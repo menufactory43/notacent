@@ -2,22 +2,43 @@
 import Base from '../layouts/Base.astro';
 import Row from './Row.astro';
 import Feed from './Feed.astro';
-import { t, type Locale } from '../i18n/strings';
-import { ranked, apps } from '../data/apps';
+import { t, localePath, type Locale } from '../i18n/strings';
+import { apps as samples, ranked as rankedSamples } from '../data/apps';
+import { rankedApps, doneApps } from '../lib/db';
+import { toView } from '../lib/view';
+import { githubReady } from '../lib/github';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
 const s = t(locale);
-const board = ranked('all');
-const sponsor = apps.find((a) => a.sponsored);
-const tools = ['Claude Code', 'Cursor', 'Lovable'];
+const q = Astro.url.searchParams;
+const period = q.get('p') === 'month' ? 'month' : 'all';
+const tool = q.get('tool') ?? '';
+const showDone = q.get('etat') === 'done';
+const tools = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Codex'];
+
+let real = (showDone ? await doneApps() : await rankedApps(period)).map(toView);
+if (tool) real = real.filter((a) => a.tool === tool);
+const isSample = real.length === 0;
+const board = isSample ? rankedSamples(period) : real;
+const sponsor = isSample ? samples.find((a) => a.sponsored) : undefined;
+const notice = q.get('soon') ? s.soon : q.get('erreur') === 'session' ? s.errSession : q.get('erreur') ? s.errGithub : '';
+const link = (params: Record<string, string>) => {
+  const u = new URLSearchParams();
+  const merged = { p: period === 'month' ? 'month' : '', tool, etat: showDone ? 'done' : '', ...params };
+  for (const [k, v] of Object.entries(merged)) if (v) u.set(k, v);
+  const qs = u.toString();
+  return localePath(locale, '/') + (qs ? `?${qs}` : '') + '#board';
+};
 ---
 <Base locale={locale} path="/">
+  {notice && <p class="notice sk hand">{notice}</p>}
   <section class="hero">
     <div>
       <h1 set:html={s.h1} />
       <p class="lede">{s.lede}</p>
       <form class="paste sk" method="get" action="/api/auth/github">
-        <input type="url" name="repo" placeholder={s.placeholder} aria-label="URL" required />
+        <input type="hidden" name="lang" value={locale} />
+        <input type="url" name="repo" placeholder={s.placeholder} aria-label="URL" />
         <button class="sk sk-btn primary" type="submit">{s.add}</button>
       </form>
       <small class="hint">{s.hint}</small>
@@ -34,15 +55,18 @@ const tools = ['Claude Code', 'Cursor', 'Lovable'];
 
   <section id="board">
     <div class="sh">
-      <h2>{s.boardTitle}</h2>
-      <div class="seg" role="group"><button aria-pressed="true" type="button">{s.allTime}</button><button aria-pressed="false" type="button">{s.thisMonth}</button></div>
+      <h2>{showDone ? s.done : s.boardTitle}</h2>
+      <div class="seg" role="group">
+        <a href={link({ p: '', etat: '' })} aria-current={period === 'all' && !showDone ? 'page' : undefined}>{s.allTime}</a>
+        <a href={link({ p: 'month', etat: '' })} aria-current={period === 'month' && !showDone ? 'page' : undefined}>{s.thisMonth}</a>
+      </div>
       <div class="filters">
-        <button class="chip" aria-pressed="true" type="button">{s.allTools}</button>
-        {tools.map((x) => <button class="chip" aria-pressed="false" type="button">{x}</button>)}
-        <button class="chip" aria-pressed="false" type="button">{s.done}</button>
+        <a class="chip" href={link({ tool: '' })} aria-pressed={!tool ? 'true' : 'false'}>{s.allTools}</a>
+        {tools.map((x) => <a class="chip" href={link({ tool: x })} aria-pressed={tool === x ? 'true' : 'false'}>{x}</a>)}
+        <a class="chip" href={link({ etat: showDone ? '' : 'done' })} aria-pressed={showDone ? 'true' : 'false'}>{s.done}</a>
       </div>
     </div>
-    <p class="examples hand">{s.examples}</p>
+    {isSample && <p class="examples hand">{githubReady() ? s.emptyBoard : s.examples}</p>}
     <div class="board">
       {board.slice(0, 2).map((a, i) => <Row app={a} rank={i + 1} locale={locale} seed={i + 1} />)}
       {sponsor && <Row app={sponsor} locale={locale} seed={7} />}
@@ -52,12 +76,13 @@ const tools = ['Claude Code', 'Cursor', 'Lovable'];
   </section>
 </Base>
 <style>
+.notice{padding:10px 16px;margin:0 0 24px;font-size:19px;background:var(--paper-2)}
 .hero{display:grid;grid-template-columns:1.3fr .9fr;gap:32px;align-items:start;margin-bottom:56px}
 h1{font:700 clamp(40px,7vw,64px)/1 var(--hand);margin:0 0 12px;text-wrap:balance}
 h1 :global(mark){background:linear-gradient(transparent 35%,var(--hilite) 35%,var(--hilite) 92%,transparent 92%);color:inherit;padding:0 4px}
 .lede{max-width:52ch;margin:0 0 20px;font-size:18px}
 .paste{display:flex;gap:8px;padding:6px 6px 6px 16px;align-items:center;max-width:560px}
-.paste input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;outline:none}
+.paste input[type=url]{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;outline:none}
 .paste input::placeholder{color:var(--pencil)}
 .paste:focus-within{box-shadow:0 0 0 3px var(--hilite)}
 .hint{display:block;margin-top:8px;font:500 17px/1.2 var(--hand);color:var(--pencil)}
@@ -69,16 +94,8 @@ h1 :global(mark){background:linear-gradient(transparent 35%,var(--hilite) 35%,va
 .sh{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0 0 8px}
 .sh h2{font:700 30px/1 var(--hand);margin:0}
 .filters{display:flex;gap:6px;flex-wrap:wrap}
+.chip{text-decoration:none}
 .examples{color:var(--redpen);font-size:17px;margin:0 0 14px}
 .board{display:grid;gap:14px}
 @media (max-width:760px){.hero{grid-template-columns:1fr}}
 </style>
-<script>
-  document.querySelectorAll<HTMLElement>('.seg button, .chip').forEach((b) =>
-    b.addEventListener('click', () => {
-      const group = b.closest('.seg') ?? b.parentElement!;
-      group.querySelectorAll('[aria-pressed]').forEach((x) => x.setAttribute('aria-pressed', 'false'));
-      b.setAttribute('aria-pressed', 'true');
-    }),
-  );
-</script>

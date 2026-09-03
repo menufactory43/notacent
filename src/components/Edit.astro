@@ -1,0 +1,65 @@
+---
+import Base from '../layouts/Base.astro';
+import { t, localePath, type Locale } from '../i18n/strings';
+import { currentUser } from '../lib/session';
+import { appBySlug } from '../lib/db';
+interface Props { locale: Locale; slug: string }
+const { locale, slug } = Astro.props;
+const s = t(locale);
+const user = await currentUser(Astro.cookies).catch(() => null);
+if (!user) return Astro.redirect(`/api/auth/github?lang=${locale}`, 302);
+const app = await appBySlug(slug).catch(() => null);
+if (!app || app.user_id !== user.id) return new Response(null, { status: 404 });
+const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre'];
+---
+<Base locale={locale} path={`/app/${slug}/modifier`} title={s.editTitle}>
+  <section class="edit">
+    <h1>{s.editTitle} <span class="hand sub">· {app.name}</span></h1>
+    <p class="lede">{s.editLede}</p>
+    <form method="post" action="/api/apps/update" class="sk">
+      <input type="hidden" name="slug" value={app.slug} />
+      <label><span>{s.fName}</span><input name="name" value={app.name} maxlength="80" /></label>
+      <label><span>{s.fUrl}</span><input name="url" type="url" value={app.url ?? app.homepage ?? ''} placeholder="https://" /></label>
+      <label><span>{s.fImage}</span><input name="image_url" type="url" value={app.image_url ?? ''} placeholder="https://" /></label>
+      <label><span>{s.fLongest}</span><textarea name="longest" rows="4" maxlength="600">{app.longest ?? ''}</textarea></label>
+      <div class="grid">
+        <label><span>{s.fTool}</span>
+          <select name="tool">{TOOLS.map((x) => <option value={x} selected={app.tool === x}>{x}</option>)}</select>
+        </label>
+        <label><span>{s.fPricing}</span>
+          <select name="pricing">
+            <option value="free" selected={app.pricing === 'free'}>{s.pFree}</option>
+            <option value="donations" selected={app.pricing === 'donations'}>{s.pDonations}</option>
+            <option value="paid" selected={app.pricing === 'paid'}>{s.pPaid}</option>
+          </select>
+        </label>
+        <label><span>{s.fStatus}</span>
+          <select name="status">
+            <option value="polishing" selected={app.status === 'polishing'}>{s.stPolishing}</option>
+            <option value="done" selected={app.status === 'done'}>{s.stDone}</option>
+            <option value="paused" selected={app.status === 'paused'}>{s.stPaused}</option>
+          </select>
+        </label>
+      </div>
+      <div class="actions">
+        <button class="sk sk-btn primary" type="submit">{s.save}</button>
+        <a class="back hand" href={localePath(locale, `/app/${app.slug}`)}>← {app.name}</a>
+      </div>
+    </form>
+  </section>
+</Base>
+<style>
+.edit{max-width:640px}
+h1{font:700 44px/1 var(--hand);margin:0 0 6px}
+.sub{color:var(--pencil);font-size:30px}
+.lede{margin:0 0 20px;color:var(--pencil)}
+form{padding:20px 22px;display:grid;gap:14px}
+label{display:grid;gap:4px}
+label span{font:700 17px/1.2 var(--hand);color:var(--pencil)}
+input,textarea,select{font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:2px solid var(--ink);border-radius:var(--sk2);padding:8px 12px;width:100%}
+textarea{resize:vertical}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.back{color:var(--pencil);font-size:18px;text-decoration:none}
+@media (max-width:640px){.grid{grid-template-columns:1fr}}
+</style>

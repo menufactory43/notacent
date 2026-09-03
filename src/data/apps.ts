@@ -26,6 +26,7 @@ export interface App {
   weekly: number[]; // jours actifs par semaine, 26 semaines
   margin?: { fr: string; en: string };
   sponsored?: boolean;
+  imageUrl?: string;
 }
 
 function weekly(shape: 'up' | 'steady' | 'burst' | 'new', seed: number) {

@@ -1,22 +1,28 @@
 ---
-import { t, type Locale } from '../i18n/strings';
+import { t, localePath, type Locale } from '../i18n/strings';
+import { recentActivity } from '../lib/db';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
 const s = t(locale);
-// Exemples ; viendra du cron (étape 7).
-const items = [
-  { l: 'S', name: 'Sémaphore', what: s.nthDay(168), when: s.ago(12, 'min') },
-  { l: '¢', name: 'Not a Cent', what: s.nthDay(1), when: s.ago(1, 'h') },
-  { l: 'P', name: 'Pixelwave', what: s.arrived, when: s.ago(3, 'h') },
-  { l: 'C', name: 'Correspondance', what: s.nthDay(214), when: s.ago(2, 'j') },
-  { l: 'L', name: 'Lunette', what: s.nowDone, when: s.ago(2, 'j') },
-];
+const rows = await recentActivity(8).catch(() => []);
+const items = rows.length
+  ? rows.map((r) => ({
+      l: r.name[0], name: r.name, href: localePath(locale, `/app/${r.slug}`),
+      what: r.kind === 'arrived' ? s.kindArrived : r.kind === 'day' ? s.kindDay(Number(r.payload.n ?? 0)) : r.payload.status === 'done' ? s.kindDone : s.kindPaused,
+      when: s.agoAuto(Date.now() - new Date(r.created_at).getTime()),
+    }))
+  : [
+      { l: 'S', name: 'Sémaphore', href: '#', what: s.nthDay(168), when: s.ago(12, 'min') },
+      { l: '¢', name: 'Not a Cent', href: '#', what: s.nthDay(1), when: s.ago(1, 'h') },
+      { l: 'P', name: 'Pixelwave', href: '#', what: s.arrived, when: s.ago(3, 'h') },
+      { l: 'C', name: 'Correspondance', href: '#', what: s.nthDay(214), when: s.ago(2, 'j') },
+    ];
 ---
 <div class="activity">
   <h2>{s.activity}</h2>
   <div class="feed">
     {items.map((i) => (
-      <article class="sk"><div class="logo-app">{i.l}</div><div><b>{i.name}</b>{i.what}<br /><span class="when">{i.when}</span></div></article>
+      <a class="sk" href={i.href}><div class="logo-app">{i.l}</div><div><b>{i.name}</b>{i.what}<br /><span class="when">{i.when}</span></div></a>
     ))}
   </div>
 </div>
@@ -25,7 +31,7 @@ const items = [
 h2{font:700 24px/1 var(--hand);margin:0 0 10px;display:flex;align-items:center;gap:8px}
 h2::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--redpen);display:inline-block}
 .feed{display:flex;gap:10px;overflow-x:auto;padding:6px 2px 10px;scrollbar-width:thin}
-.feed article{flex:0 0 200px;padding:10px 12px;font-size:13px;color:var(--pencil);display:flex;gap:10px;align-items:center}
+.feed a{flex:0 0 200px;padding:10px 12px;font-size:13px;color:var(--pencil);display:flex;gap:10px;align-items:center;text-decoration:none}
 .feed .logo-app{width:32px;height:32px;font-size:16px}
 .feed b{color:var(--ink);font-weight:700;display:block}
 .when{font:500 14px/1 var(--hand)}

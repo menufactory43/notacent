@@ -1,23 +1,33 @@
 ---
 import Base from '../layouts/Base.astro';
-import { t, type Locale } from '../i18n/strings';
+import { t, localePath, type Locale } from '../i18n/strings';
 import type { App } from '../data/apps';
-interface Props { locale: Locale; app: App }
-const { locale, app } = Astro.props;
+import { currentUser } from '../lib/session';
+interface Props { locale: Locale; app: App; ownerId?: number; sample?: boolean }
+const { locale, app, ownerId, sample } = Astro.props;
 const s = t(locale);
+const user = await currentUser(Astro.cookies).catch(() => null);
+const mine = Boolean(user && ownerId && user.id === ownerId);
 const since = new Date(app.firstCommit).toLocaleDateString(locale, { month: 'short', year: 'numeric' });
+const stamp = app.pricing === 'donations' ? s.donations : app.pricing === 'paid' ? '€' : s.free;
+const stateNote = app.status === 'done' ? s.doneStatus : app.status === 'paused' ? s.paused : '';
 ---
 <Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={app.longest[locale]}>
+  {sample && <p class="examples hand">{s.examples}</p>}
   <article class="sk fiche">
-    <span class="stamp">{app.pricing === 'donations' ? s.donations : s.free}</span>
-    <div class="shot"><canvas id="shot" width="520" height="390" aria-hidden="true"></canvas></div>
+    <span class="stamp">{stamp}</span>
+    <div class="shot">
+      {app.imageUrl ? <img src={app.imageUrl} alt="" loading="lazy" /> : <canvas id="shot" width="520" height="390" aria-hidden="true"></canvas>}
+    </div>
     <div class="cartel">
-      <h1>{app.name}</h1>
+      <h1>{app.name} {stateNote && <span class="state hand">· {stateNote}</span>}</h1>
       <p class="meta">{s.by} @{app.owner} · {app.tool} · {app.language} · {s.since} <span class="mono">{since}</span></p>
-      <blockquote class="quote">
-        {app.longest[locale]}
-        <small>{s.longest}</small>
-      </blockquote>
+      {app.longest[locale] && (
+        <blockquote class="quote">
+          {app.longest[locale]}
+          <small>{s.longest}</small>
+        </blockquote>
+      )}
       <div class="stats">
         <div><b class="mono">{app.activeDays}</b><span>{s.days}</span></div>
         <div><b class="mono">{app.commits.toLocaleString(locale)}</b><span>{s.commits}</span></div>
@@ -26,18 +36,21 @@ const since = new Date(app.firstCommit).toLocaleDateString(locale, { month: 'sho
         <div><b class="mono">{app.clicks.toLocaleString(locale)}</b><span>{s.clicks}</span></div>
       </div>
       <div class="actions">
-        <button class="sk sk-btn primary bravo" type="button">✋ {s.bravo} · <span class="count mono">{app.bravos}</span></button>
-        {app.url && <a class="sk sk-btn" href={app.url} rel="noopener">{s.open} ↗</a>}
+        <button class="sk sk-btn primary bravo" type="button" data-slug={app.slug} data-already={s.already}>✋ {s.bravo} · <span class="count mono">{app.bravos}</span></button>
+        {app.url && <a class="sk sk-btn" href={sample ? app.url : `/api/apps/go?slug=${app.slug}`} rel="noopener">{s.open} ↗</a>}
         {app.repo && <a class="sk sk-btn" href={app.repo} rel="noopener">{s.repo}</a>}
+        {mine && <a class="sk sk-btn" href={localePath(locale, `/app/${app.slug}/modifier`)}>✎ {s.edit}</a>}
       </div>
     </div>
   </article>
 </Base>
 <style>
+.examples{color:var(--redpen);font-size:17px;margin:0 0 14px}
 .fiche{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:26px 28px;position:relative}
 .shot{border:2px solid var(--ink);border-radius:var(--sk2);aspect-ratio:4/3;background:var(--paper-2);overflow:hidden}
-.shot canvas{width:100%;height:100%;display:block}
+.shot canvas,.shot img{width:100%;height:100%;display:block;object-fit:cover}
 h1{font:700 40px/1 var(--hand);margin:0 0 2px}
+.state{font-size:24px;color:var(--pencil)}
 .meta{color:var(--pencil);font-size:14px;margin:0 0 14px}
 .quote{border-left:3px solid var(--hilite);padding:6px 14px;margin:0 0 18px;font-style:italic;max-width:48ch}
 .quote small{display:block;font-style:normal;font:700 15px/1.4 var(--hand);color:var(--pencil);margin-top:4px}
@@ -48,6 +61,7 @@ h1{font:700 40px/1 var(--hand);margin:0 0 2px}
 .stats span{font:500 14px/1.2 var(--hand);color:var(--pencil)}
 .stamp{position:absolute;right:22px;top:-18px;transform:rotate(-7deg);border:3px double var(--redpen);color:var(--redpen);font:700 22px/1 var(--hand);padding:6px 12px;border-radius:12px 40px 14px 44px/40px 12px 44px 14px;background:var(--paper)}
 .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.bravo.given{background:var(--paper-2);color:var(--pencil)}
 @media (max-width:760px){.fiche{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
 </style>
 <script>
@@ -68,8 +82,14 @@ h1{font:700 40px/1 var(--hand);margin:0 0 2px}
     rc.circle(84, 44, 12, { fill: hil, fillStyle: 'solid', stroke: hil });
     rc.circle(108, 44, 12, { fill: '#6DBE7B', fillStyle: 'solid', stroke: '#6DBE7B' });
   }
-  document.querySelector('.bravo')?.addEventListener('click', (e) => {
-    const n = (e.currentTarget as HTMLElement).querySelector('.count')!;
-    n.textContent = String(Number(n.textContent) + 1);
+  const b = document.querySelector<HTMLButtonElement>('.bravo');
+  b?.addEventListener('click', async () => {
+    const n = b.querySelector('.count')!;
+    b.disabled = true;
+    try {
+      const r = await fetch('/api/apps/bravo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: b.dataset.slug }) });
+      if (r.ok) { const j = await r.json(); n.textContent = String(j.bravos); if (j.already) b.title = b.dataset.already ?? ''; b.classList.add('given'); }
+      else n.textContent = String(Number(n.textContent) + 1);
+    } catch { n.textContent = String(Number(n.textContent) + 1); }
   });
 </script>

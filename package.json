@@ -9,14 +9,22 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs"
   },
   "dependencies": {
     "@astrojs/vercel": "^11.0.10",
+    "@neondatabase/serverless": "^1.1.0",
     "astro": "^7.2.10",
+    "jose": "^6.2.10",
     "roughjs": "^4.6.6"
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/node": "^26.4.1",
+    "typescript": "^6.0.3"
   }
 }

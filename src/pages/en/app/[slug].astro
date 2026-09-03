@@ -1,7 +1,0 @@
----
-import Fiche from '../../../components/Fiche.astro';
-import { apps } from '../../../data/apps';
-export function getStaticPaths() { return apps.map((a) => ({ params: { slug: a.slug }, props: { app: a } })); }
-const { app } = Astro.props;
----
-<Fiche locale="en" app={app} />

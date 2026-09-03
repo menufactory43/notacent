@@ -1,0 +1,12 @@
+---
+import Fiche from '../../../components/Fiche.astro';
+import { apps } from '../../../data/apps';
+import { appBySlug } from '../../../lib/db';
+import { toView } from '../../../lib/view';
+export const prerender = false;
+const slug = Astro.params.slug ?? '';
+const row = await appBySlug(slug).catch(() => null);
+const sample = row ? undefined : apps.find((a) => a.slug === slug);
+if (!row && !sample) return new Response(null, { status: 404 });
+---
+<Fiche locale="fr" app={row ? toView(row) : sample!} ownerId={row?.user_id} sample={!row} />

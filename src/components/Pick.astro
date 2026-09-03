@@ -1,0 +1,70 @@
+---
+import Base from '../layouts/Base.astro';
+import { t, localePath, type Locale } from '../i18n/strings';
+import { currentUser } from '../lib/session';
+import { installationRepos, appSlug, type GhRepo } from '../lib/github';
+import { sql } from '../lib/db';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const s = t(locale);
+const user = await currentUser(Astro.cookies).catch(() => null);
+if (!user?.access_token) return Astro.redirect(`/api/auth/github?lang=${locale}`, 302);
+if (!user.installation_id) return Astro.redirect(`https://github.com/apps/${appSlug()}/installations/new`, 302);
+let repos: GhRepo[] = [];
+let error = '';
+try { repos = await installationRepos(user.access_token, user.installation_id); } catch (e) { error = s.errGithub; console.error(e); }
+const published = new Set(((await sql.query(`select repo_id from apps where user_id = $1 and published`, [user.id])) as { repo_id: number }[]).map((r) => Number(r.repo_id)));
+const wanted = (Astro.cookies.get('nac_repo')?.value ?? '').toLowerCase();
+const preferred = (r: GhRepo) => wanted && (wanted.includes(r.full_name.toLowerCase()) || wanted.endsWith(`/${r.name.toLowerCase()}`));
+const installUrl = `https://github.com/apps/${appSlug()}/installations/new`;
+---
+<Base locale={locale} path="/ajouter" title={s.pickTitle}>
+  <section class="pick">
+    <h1>{s.pickTitle}</h1>
+    <p class="lede">{s.pickLede}</p>
+    {error && <p class="notice sk hand">{error}</p>}
+    <form method="post" action="/api/apps/publish">
+      {repos.length === 0 && !error && <p class="hand empty">{s.pickNone}</p>}
+      <ul class="repos">
+        {repos.map((r) => (
+          <li class="sk">
+            <label>
+              <input type="checkbox" name="repo" value={r.id} checked={preferred(r) || published.has(r.id)} />
+              <span class="body">
+                <b>{r.name}</b>
+                {r.private && <span class="chip">{s.private}</span>}
+                {published.has(r.id) && <span class="chip">{s.publishedAlready}</span>}
+                <span class="desc">{r.description}</span>
+                <span class="meta mono">{r.language ?? ''} · {new Date(r.pushed_at).toLocaleDateString(locale)}</span>
+              </span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      <div class="actions">
+        <button class="sk sk-btn primary" type="submit" disabled={repos.length === 0}>{s.publish}</button>
+        <a class="sk sk-btn" href={installUrl}>{s.pickMore} ↗</a>
+        <a class="back hand" href={localePath(locale, '/')}>← Not a Cent</a>
+      </div>
+    </form>
+  </section>
+</Base>
+<style>
+.pick{max-width:640px}
+h1{font:700 44px/1 var(--hand);margin:0 0 6px}
+.lede{margin:0 0 20px;color:var(--pencil)}
+.notice{padding:10px 16px;margin:0 0 16px;font-size:19px;background:var(--paper-2)}
+.empty{font-size:20px;color:var(--pencil)}
+.repos{list-style:none;padding:0;margin:0 0 20px;display:grid;gap:10px}
+.repos li{padding:0}
+label{display:flex;gap:14px;padding:12px 16px;cursor:pointer;align-items:flex-start}
+input[type=checkbox]{width:22px;height:22px;margin-top:3px;accent-color:var(--redpen);flex-shrink:0}
+.body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.body b{font-size:17px;display:inline}
+.body .chip{margin-left:8px;font-size:13px;padding:0 7px}
+.desc{color:var(--pencil);font-size:14px}
+.meta{color:var(--pencil);font-size:12px}
+.actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.back{color:var(--pencil);font-size:18px;text-decoration:none}
+button[disabled]{opacity:.5;cursor:not-allowed}
+</style>

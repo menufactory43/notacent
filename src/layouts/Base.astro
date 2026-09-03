@@ -1,12 +1,14 @@
 ---
 import '../styles/global.css';
 import { t, localePath, otherLocale, type Locale } from '../i18n/strings';
-import { totals } from '../data/apps';
+import { totals } from '../lib/db';
+import { currentUser } from '../lib/session';
 interface Props { locale: Locale; title?: string; description?: string; path?: string }
 const { locale, title, description, path = '/' } = Astro.props;
+const user = await currentUser(Astro.cookies).catch(() => null);
 const s = t(locale);
 const other = otherLocale(locale);
-const tot = totals();
+const tot = await totals().catch(() => ({ apps: 0, days: 0 }));
 const fullTitle = title ? `${title} · Not a Cent` : 'Not a Cent';
 ---
 <!doctype html>
@@ -31,6 +33,7 @@ const fullTitle = title ? `${title} · Not a Cent` : 'Not a Cent';
       <a class="logo" href={localePath(locale, '/')}><span>Not a</span><span class="zero">Cent</span></a>
       <div class="nav-r">
         <span class="tally mono"><b>{tot.apps}</b> {s.apps} · <b>{tot.days.toLocaleString(locale)}</b> {s.totalDays} · <b>0 €</b></span>
+        {user && <form method="post" action="/api/auth/logout" class="me"><span class="hand">@{user.login}</span><button type="submit" class="chip">{s.logout}</button></form>}
         <div class="seg" role="group" aria-label="Langue / Language">
           <a href={localePath('fr', path)} aria-current={locale === 'fr' ? 'page' : undefined}>FR</a>
           <a href={localePath('en', path)} aria-current={locale === 'en' ? 'page' : undefined}>EN</a>
@@ -53,6 +56,7 @@ nav{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-
 .nav-r{display:flex;gap:12px;align-items:center}
 .tally{font-size:13px;color:var(--pencil)}
 .tally b{color:var(--ink);font-weight:500}
+.me{display:flex;gap:8px;align-items:center;margin:0;font-size:17px}
 footer{margin-top:64px;border-top:2px dashed var(--faint);padding-top:18px;color:var(--pencil);font-size:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 footer .f1{font-size:18px;color:var(--ink)}
 @media (max-width:760px){.tally{display:none}}

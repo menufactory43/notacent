@@ -22,4 +22,4 @@ Astro sur Vercel, français et anglais. Fond blanc, bords tracés à la main, ch
 
 Les étapes 2 à 7 sont codées. Elles s'activent dès que l'app GitHub est branchée : voir INSTALLATION.md.
 
-Le site est lui-même une fiche de l'annuaire.
+Le site ne se liste pas lui-même : son repo est public, ça suffit.

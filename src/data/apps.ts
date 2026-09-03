@@ -79,7 +79,7 @@ export const apps: App[] = [
     lifetimeMonths: 0, bestStreakWeeks: 1, bravos: 0, pricing: 'free', status: 'polishing',
     longest: { fr: 'La maquette, avant la première ligne de code.', en: 'The mockup, before the first line of code.' },
     weekly: weekly('new', 4), margin: { fr: 'ce site, oui oui', en: 'this very site' },
-    repo: 'https://github.com/meffysto/notacent',
+    repo: 'https://github.com/menufactory43/notacent',
   },
 ];
 

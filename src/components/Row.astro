@@ -15,6 +15,7 @@ const last = app.lastCommitDaysAgo === 0 ? s.today : s.ago(app.lastCommitDaysAgo
     <div class="logo-app" aria-hidden="true">{app.imageUrl ? <img src={app.imageUrl} alt="" loading="lazy" /> : app.name[0]}</div>
     <div>
       <p class="name"><a href={localePath(locale, `/app/${app.slug}`)}>{app.name}</a></p>
+      {app.tagline && <p class="tagline">{app.tagline}</p>}
       <p class="by">@{app.owner} <span class="tool">{app.tool}</span> · {app.language}</p>
     </div>
   </div>
@@ -36,6 +37,7 @@ const last = app.lastCommitDaysAgo === 0 ? s.today : s.ago(app.lastCommitDaysAgo
 .name{font-weight:700;font-size:18px;margin:0}
 .name a{text-decoration:none;border-bottom:1.5px solid var(--faint)}
 .name a:hover{border-bottom-color:var(--ink)}
+.tagline{margin:1px 0 0;font-size:14px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .by{color:var(--pencil);font-size:14px;margin:2px 0 0}
 .tool{font:500 15px/1 var(--hand);color:var(--ink);border:1.5px solid var(--faint);border-radius:8px 30px 10px 34px/30px 8px 34px 10px;padding:1px 7px;margin-left:6px}
 .metric{text-align:right}

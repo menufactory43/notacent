@@ -59,3 +59,4 @@ create table if not exists sponsors (
   created_at timestamptz default now()
 );
 create index if not exists sponsors_active on sponsors (ends_at desc);
+alter table apps add column if not exists tagline text;

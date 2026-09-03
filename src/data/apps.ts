@@ -27,6 +27,7 @@ export interface App {
   margin?: { fr: string; en: string };
   sponsored?: boolean;
   imageUrl?: string;
+  tagline?: string;
 }
 
 function weekly(shape: 'up' | 'steady' | 'burst' | 'new', seed: number) {
@@ -44,7 +45,7 @@ function weekly(shape: 'up' | 'steady' | 'burst' | 'new', seed: number) {
 
 export const apps: App[] = [
   {
-    slug: 'correspondance', name: 'Correspondance', owner: 'meffysto', tool: 'Claude Code', language: 'Swift',
+    slug: 'correspondance', name: 'Correspondance', owner: 'meffysto', tool: 'Claude Code', language: 'Swift', tagline: 'Toutes vos messageries, une inbox.',
     activeDays: 214, activeDays30: 22, commits: 1187, clicks: 2340, lastCommitDaysAgo: 2, firstCommit: '2026-02-03',
     lifetimeMonths: 7, bestStreakWeeks: 19, bravos: 48, pricing: 'free', status: 'polishing',
     longest: {

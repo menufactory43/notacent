@@ -4,7 +4,7 @@ export const hasDb = Boolean(import.meta.env.DATABASE_URL ?? process.env.DATABAS
 
 export interface DbApp {
   id: number; user_id: number; repo_id: number; full_name: string; slug: string; name: string;
-  description: string | null; language: string | null; private: boolean; homepage: string | null;
+  description: string | null; tagline: string | null; language: string | null; private: boolean; homepage: string | null;
   url: string | null; image_url: string | null; longest: string | null; tool: string | null;
   pricing: 'free' | 'donations' | 'paid'; status: 'polishing' | 'done' | 'paused';
   first_commit: string | null; last_commit: string | null; commits: number; active_days: number;
@@ -16,7 +16,7 @@ export async function rankedApps(period: 'all' | 'month' = 'all', limit = 100): 
   if (!hasDb) return [];
   const order = period === 'all' ? 'active_days' : 'active_days_30';
   return (await sql.query(
-    `select a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image from apps a join users u on u.id = a.user_id
+    `select a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image from apps a join users u on u.id = a.user_id
      where a.published and a.pricing <> 'paid' and a.status = 'polishing'
      order by ${order} desc, a.commits desc limit $1`, [limit],
   )) as DbApp[];
@@ -24,13 +24,13 @@ export async function rankedApps(period: 'all' | 'month' = 'all', limit = 100): 
 export async function doneApps(limit = 100): Promise<DbApp[]> {
   if (!hasDb) return [];
   return (await sql.query(
-    `select a.id, a.user_id, a.slug, a.name, a.language, a.private, a.full_name, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.created_at, u.login, (a.image is not null) as has_image from apps a join users u on u.id = a.user_id
+    `select a.id, a.user_id, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.full_name, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.created_at, u.login, (a.image is not null) as has_image from apps a join users u on u.id = a.user_id
      where a.published and a.status <> 'polishing' order by active_days desc limit $1`, [limit],
   )) as DbApp[];
 }
 export async function appBySlug(slug: string): Promise<DbApp | null> {
   if (!hasDb) return null;
-  const rows = (await sql.query(`select a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image from apps a join users u on u.id = a.user_id where a.slug = $1`, [slug])) as DbApp[];
+  const rows = (await sql.query(`select a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image from apps a join users u on u.id = a.user_id where a.slug = $1`, [slug])) as DbApp[];
   return rows[0] ?? null;
 }
 export async function totals() {
@@ -49,7 +49,7 @@ export async function recentActivity(limit = 8) {
 export async function activeSponsor(): Promise<DbApp | null> {
   if (!hasDb) return null;
   const rows = (await sql.query(
-    `select a.id, a.user_id, a.slug, a.name, a.language, a.private, a.full_name, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.created_at, u.login, (a.image is not null) as has_image, true as sponsored
+    `select a.id, a.user_id, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.full_name, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.created_at, u.login, (a.image is not null) as has_image, true as sponsored
      from sponsors s join apps a on a.id = s.app_id join users u on u.id = a.user_id
      where a.published and s.starts_at <= now() and s.ends_at > now() order by s.ends_at asc limit 1`,
   )) as DbApp[];

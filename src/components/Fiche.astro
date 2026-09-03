@@ -19,7 +19,7 @@ const price = new Intl.NumberFormat(locale, { style: 'currency', currency: spons
 const sp = Astro.url.searchParams.get('sponsor');
 const sponsorMsg = sp === 'merci' ? s.sponsorThanks : sp === 'erreur' ? s.sponsorErr : '';
 ---
-<Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={app.longest[locale]}>
+<Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={app.tagline ?? app.longest[locale]}>
   {sample && <p class="examples hand">{s.examples}</p>}
   <article class="sk fiche">
     <span class="stamp">{stamp}</span>
@@ -28,6 +28,7 @@ const sponsorMsg = sp === 'merci' ? s.sponsorThanks : sp === 'erreur' ? s.sponso
     </div>
     <div class="cartel">
       <h1>{app.name} {stateNote && <span class="state hand">· {stateNote}</span>}</h1>
+      {app.tagline && <p class="tagline">{app.tagline}</p>}
       <p class="meta">{s.by} @{app.owner} · {app.tool} · {app.language} · {s.since} <span class="mono">{since}</span></p>
       {app.longest[locale] && (
         <blockquote class="quote">
@@ -67,6 +68,7 @@ const sponsorMsg = sp === 'merci' ? s.sponsorThanks : sp === 'erreur' ? s.sponso
 .shot canvas,.shot img{width:100%;height:100%;display:block;object-fit:cover}
 h1{font:700 40px/1 var(--hand);margin:0 0 2px}
 .state{font-size:24px;color:var(--pencil)}
+.tagline{font-size:18px;margin:2px 0 6px;max-width:48ch}
 .meta{color:var(--pencil);font-size:14px;margin:0 0 14px}
 .quote{border-left:3px solid var(--hilite);padding:6px 14px;margin:0 0 18px;font-style:italic;max-width:48ch}
 .quote small{display:block;font-style:normal;font:700 15px/1.4 var(--hand);color:var(--pencil);margin-top:4px}

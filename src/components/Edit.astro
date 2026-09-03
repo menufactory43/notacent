@@ -20,6 +20,7 @@ const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', '
       {Astro.url.searchParams.get('erreur') === 'image' && <p class="err hand">{s.errImage}</p>}
       <input type="hidden" name="slug" value={app.slug} />
       <label><span>{s.fName}</span><input name="name" value={app.name} maxlength="80" /></label>
+      <label><span>{s.fTagline}</span><input name="tagline" value={app.tagline ?? app.description ?? ''} maxlength="140" /></label>
       <label><span>{s.fUrl}</span><input name="url" type="url" value={app.url ?? app.homepage ?? ''} placeholder="https://" /></label>
       <label><span>{s.fImage}</span><input name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /><small>{s.fImageHint}</small></label>
       <label><span>{s.fLongest}</span><textarea name="longest" rows="4" maxlength="600">{app.longest ?? ''}</textarea></label>

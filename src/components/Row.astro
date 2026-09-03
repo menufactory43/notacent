@@ -1,0 +1,54 @@
+---
+import Spark from './Spark.astro';
+import { t, localePath, type Locale } from '../i18n/strings';
+import type { App } from '../data/apps';
+interface Props { app: App; rank?: number; locale: Locale; seed: number }
+const { app, rank, locale, seed } = Astro.props;
+const s = t(locale);
+const last = app.lastCommitDaysAgo === 0 ? s.today : s.ago(app.lastCommitDaysAgo, 'j');
+---
+<article class:list={['sk', 'row', { sponsor: app.sponsored }]}>
+  {app.sponsored
+    ? <><div class="rank small">{s.sponsored}</div><span class="label">{s.sponsoredLabel}</span></>
+    : <div class="rank">{rank}</div>}
+  <div class="who">
+    <div class="logo-app" aria-hidden="true">{app.name[0]}</div>
+    <div>
+      <p class="name"><a href={localePath(locale, `/app/${app.slug}`)}>{app.name}</a></p>
+      <p class="by">@{app.owner} <span class="tool">{app.tool}</span> · {app.language}</p>
+    </div>
+  </div>
+  <div class="metric"><b class="mono">{app.activeDays}</b><span>{s.days}</span></div>
+  <div class="sub">
+    <Spark data={app.weekly} seed={seed} />
+    <div>
+      <b>{app.commits.toLocaleString(locale)}</b> {s.commits} · <span class="clicks"><b>{app.clicks.toLocaleString(locale)}</b> {s.clicks}</span><br />
+      {s.last} <b>{last}</b>
+    </div>
+  </div>
+  {app.margin && <span class="margin">{app.margin[locale]}</span>}
+</article>
+<style>
+.row{display:grid;grid-template-columns:36px 1fr 150px 210px;gap:16px;align-items:center;padding:14px 18px;position:relative}
+.rank{font:700 34px/1 var(--hand);color:var(--pencil)}
+.rank.small{font-size:14px;line-height:1.1;text-align:center}
+.who{display:flex;gap:12px;align-items:center;min-width:0}
+.name{font-weight:700;font-size:18px;margin:0}
+.name a{text-decoration:none;border-bottom:1.5px solid var(--faint)}
+.name a:hover{border-bottom-color:var(--ink)}
+.by{color:var(--pencil);font-size:14px;margin:2px 0 0}
+.tool{font:500 15px/1 var(--hand);color:var(--ink);border:1.5px solid var(--faint);border-radius:8px 30px 10px 34px/30px 8px 34px 10px;padding:1px 7px;margin-left:6px}
+.metric{text-align:right}
+.metric b{display:block;font-size:28px;line-height:1;font-weight:500}
+.metric span{font:500 15px/1.2 var(--hand);color:var(--pencil)}
+.sub{display:flex;gap:14px;justify-content:flex-end;color:var(--pencil);font-size:13px;align-items:center}
+.sub b{font-weight:500;color:var(--ink)}
+.margin{position:absolute;right:-8px;top:-14px;transform:rotate(3deg);font:700 17px/1 var(--hand);color:var(--redpen);background:var(--paper);padding:0 4px}
+.sponsor{border-style:dashed;border-color:var(--pencil);background:var(--paper-2)}
+.label{font:700 15px/1 var(--hand);color:var(--pencil);position:absolute;top:-11px;left:24px;background:var(--paper-2);padding:0 6px}
+@media (max-width:760px){
+  .row{grid-template-columns:1fr}
+  .metric{text-align:left;display:flex;gap:10px;align-items:baseline}
+  .sub{justify-content:flex-start}
+}
+</style>

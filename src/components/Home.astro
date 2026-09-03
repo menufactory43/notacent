@@ -1,0 +1,84 @@
+---
+import Base from '../layouts/Base.astro';
+import Row from './Row.astro';
+import Feed from './Feed.astro';
+import { t, type Locale } from '../i18n/strings';
+import { ranked, apps } from '../data/apps';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const s = t(locale);
+const board = ranked('all');
+const sponsor = apps.find((a) => a.sponsored);
+const tools = ['Claude Code', 'Cursor', 'Lovable'];
+---
+<Base locale={locale} path="/">
+  <section class="hero">
+    <div>
+      <h1 set:html={s.h1} />
+      <p class="lede">{s.lede}</p>
+      <form class="paste sk" method="get" action="/api/auth/github">
+        <input type="url" name="repo" placeholder={s.placeholder} aria-label="URL" required />
+        <button class="sk sk-btn primary" type="submit">{s.add}</button>
+      </form>
+      <small class="hint">{s.hint}</small>
+    </div>
+    <aside class="sk note" aria-label={s.rules}>
+      <span class="tape"></span>
+      <strong>{s.rules}</strong>
+      <ul>
+        <li>{s.r1}</li><li>{s.r2}</li><li>{s.r3}</li>
+        <li><s>{s.r4}</s> {s.r4b}</li>
+      </ul>
+    </aside>
+  </section>
+
+  <section id="board">
+    <div class="sh">
+      <h2>{s.boardTitle}</h2>
+      <div class="seg" role="group"><button aria-pressed="true" type="button">{s.allTime}</button><button aria-pressed="false" type="button">{s.thisMonth}</button></div>
+      <div class="filters">
+        <button class="chip" aria-pressed="true" type="button">{s.allTools}</button>
+        {tools.map((x) => <button class="chip" aria-pressed="false" type="button">{x}</button>)}
+        <button class="chip" aria-pressed="false" type="button">{s.done}</button>
+      </div>
+    </div>
+    <p class="examples hand">{s.examples}</p>
+    <div class="board">
+      {board.slice(0, 2).map((a, i) => <Row app={a} rank={i + 1} locale={locale} seed={i + 1} />)}
+      {sponsor && <Row app={sponsor} locale={locale} seed={7} />}
+      {board.slice(2).map((a, i) => <Row app={a} rank={i + 3} locale={locale} seed={i + 3} />)}
+    </div>
+    <Feed locale={locale} />
+  </section>
+</Base>
+<style>
+.hero{display:grid;grid-template-columns:1.3fr .9fr;gap:32px;align-items:start;margin-bottom:56px}
+h1{font:700 clamp(40px,7vw,64px)/1 var(--hand);margin:0 0 12px;text-wrap:balance}
+h1 :global(mark){background:linear-gradient(transparent 35%,var(--hilite) 35%,var(--hilite) 92%,transparent 92%);color:inherit;padding:0 4px}
+.lede{max-width:52ch;margin:0 0 20px;font-size:18px}
+.paste{display:flex;gap:8px;padding:6px 6px 6px 16px;align-items:center;max-width:560px}
+.paste input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;outline:none}
+.paste input::placeholder{color:var(--pencil)}
+.paste:focus-within{box-shadow:0 0 0 3px var(--hilite)}
+.hint{display:block;margin-top:8px;font:500 17px/1.2 var(--hand);color:var(--pencil)}
+.note{position:relative;padding:18px 20px;transform:rotate(1.2deg);font:500 21px/1.3 var(--hand)}
+.tape{position:absolute;top:-10px;left:50%;width:70px;height:20px;background:var(--hilite);opacity:.85;transform:translateX(-50%) rotate(-3deg)}
+.note ul{margin:8px 0 0;padding-left:18px}
+.note li{margin:2px 0}
+.note s{color:var(--pencil)}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0 0 8px}
+.sh h2{font:700 30px/1 var(--hand);margin:0}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.examples{color:var(--redpen);font-size:17px;margin:0 0 14px}
+.board{display:grid;gap:14px}
+@media (max-width:760px){.hero{grid-template-columns:1fr}}
+</style>
+<script>
+  document.querySelectorAll<HTMLElement>('.seg button, .chip').forEach((b) =>
+    b.addEventListener('click', () => {
+      const group = b.closest('.seg') ?? b.parentElement!;
+      group.querySelectorAll('[aria-pressed]').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+      b.setAttribute('aria-pressed', 'true');
+    }),
+  );
+</script>

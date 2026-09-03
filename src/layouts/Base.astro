@@ -1,0 +1,59 @@
+---
+import '../styles/global.css';
+import { t, localePath, otherLocale, type Locale } from '../i18n/strings';
+import { totals } from '../data/apps';
+interface Props { locale: Locale; title?: string; description?: string; path?: string }
+const { locale, title, description, path = '/' } = Astro.props;
+const s = t(locale);
+const other = otherLocale(locale);
+const tot = totals();
+const fullTitle = title ? `${title} · Not a Cent` : 'Not a Cent';
+---
+<!doctype html>
+<html lang={locale}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{fullTitle}</title>
+  <meta name="description" content={description ?? s.tagline} />
+  <meta property="og:title" content={fullTitle} />
+  <meta property="og:description" content={description ?? s.tagline} />
+  <link rel="alternate" hreflang="fr" href={localePath('fr', path)} />
+  <link rel="alternate" hreflang="en" href={localePath('en', path)} />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" />
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <a class="logo" href={localePath(locale, '/')}><span>Not a</span><span class="zero">Cent</span></a>
+      <div class="nav-r">
+        <span class="tally mono"><b>{tot.apps}</b> {s.apps} · <b>{tot.days.toLocaleString(locale)}</b> {s.totalDays} · <b>0 €</b></span>
+        <div class="seg" role="group" aria-label="Langue / Language">
+          <a href={localePath('fr', path)} aria-current={locale === 'fr' ? 'page' : undefined}>FR</a>
+          <a href={localePath('en', path)} aria-current={locale === 'en' ? 'page' : undefined}>EN</a>
+        </div>
+      </div>
+    </nav>
+    <slot />
+    <footer>
+      <span class="hand f1">{s.foot1}</span>
+      <span>{s.foot2}</span>
+    </footer>
+  </div>
+</body>
+</html>
+<style>
+nav{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:40px}
+.logo{font:700 34px/1 var(--hand);letter-spacing:-.01em;display:flex;align-items:baseline;gap:6px;text-decoration:none}
+.logo .zero{position:relative;display:inline-block}
+.logo .zero::after{content:"";position:absolute;left:-4px;right:-4px;top:52%;height:3px;background:var(--redpen);transform:rotate(-8deg);border-radius:2px}
+.nav-r{display:flex;gap:12px;align-items:center}
+.tally{font-size:13px;color:var(--pencil)}
+.tally b{color:var(--ink);font-weight:500}
+footer{margin-top:64px;border-top:2px dashed var(--faint);padding-top:18px;color:var(--pencil);font-size:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer .f1{font-size:18px;color:var(--ink)}
+@media (max-width:760px){.tally{display:none}}
+</style>

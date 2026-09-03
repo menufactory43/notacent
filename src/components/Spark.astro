@@ -1,0 +1,24 @@
+---
+interface Props { data: number[]; seed: number }
+const { data, seed } = Astro.props;
+---
+<canvas class="spark" data-series={JSON.stringify(data)} data-seed={seed} width="240" height="68" aria-hidden="true"></canvas>
+<style>.spark{width:120px;height:34px;display:block}</style>
+<script>
+  import rough from 'roughjs';
+  const css = getComputedStyle(document.documentElement);
+  const ink = css.getPropertyValue('--ink').trim();
+  const hil = css.getPropertyValue('--hilite').trim();
+  document.querySelectorAll<HTMLCanvasElement>('canvas.spark').forEach((c) => {
+    if (c.dataset.drawn) return;
+    c.dataset.drawn = '1';
+    const d: number[] = JSON.parse(c.dataset.series || '[]');
+    const seed = Number(c.dataset.seed || 1);
+    const W = c.width, H = c.height;
+    const rc = rough.canvas(c);
+    const pts: [number, number][] = d.map((v, i) => [6 + (i * (W - 12)) / (d.length - 1), H - 6 - (v / 7) * (H - 14)]);
+    rc.linearPath(pts, { stroke: ink, strokeWidth: 2, roughness: 1.4, bowing: 1.2, seed });
+    const last = pts[pts.length - 1];
+    rc.circle(last[0], last[1], 9, { fill: hil, fillStyle: 'solid', stroke: ink, strokeWidth: 1.5, roughness: 1.2, seed: seed + 1 });
+  });
+</script>

@@ -1,4 +1,5 @@
-import { SignJWT, importPKCS8 } from 'jose';
+import { SignJWT } from 'jose';
+import { createPrivateKey } from 'node:crypto';
 
 const env = (k: string) => (import.meta.env[k] ?? process.env[k] ?? '') as string;
 export const appSlug = () => env('GITHUB_APP_SLUG');
@@ -53,7 +54,7 @@ let cache: { id: number; token: string; exp: number } | null = null;
 export async function installationToken(installationId: number): Promise<string> {
   if (cache && cache.id === installationId && cache.exp > Date.now() + 60_000) return cache.token;
   const pem = env('GITHUB_APP_PRIVATE_KEY').replace(/\\n/g, '\n');
-  const key = await importPKCS8(pem, 'RS256');
+  const key = createPrivateKey(pem); // accepte PKCS#1 (GitHub) et PKCS#8
   const jwt = await new SignJWT({}).setProtectedHeader({ alg: 'RS256' }).setIssuedAt(Math.floor(Date.now() / 1000) - 30).setExpirationTime('9m').setIssuer(env('GITHUB_APP_ID')).sign(key);
   const { data } = await gh<{ token: string; expires_at: string }>(`/app/installations/${installationId}/access_tokens`, jwt, { method: 'POST' });
   cache = { id: installationId, token: data.token, exp: new Date(data.expires_at).getTime() };

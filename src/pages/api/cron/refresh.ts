@@ -13,7 +13,8 @@ export const GET: APIRoute = async ({ request }) => {
   let ok = 0, failed = 0;
   for (const a of apps) {
     try {
-      const token = a.installation_id ? await installationToken(a.installation_id) : a.access_token;
+      let token = a.access_token;
+      if (a.installation_id) { try { token = await installationToken(a.installation_id); } catch (e) { console.error('jeton d\'installation', e); } }
       if (!token) throw new Error('aucun jeton');
       const m = compute(await commitDates(token, a.full_name));
       const status = statusFor(m.last_commit, a.status);

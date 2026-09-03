@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { sql, hasDb } from '../../../lib/db';
 import { installationToken } from '../../../lib/github';
 import { commitDates, compute, statusFor } from '../../../lib/metrics';
+import { open } from '../../../lib/crypto';
 export const prerender = false;
 // Relit chaque repo publié, une fois par nuit. Appelé par Vercel Cron avec le CRON_SECRET.
 export const GET: APIRoute = async ({ request }) => {
@@ -13,7 +14,7 @@ export const GET: APIRoute = async ({ request }) => {
   let ok = 0, failed = 0;
   for (const a of apps) {
     try {
-      let token = a.access_token;
+      let token = open(a.access_token);
       if (a.installation_id) { try { token = await installationToken(a.installation_id); } catch (e) { console.error('jeton d\'installation', e); } }
       if (!token) throw new Error('aucun jeton');
       const m = compute(await commitDates(token, a.full_name));

@@ -44,3 +44,28 @@ Pour développer en local, ajoute les mêmes lignes à `.env.local` (jamais comm
 3. Retour sur `/ajouter` : la liste des repos ouverts, à cocher.
 4. Chaque repo coché est lu (dates de commit seulement), publié, puis on arrive sur sa fiche à compléter.
 5. Chaque nuit à 3 h 17 UTC, le cron relit tous les repos publiés avec le jeton d'installation de l'app.
+
+# Brancher Stripe (fiche sponsorisée)
+
+Le code est prêt, il s'active dès que les clés existent. Sans elles, le bouton n'apparaît pas.
+
+1. Sur https://dashboard.stripe.com/apikeys, copie la clé secrète, puis :
+
+```
+pbpaste | npx vercel env add STRIPE_SECRET_KEY production --yes
+```
+
+2. Sur https://dashboard.stripe.com/webhooks, ajoute un endpoint `https://notacent.vercel.app/api/sponsor/webhook` qui écoute `checkout.session.completed`, copie son secret de signature, puis :
+
+```
+pbpaste | npx vercel env add STRIPE_WEBHOOK_SECRET production --yes
+```
+
+3. Optionnel, pour changer le tarif (défaut : 19 € pour 7 jours) :
+
+```
+printf 1900 | npx vercel env add SPONSOR_PRICE_CENTS production --yes
+printf 7 | npx vercel env add SPONSOR_DAYS production --yes
+```
+
+Puis `npx vercel deploy --prod --yes`. Le maker voit alors « Sponsoriser 7 jours » sur sa fiche. Un seul emplacement à la fois : si un sponsor est en place, le suivant prend la suite à la fin.

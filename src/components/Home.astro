@@ -4,7 +4,7 @@ import Row from './Row.astro';
 import Feed from './Feed.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
 import { apps as samples, ranked as rankedSamples } from '../data/apps';
-import { rankedApps, doneApps } from '../lib/db';
+import { rankedApps, doneApps, activeSponsor } from '../lib/db';
 import { toView } from '../lib/view';
 import { githubReady } from '../lib/github';
 interface Props { locale: Locale }
@@ -20,7 +20,8 @@ let real = (showDone ? await doneApps() : await rankedApps(period)).map(toView);
 if (tool) real = real.filter((a) => a.tool === tool);
 const isSample = real.length === 0;
 const board = isSample ? rankedSamples(period) : real;
-const sponsor = isSample ? samples.find((a) => a.sponsored) : undefined;
+const realSponsor = await activeSponsor().catch(() => null);
+const sponsor = realSponsor ? toView(realSponsor) : isSample ? samples.find((a) => a.sponsored) : undefined;
 const notice = q.get('soon') ? s.soon : q.get('erreur') === 'session' ? s.errSession : q.get('erreur') ? s.errGithub : '';
 const link = (params: Record<string, string>) => {
   const u = new URLSearchParams();

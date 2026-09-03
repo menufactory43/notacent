@@ -1,5 +1,6 @@
 import type { AstroCookies } from 'astro';
 import { sql, hasDb } from './db';
+import { open } from './crypto';
 
 const secret = () => import.meta.env.SESSION_SECRET ?? process.env.SESSION_SECRET ?? '';
 const enc = new TextEncoder();
@@ -29,5 +30,7 @@ export async function currentUser(cookies: AstroCookies): Promise<SessionUser | 
   const id = await verify(cookies.get('nac_session')?.value);
   if (!id) return null;
   const rows = (await sql.query(`select id, github_id, login, name, avatar_url, access_token, installation_id from users where id = $1`, [Number(id)])) as SessionUser[];
-  return rows[0] ?? null;
+  const u = rows[0];
+  if (!u) return null;
+  return { ...u, access_token: open(u.access_token) };
 }

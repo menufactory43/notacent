@@ -8,7 +8,7 @@ const rows = await recentActivity(8).catch(() => []);
 const items = rows.length
   ? rows.map((r) => ({
       l: r.name[0], name: r.name, href: localePath(locale, `/app/${r.slug}`),
-      what: r.kind === 'arrived' ? s.kindArrived : r.kind === 'day' ? s.kindDay(Number(r.payload.n ?? 0)) : r.payload.status === 'done' ? s.kindDone : s.kindPaused,
+      what: r.kind === 'arrived' ? s.kindArrived : r.kind === 'sponsor' ? s.kindSponsor : r.kind === 'day' ? s.kindDay(Number(r.payload.n ?? 0)) : r.payload.status === 'done' ? s.kindDone : s.kindPaused,
       when: s.agoAuto(Date.now() - new Date(r.created_at).getTime()),
     }))
   : [

@@ -16,11 +16,12 @@ const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', '
   <section class="edit">
     <h1>{s.editTitle} <span class="hand sub">· {app.name}</span></h1>
     <p class="lede">{s.editLede}</p>
-    <form method="post" action="/api/apps/update" class="sk">
+    <form method="post" action="/api/apps/update" class="sk" enctype="multipart/form-data">
+      {Astro.url.searchParams.get('erreur') === 'image' && <p class="err hand">{s.errImage}</p>}
       <input type="hidden" name="slug" value={app.slug} />
       <label><span>{s.fName}</span><input name="name" value={app.name} maxlength="80" /></label>
       <label><span>{s.fUrl}</span><input name="url" type="url" value={app.url ?? app.homepage ?? ''} placeholder="https://" /></label>
-      <label><span>{s.fImage}</span><input name="image_url" type="url" value={app.image_url ?? ''} placeholder="https://" /></label>
+      <label><span>{s.fImage}</span><input name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /><small>{s.fImageHint}</small></label>
       <label><span>{s.fLongest}</span><textarea name="longest" rows="4" maxlength="600">{app.longest ?? ''}</textarea></label>
       <div class="grid">
         <label><span>{s.fTool}</span>
@@ -56,6 +57,9 @@ h1{font:700 44px/1 var(--hand);margin:0 0 6px}
 form{padding:20px 22px;display:grid;gap:14px}
 label{display:grid;gap:4px}
 label span{font:700 17px/1.2 var(--hand);color:var(--pencil)}
+label small{color:var(--pencil);font-size:13px}
+.err{color:var(--redpen);font-size:18px;margin:0}
+input[type=file]{border-style:dashed;padding:10px 12px}
 input,textarea,select{font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:2px solid var(--ink);border-radius:var(--sk2);padding:8px 12px;width:100%}
 textarea{resize:vertical}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}

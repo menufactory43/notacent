@@ -12,6 +12,6 @@ export function toView(a: DbApp): App {
     bestStreakWeeks: a.best_streak_weeks, bravos: a.bravos, pricing: a.pricing, status: a.status,
     longest: { fr: a.longest ?? a.description ?? '', en: a.longest ?? a.description ?? '' },
     url: a.url ?? a.homepage ?? undefined, repo: a.private ? undefined : `https://github.com/${a.full_name}`,
-    weekly: a.weekly?.length ? a.weekly : Array(26).fill(0), imageUrl: a.image_url ?? undefined,
+    weekly: a.weekly?.length ? a.weekly : Array(26).fill(0), imageUrl: a.has_image ? `/api/img/${a.slug}` : a.image_url ?? undefined, sponsored: a.sponsored ?? false,
   };
 }

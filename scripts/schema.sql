@@ -47,3 +47,15 @@ create table if not exists activity (
   created_at timestamptz default now()
 );
 create index if not exists activity_recent on activity (created_at desc);
+alter table apps add column if not exists image bytea;
+alter table apps add column if not exists image_type text;
+create table if not exists sponsors (
+  id serial primary key,
+  app_id int references apps(id) on delete cascade,
+  starts_at timestamptz not null default now(),
+  ends_at timestamptz not null,
+  amount_cents int not null,
+  stripe_session text unique,
+  created_at timestamptz default now()
+);
+create index if not exists sponsors_active on sponsors (ends_at desc);

@@ -15,10 +15,17 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const tool = TOOLS.includes(String(f.get('tool'))) ? String(f.get('tool')) : null;
   const pricing = ['free', 'donations', 'paid'].includes(String(f.get('pricing'))) ? String(f.get('pricing')) : 'free';
   const status = ['polishing', 'done', 'paused'].includes(String(f.get('status'))) ? String(f.get('status')) : 'polishing';
+  const file = f.get('image');
+  let image: Buffer | null = null, imageType: string | null = null;
+  if (file instanceof File && file.size > 0) {
+    if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type) || file.size > 2_000_000) return redirect(`${lang}/app/${slug}/modifier?erreur=image`, 302);
+    image = Buffer.from(await file.arrayBuffer()); imageType = file.type;
+  }
   const rows = (await sql.query(
-    `update apps set url = $1, image_url = $2, longest = $3, tool = $4, pricing = $5, status = $6, name = coalesce($7, name)
+    `update apps set url = $1, image_url = $2, longest = $3, tool = $4, pricing = $5, status = $6, name = coalesce($7, name),
+       image = coalesce($10, image), image_type = coalesce($11, image_type)
      where slug = $8 and user_id = $9 returning id, slug`,
-    [httpOnly(clean(f.get('url'), 500)), httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, user.id],
+    [httpOnly(clean(f.get('url'), 500)), httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, user.id, image, imageType],
   )) as { id: number; slug: string }[];
   if (!rows.length) return redirect(`${lang}/?erreur=fiche`, 302);
   if (status !== 'polishing') await sql.query(`insert into activity (app_id, kind, payload) values ($1, 'status', $2)`, [rows[0].id, JSON.stringify({ status })]);

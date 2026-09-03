@@ -3,14 +3,21 @@ import Base from '../layouts/Base.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
 import type { App } from '../data/apps';
 import { currentUser } from '../lib/session';
-interface Props { locale: Locale; app: App; ownerId?: number; sample?: boolean }
-const { locale, app, ownerId, sample } = Astro.props;
+import { stripeReady, sponsorDays, sponsorCents, sponsorCurrency } from '../lib/stripe';
+import { sponsorUntil, activeSponsor } from '../lib/db';
+interface Props { locale: Locale; app: App; ownerId?: number; sample?: boolean; appId?: number }
+const { locale, app, ownerId, sample, appId } = Astro.props;
 const s = t(locale);
 const user = await currentUser(Astro.cookies).catch(() => null);
 const mine = Boolean(user && ownerId && user.id === ownerId);
 const since = new Date(app.firstCommit).toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 const stamp = app.pricing === 'donations' ? s.donations : app.pricing === 'paid' ? '€' : s.free;
 const stateNote = app.status === 'done' ? s.doneStatus : app.status === 'paused' ? s.paused : '';
+const until = appId ? await sponsorUntil(appId).catch(() => null) : null;
+const someoneElse = appId && !until ? await activeSponsor().catch(() => null) : null;
+const price = new Intl.NumberFormat(locale, { style: 'currency', currency: sponsorCurrency().toUpperCase(), maximumFractionDigits: 0 }).format(sponsorCents() / 100);
+const sp = Astro.url.searchParams.get('sponsor');
+const sponsorMsg = sp === 'merci' ? s.sponsorThanks : sp === 'erreur' ? s.sponsorErr : '';
 ---
 <Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={app.longest[locale]}>
   {sample && <p class="examples hand">{s.examples}</p>}
@@ -41,6 +48,15 @@ const stateNote = app.status === 'done' ? s.doneStatus : app.status === 'paused'
         {app.repo && <a class="sk sk-btn" href={app.repo} rel="noopener">{s.repo}</a>}
         {mine && <a class="sk sk-btn" href={localePath(locale, `/app/${app.slug}/modifier`)}>✎ {s.edit}</a>}
       </div>
+      {sponsorMsg && <p class="sponsor-msg hand">{sponsorMsg}</p>}
+      {until && <p class="sponsor-msg hand">★ {s.sponsorUntil(new Date(until).toLocaleDateString(locale))}</p>}
+      {mine && stripeReady() && !until && (
+        <form method="post" action="/api/sponsor/checkout" class="sponsor">
+          <input type="hidden" name="slug" value={app.slug} />
+          <button class="sk sk-btn" type="submit">★ {s.sponsorBtn(sponsorDays(), price)}</button>
+          <small class="hand">{someoneElse ? s.sponsorQueue : s.sponsorNote}</small>
+        </form>
+      )}
     </div>
   </article>
 </Base>
@@ -62,6 +78,9 @@ h1{font:700 40px/1 var(--hand);margin:0 0 2px}
 .stamp{position:absolute;right:22px;top:-18px;transform:rotate(-7deg);border:3px double var(--redpen);color:var(--redpen);font:700 22px/1 var(--hand);padding:6px 12px;border-radius:12px 40px 14px 44px/40px 12px 44px 14px;background:var(--paper)}
 .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .bravo.given{background:var(--paper-2);color:var(--pencil)}
+.sponsor{margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sponsor small{color:var(--pencil);font-size:16px}
+.sponsor-msg{margin:14px 0 0;color:var(--redpen);font-size:19px}
 @media (max-width:760px){.fiche{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
 </style>
 <script>

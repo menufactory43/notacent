@@ -12,7 +12,7 @@ const last = app.lastCommitDaysAgo === 0 ? s.today : s.ago(app.lastCommitDaysAgo
     ? <><div class="rank small">{s.sponsored}</div><span class="label">{s.sponsoredLabel}</span></>
     : <div class="rank">{rank}</div>}
   <div class="who">
-    <div class="logo-app" aria-hidden="true">{app.name[0]}</div>
+    <div class="logo-app" aria-hidden="true">{app.imageUrl ? <img src={app.imageUrl} alt="" loading="lazy" /> : app.name[0]}</div>
     <div>
       <p class="name"><a href={localePath(locale, `/app/${app.slug}`)}>{app.name}</a></p>
       <p class="by">@{app.owner} <span class="tool">{app.tool}</span> · {app.language}</p>

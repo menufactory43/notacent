@@ -9,4 +9,4 @@ const row = await appBySlug(slug).catch(() => null);
 const sample = row ? undefined : apps.find((a) => a.slug === slug);
 if (!row && !sample) return new Response(null, { status: 404 });
 ---
-<Fiche locale="en" app={row ? toView(row) : sample!} ownerId={row?.user_id} sample={!row} />
+<Fiche locale="en" app={row ? toView(row) : sample!} ownerId={row?.user_id} appId={row?.id} sample={!row} />

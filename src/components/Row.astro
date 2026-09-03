@@ -29,7 +29,7 @@ const last = app.lastCommitDaysAgo === 0 ? s.today : s.ago(app.lastCommitDaysAgo
   {app.margin && <span class="margin">{app.margin[locale]}</span>}
 </article>
 <style>
-.row{display:grid;grid-template-columns:36px 1fr 150px 210px;gap:16px;align-items:center;padding:14px 18px;position:relative}
+.row{display:grid;grid-template-columns:36px 1fr 120px 260px;gap:16px;align-items:center;padding:14px 18px;position:relative}
 .rank{font:700 34px/1 var(--hand);color:var(--pencil)}
 .rank.small{font-size:14px;line-height:1.1;text-align:center}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
@@ -41,7 +41,7 @@ const last = app.lastCommitDaysAgo === 0 ? s.today : s.ago(app.lastCommitDaysAgo
 .metric{text-align:right}
 .metric b{display:block;font-size:28px;line-height:1;font-weight:500}
 .metric span{font:500 15px/1.2 var(--hand);color:var(--pencil)}
-.sub{display:flex;gap:14px;justify-content:flex-end;color:var(--pencil);font-size:13px;align-items:center}
+.sub{display:flex;gap:14px;justify-content:flex-end;color:var(--pencil);font-size:13px;align-items:center;white-space:nowrap}
 .sub b{font-weight:500;color:var(--ink)}
 .margin{position:absolute;right:-8px;top:-14px;transform:rotate(3deg);font:700 17px/1 var(--hand);color:var(--redpen);background:var(--paper);padding:0 4px}
 .sponsor{border-style:dashed;border-color:var(--pencil);background:var(--paper-2)}

@@ -3,13 +3,16 @@ import '../styles/global.css';
 import { t, localePath, otherLocale, type Locale } from '../i18n/strings';
 import { totals } from '../lib/db';
 import { currentUser } from '../lib/session';
-interface Props { locale: Locale; title?: string; description?: string; path?: string }
-const { locale, title, description, path = '/' } = Astro.props;
+interface Props { locale: Locale; title?: string; description?: string; path?: string; image?: string }
+const { locale, title, description, path = '/', image } = Astro.props;
 const user = await currentUser(Astro.cookies).catch(() => null);
 const s = t(locale);
 const other = otherLocale(locale);
 const tot = await totals().catch(() => ({ apps: 0, days: 0 }));
 const fullTitle = title ? `${title} · Not a Cent` : 'Not a Cent';
+const canonical = new URL(localePath(locale, path), Astro.site ?? Astro.url);
+// Carte de partage : celle de la fiche si on en a une, sinon la carte du site.
+const ogImage = new URL(image ?? (locale === 'fr' ? '/og.png' : '/og-en.png'), Astro.site ?? Astro.url);
 ---
 <!doctype html>
 <html lang={locale}>
@@ -18,10 +21,23 @@ const fullTitle = title ? `${title} · Not a Cent` : 'Not a Cent';
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{fullTitle}</title>
   <meta name="description" content={description ?? s.tagline} />
+  <link rel="canonical" href={canonical} />
+  <meta property="og:type" content={title ? 'article' : 'website'} />
+  <meta property="og:site_name" content="Not a Cent" />
+  <meta property="og:locale" content={locale === 'fr' ? 'fr_FR' : 'en_US'} />
+  <meta property="og:url" content={canonical} />
   <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={description ?? s.tagline} />
-  <link rel="alternate" hreflang="fr" href={localePath('fr', path)} />
-  <link rel="alternate" hreflang="en" href={localePath('en', path)} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content={description ?? s.tagline} />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={fullTitle} />
+  <meta name="twitter:description" content={description ?? s.tagline} />
+  <meta name="twitter:image" content={ogImage} />
+  <link rel="alternate" hreflang="fr" href={new URL(localePath('fr', path), Astro.site ?? Astro.url)} />
+  <link rel="alternate" hreflang="en" href={new URL(localePath('en', path), Astro.site ?? Astro.url)} />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

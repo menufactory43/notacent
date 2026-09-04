@@ -19,7 +19,7 @@ const price = new Intl.NumberFormat(locale, { style: 'currency', currency: spons
 const sp = Astro.url.searchParams.get('sponsor');
 const sponsorMsg = sp === 'merci' ? s.sponsorThanks : sp === 'erreur' ? s.sponsorErr : '';
 ---
-<Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={app.tagline ?? app.longest[locale]}>
+<Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={app.tagline ?? app.longest[locale]} image={`/api/og/${app.slug}.png${locale === 'fr' ? '' : '?lang=en'}`}>
   {sample && <p class="examples hand">{s.examples}</p>}
   <article class="sk fiche">
     <span class="stamp">{stamp}</span>

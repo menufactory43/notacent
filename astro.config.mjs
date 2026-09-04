@@ -4,7 +4,17 @@ import vercel from '@astrojs/vercel';
 
 export default defineConfig({
   site: 'https://notacent.dev',
-  adapter: vercel({ includeFiles: ['./src/assets/fonts/Caveat-Bold.ttf', './src/assets/fonts/AtkinsonHyperlegible-Regular.ttf', './src/assets/fonts/AtkinsonHyperlegible-Bold.ttf', './src/assets/fonts/IBMPlexMono-Medium.ttf'] }),
+  adapter: vercel({
+    // Les cartes de partage (satori) lisent ces fichiers au moment du rendu :
+    // le tracing des dépendances ne les voit pas, on les recopie à la main.
+    includeFiles: [
+      './src/assets/fonts/Caveat-Bold.ttf',
+      './src/assets/fonts/AtkinsonHyperlegible-Regular.ttf',
+      './src/assets/fonts/AtkinsonHyperlegible-Bold.ttf',
+      './src/assets/fonts/IBMPlexMono-Medium.ttf',
+      './node_modules/harfbuzzjs/hb.wasm',
+    ],
+  }),
   i18n: {
     defaultLocale: 'fr',
     locales: ['fr', 'en'],

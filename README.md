@@ -19,7 +19,20 @@ Astro sur Vercel, français et anglais. Fond blanc, bords tracés à la main, ch
 6. Le geste « bravo » et le compteur.
 7. Cron quotidien et fil d'activité.
 8. Fiche sponsorisée via Stripe Checkout. ← reste à faire
+9. Serveur MCP public (`/api/mcp`) pour ChatGPT, Claude et les autres assistants.
 
 Les étapes 2 à 7 sont codées. Elles s'activent dès que l'app GitHub est branchée : voir INSTALLATION.md.
 
 Le site ne se liste pas lui-même : son repo est public, ça suffit.
+
+## Serveur MCP
+
+Le site expose un serveur [MCP](https://modelcontextprotocol.io) sans état ni authentification sur `/api/mcp`
+(Streamable HTTP, réponses JSON). Quatre outils, tous en lecture : `search_apps`, `get_app`, `top_apps`,
+`how_to_submit`. Il sert exactement ce que les pages montrent ; publier une app passe toujours par GitHub.
+
+    node scripts/mcp-smoke.mjs                                 # contre le serveur de dev
+    node scripts/mcp-smoke.mjs https://notacent.vercel.app/api/mcp
+
+Pour l'essayer dans Claude Code : `claude mcp add --transport http notacent https://notacent.vercel.app/api/mcp`.
+Soumission aux annuaires : voir INSTALLATION.md.

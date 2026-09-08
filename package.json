@@ -15,12 +15,14 @@
   },
   "dependencies": {
     "@astrojs/vercel": "^11.0.10",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@neondatabase/serverless": "^1.1.0",
     "astro": "^7.2.10",
     "jose": "^6.2.10",
     "roughjs": "^4.6.6",
     "satori": "^0.33.4",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.4",
+    "zod": "^4.5.4"
   },
   "allowScripts": {
     "esbuild": true

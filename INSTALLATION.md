@@ -69,3 +69,26 @@ printf 7 | npx vercel env add SPONSOR_DAYS production --yes
 ```
 
 Puis `npx vercel deploy --prod --yes`. Le maker voit alors « Sponsoriser 7 jours » sur sa fiche. Un seul emplacement à la fois : si un sponsor est en place, le suivant prend la suite à la fin.
+
+# Soumettre le serveur MCP aux annuaires
+
+Le serveur (`/api/mcp`) est public, sans OAuth, en lecture seule ; la politique de confidentialité est sur
+`/confidentialite` et `/en/confidentialite`. Avant de soumettre, vérifie qu'il répond en production :
+
+```
+node scripts/mcp-smoke.mjs https://notacent.vercel.app/api/mcp
+```
+
+## ChatGPT (Apps SDK)
+
+1. https://platform.openai.com → Apps → **Submit**. Il faut un compte développeur OpenAI vérifié.
+2. Serveur MCP : `https://notacent.vercel.app/api/mcp`, authentification : aucune.
+3. Métadonnées : nom « Not a Cent », description « Free apps polished for months, ranked by days of work read from the repo, not by revenue », icône `public/favicon.svg`, politique de confidentialité `https://notacent.vercel.app/en/confidentialite`, pays : tous.
+4. Consignes de test pour le reviewer : « Ask: *find me a free Mac app for messaging* → the assistant calls `search_apps`. Ask: *what took the maker of Correspondance the longest?* → `get_app`. » Aucun compte de test nécessaire.
+5. Le tableau de bord donne l'état de la revue et les retours.
+
+## Claude (Connectors Directory)
+
+La soumission se fait dans Claude.ai › réglages d'organisation › Connectors, ce qui demande un plan **Team ou Enterprise**.
+Même URL, même politique de confidentialité ; les outils portent déjà les annotations `readOnlyHint` que la revue exige.
+En attendant, n'importe qui peut l'ajouter à la main : `claude mcp add --transport http notacent https://notacent.vercel.app/api/mcp`.

@@ -1,0 +1,51 @@
+---
+import Base from '../layouts/Base.astro';
+import type { Locale } from '../i18n/strings';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const fr = locale === 'fr';
+---
+<Base locale={locale} path="/confidentialite" title={fr ? 'Confidentialité' : 'Privacy'} description={fr ? 'Ce que Not a Cent lit, garde, et ne lit jamais.' : 'What Not a Cent reads, keeps, and never reads.'}>
+  <article class="sk page">
+    <h1>{fr ? 'Confidentialité' : 'Privacy'}</h1>
+    <p class="hand lede">{fr ? 'Court, parce qu\'il n\'y a pas grand-chose à dire.' : 'Short, because there is not much to say.'}</p>
+
+    <h2>{fr ? 'Ce qu\'on lit sur GitHub' : 'What we read on GitHub'}</h2>
+    <p>{fr
+      ? 'Quand un maker ajoute une app, il installe la GitHub App « Not a Cent » sur les repos de son choix, en lecture seule. On ne lit que les dates des commits de la branche par défaut, le nom, la description et le langage du repo. On ne lit jamais le code, et on ne demande aucune permission d\'écriture. Les repos privés sont acceptés : seuls les chiffres qui en sortent sont publics.'
+      : 'When a maker adds an app, they install the “Not a Cent” GitHub App on the repos they choose, read-only. We only read commit dates on the default branch, and the repo name, description and language. We never read the code, and we never ask for write permission. Private repos are welcome: only the numbers that come out of them are public.'}</p>
+
+    <h2>{fr ? 'Ce qu\'on garde' : 'What we keep'}</h2>
+    <ul>
+      <li>{fr ? 'Le login GitHub, l\'identifiant numérique et l\'avatar du maker, pour afficher « par @login ».' : 'The maker\'s GitHub login, numeric id and avatar, to show “by @login”.'}</li>
+      <li>{fr ? 'Un jeton GitHub chiffré, utilisé chaque nuit pour relire les dates de commit.' : 'An encrypted GitHub token, used every night to re-read commit dates.'}</li>
+      <li>{fr ? 'Les quatre champs de la fiche : lien, image, ce qui a pris le plus de temps, outil.' : 'The four card fields: link, image, what took the longest, main tool.'}</li>
+      <li>{fr ? 'Un cookie de session signé, pour rester connecté. Aucun cookie tiers, aucun traceur, aucune analytique.' : 'A signed session cookie, to stay signed in. No third-party cookie, no tracker, no analytics.'}</li>
+    </ul>
+    <p>{fr ? 'Le geste « bravo » et les clics sont comptés par app, jamais par personne.' : '“Nice one” and clicks are counted per app, never per person.'}</p>
+
+    <h2>{fr ? 'Les assistants (ChatGPT, Claude…)' : 'Assistants (ChatGPT, Claude…)'}</h2>
+    <p>{fr
+      ? 'Not a Cent expose un serveur MCP public en lecture seule (/api/mcp). Un assistant peut y chercher une app, lire une fiche ou le classement : exactement ce que cette page web montre déjà, rien de plus. Aucune donnée de l\'assistant ni de son utilisateur n\'est conservée ; il n\'y a ni compte ni jeton de ce côté. Publier une app passe toujours par ce site et GitHub.'
+      : 'Not a Cent exposes a public, read-only MCP server (/api/mcp). An assistant can search apps, read a card or the board: exactly what this website already shows, nothing more. No data from the assistant or its user is stored; there is no account and no token on that side. Listing an app always goes through this site and GitHub.'}</p>
+
+    <h2>{fr ? 'Retirer son app' : 'Removing your app'}</h2>
+    <p>{fr
+      ? 'Désinstalle la GitHub App depuis GitHub, ou écris à l\'adresse ci-dessous : la fiche, le jeton et les chiffres sont effacés. Les images de fiche sortent du cache en cinq minutes.'
+      : 'Uninstall the GitHub App from GitHub, or write to the address below: the card, the token and the numbers are deleted. Card images leave the cache within five minutes.'}</p>
+
+    <h2>{fr ? 'Qui' : 'Who'}</h2>
+    <p>{fr ? 'Not a Cent est fait main par un développeur indépendant en France. Hébergé chez Vercel, base chez Neon (Europe). Contact : ' : 'Not a Cent is handmade by an independent developer in France. Hosted on Vercel, database at Neon (Europe). Contact: '}<a href="mailto:meffysto@gmail.com">meffysto@gmail.com</a>.</p>
+    <p class="mono small">{fr ? 'Dernière mise à jour : 8 septembre 2026.' : 'Last updated: September 8, 2026.'}</p>
+  </article>
+</Base>
+<style>
+.page{padding:32px 36px;max-width:760px;margin:0 auto}
+.page h1{font:700 44px/1 var(--hand);margin:0 0 6px}
+.page .lede{font-size:22px;color:var(--pencil);margin:0 0 28px}
+.page h2{font:700 26px/1.1 var(--hand);margin:28px 0 8px}
+.page p,.page li{font-size:17px;line-height:1.5}
+.page ul{padding-left:22px}
+.page .small{font-size:13px;color:var(--pencil)}
+@media (max-width:760px){.page{padding:24px 20px}}
+</style>

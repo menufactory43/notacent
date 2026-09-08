@@ -60,3 +60,19 @@ export async function sponsorUntil(appId: number): Promise<string | null> {
   const [r] = (await sql.query(`select max(ends_at) as until from sponsors where app_id = $1 and ends_at > now()`, [appId])) as { until: string | null }[];
   return r?.until ?? null;
 }
+
+// Recherche plein texte simple pour le serveur MCP : nom, phrase, description, « ce qui a pris le plus de temps », langage, auteur.
+export async function searchApps(query: string, opts: { tool?: string; includeDone?: boolean; limit?: number } = {}): Promise<DbApp[]> {
+  if (!hasDb) return [];
+  const limit = Math.min(Math.max(opts.limit ?? 10, 1), 50);
+  const words = query.split(/\s+/).map((w) => w.trim()).filter((w) => w.length > 1).slice(0, 8);
+  const params: unknown[] = [limit];
+  const clauses = words.map((w) => { params.push(`%${w}%`); const i = params.length; return `(a.name ilike $${i} or a.tagline ilike $${i} or a.description ilike $${i} or a.longest ilike $${i} or a.language ilike $${i} or u.login ilike $${i})`; });
+  if (opts.tool) { params.push(opts.tool); clauses.push(`a.tool = $${params.length}`); }
+  if (!opts.includeDone) clauses.push(`a.status = 'polishing'`);
+  const where = ['a.published', `a.pricing <> 'paid'`, ...clauses].join(' and ');
+  return (await sql.query(
+    `select a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image
+     from apps a join users u on u.id = a.user_id where ${where} order by a.active_days desc, a.commits desc limit $1`, params,
+  )) as DbApp[];
+}

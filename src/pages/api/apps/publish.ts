@@ -15,7 +15,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const ids = form.getAll('repo').map(Number).filter(Boolean);
   if (!ids.length) return redirect(`${lang}/ajouter`, 302);
   const repos = (await installationRepos(user.access_token, user.installation_id)).filter((r) => ids.includes(r.id));
-  let firstSlug = '';
+  const slugs: string[] = [];
   for (const r of repos) {
     let slug = slugify(r.name);
     const taken = (await sql.query(`select 1 from apps where slug = $1 and repo_id <> $2`, [slug, r.id])) as unknown[];
@@ -33,7 +33,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
        m.first_commit, m.last_commit, m.commits, m.active_days, m.active_days_30, m.best_streak_weeks, m.weekly],
     )) as { id: number; slug: string; inserted: boolean }[];
     if (row.inserted) await sql.query(`insert into activity (app_id, kind) values ($1, 'arrived')`, [row.id]);
-    firstSlug ||= row.slug;
+    slugs.push(row.slug);
   }
-  return redirect(`${lang}/app/${firstSlug}/modifier`, 302);
+  if (!slugs.length) return redirect(`${lang}/ajouter`, 302);
+  // Plusieurs repos cochés : on enchaîne les fiches, une par une, dans l'ordre de publication.
+  cookies.set('nac_batch', slugs.join(','), { path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 3600 });
+  return redirect(`${lang}/app/${slugs[0]}/modifier`, 302);
 };

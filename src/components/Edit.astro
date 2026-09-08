@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
 import { currentUser } from '../lib/session';
-import { appBySlug } from '../lib/db';
+import { appBySlug, appsByUser } from '../lib/db';
 interface Props { locale: Locale; slug: string }
 const { locale, slug } = Astro.props;
 const s = t(locale);
@@ -11,11 +11,19 @@ if (!user) return Astro.redirect(`/api/auth/github?lang=${locale}`, 302);
 const app = await appBySlug(slug).catch(() => null);
 if (!app || app.user_id !== user.id) return new Response(null, { status: 404 });
 const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre'];
+const mine = (await appsByUser(user.id).catch(() => [])).filter((a) => a.published);
+const others = mine.filter((a) => a.slug !== app.slug);
+const incomplete = (a: { tagline: string | null; longest: string | null; tool: string | null }) => !a.tagline || !a.longest || !a.tool;
+// Une série de fiches publiées d'un coup : on dit où on en est, et « Enregistrer » mène à la suivante.
+const batch = (Astro.cookies.get('nac_batch')?.value ?? '').split(',').filter(Boolean);
+const pos = batch.indexOf(app.slug);
+const inBatch = pos >= 0 && batch.length > 1;
+const next = inBatch ? batch[pos + 1] : undefined;
 ---
 <Base locale={locale} path={`/app/${slug}/modifier`} title={s.editTitle}>
   <section class="edit">
     <h1>{s.editTitle} <span class="hand sub">· {app.name}</span></h1>
-    <p class="lede">{s.editLede}</p>
+    <p class="lede">{s.editLede}{inBatch && <span class="hand batch"> · {s.batchOf(pos + 1, batch.length)}</span>}</p>
     <form method="post" action="/api/apps/update" class="sk" enctype="multipart/form-data">
       {Astro.url.searchParams.get('erreur') === 'image' && <p class="err hand">{s.errImage}</p>}
       <input type="hidden" name="slug" value={app.slug} />
@@ -44,10 +52,24 @@ const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', '
         </label>
       </div>
       <div class="actions">
-        <button class="sk sk-btn primary" type="submit">{s.save}</button>
-        <a class="back hand" href={localePath(locale, `/app/${app.slug}`)}>← {app.name}</a>
+        <button class="sk sk-btn primary" type="submit">{next ? s.saveNext : s.save}</button>
+        {next ? <a class="back hand" href={localePath(locale, `/app/${next}/modifier`)}>{s.skip} →</a> : <a class="back hand" href={localePath(locale, `/app/${app.slug}`)}>← {app.name}</a>}
       </div>
     </form>
+    <form method="post" action="/api/apps/remove" class="remove" onsubmit={`return confirm(${JSON.stringify(s.removeConfirm)})`}>
+      <input type="hidden" name="slug" value={app.slug} />
+      <button type="submit" class="hand danger">{s.remove}</button>
+    </form>
+    {others.length > 0 && (
+      <aside class="others">
+        <h2 class="hand">{s.otherCards}</h2>
+        <ul>
+          {others.map((a) => (
+            <li><a href={localePath(locale, `/app/${a.slug}/modifier`)}>{a.name}</a>{incomplete(a) && <span class="chip">{s.toFill}</span>}</li>
+          ))}
+        </ul>
+      </aside>
+    )}
   </section>
 </Base>
 <style>
@@ -66,5 +88,14 @@ textarea{resize:vertical}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:6px}
 .back{color:var(--pencil);font-size:18px;text-decoration:none}
+.batch{color:var(--redpen)}
+.remove{margin:18px 0 0;text-align:right}
+.danger{background:none;border:0;padding:0;font-size:17px;color:var(--pencil);cursor:pointer;border-bottom:1.5px dashed var(--faint)}
+.danger:hover{color:var(--redpen);border-bottom-color:var(--redpen)}
+.others{margin-top:36px;border-top:2px dashed var(--faint);padding-top:16px}
+.others h2{font-size:24px;margin:0 0 8px;color:var(--pencil)}
+.others ul{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px 18px}
+.others a{font-weight:700;text-decoration:none;border-bottom:1.5px solid var(--faint)}
+.others .chip{margin-left:6px;font-size:12px;padding:0 6px}
 @media (max-width:640px){.grid{grid-template-columns:1fr}}
 </style>

@@ -23,7 +23,7 @@ const isSample = real.length === 0;
 const board = isSample ? rankedSamples(period) : real;
 const realSponsor = await activeSponsor().catch(() => null);
 const sponsor = realSponsor ? toView(realSponsor) : isSample ? samples.find((a) => a.sponsored) : undefined;
-const notice = q.get('soon') ? s.soon : q.get('erreur') === 'session' ? s.errSession : q.get('erreur') ? s.errGithub : '';
+const notice = q.get('retiree') ? s.removed : q.get('soon') ? s.soon : q.get('erreur') === 'session' ? s.errSession : q.get('erreur') ? s.errGithub : '';
 const link = (params: Record<string, string>) => {
   const u = new URLSearchParams();
   const merged = { p: period === 'month' ? 'month' : '', tool, etat: showDone ? 'done' : '', ...params };

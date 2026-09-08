@@ -76,3 +76,9 @@ export async function searchApps(query: string, opts: { tool?: string; includeDo
      from apps a join users u on u.id = a.user_id where ${where} order by a.active_days desc, a.commits desc limit $1`, params,
   )) as DbApp[];
 }
+
+// Les fiches d'un maker, pour le fil des fiches à compléter.
+export async function appsByUser(userId: number): Promise<Pick<DbApp, 'id' | 'slug' | 'name' | 'tagline' | 'longest' | 'tool' | 'published'>[]> {
+  if (!hasDb) return [];
+  return (await sql.query(`select id, slug, name, tagline, longest, tool, published from apps where user_id = $1 order by created_at`, [userId])) as Pick<DbApp, 'id' | 'slug' | 'name' | 'tagline' | 'longest' | 'tool' | 'published'>[];
+}

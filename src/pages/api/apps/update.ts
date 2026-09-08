@@ -29,5 +29,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   )) as { id: number; slug: string }[];
   if (!rows.length) return redirect(`${lang}/?erreur=fiche`, 302);
   if (status !== 'polishing') await sql.query(`insert into activity (app_id, kind, payload) values ($1, 'status', $2)`, [rows[0].id, JSON.stringify({ status })]);
+  const batch = (cookies.get('nac_batch')?.value ?? '').split(',').filter((x) => x && x !== rows[0].slug);
+  if (batch.length) { cookies.set('nac_batch', batch.join(','), { path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 3600 }); return redirect(`${lang}/app/${batch[0]}/modifier`, 302); }
+  cookies.delete('nac_batch', { path: '/' });
   return redirect(`${lang}/app/${rows[0].slug}`, 302);
 };

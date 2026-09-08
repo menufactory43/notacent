@@ -13,7 +13,7 @@ const last = app.lastCommitDaysAgo === 0 ? s.today : s.ago(app.lastCommitDaysAgo
     : <div class="rank">{rank}</div>}
   <div class="who">
     <div class="logo-app" aria-hidden="true">{app.imageUrl ? <img src={app.imageUrl} alt="" loading="lazy" /> : app.name[0]}</div>
-    <div>
+    <div class="txt">
       <p class="name"><a href={localePath(locale, `/app/${app.slug}`)}>{app.name}</a></p>
       {app.tagline && <p class="tagline">{app.tagline}</p>}
       <p class="by">@{app.owner} <span class="tool">{app.tool}</span> · {app.language}</p>
@@ -34,6 +34,7 @@ const last = app.lastCommitDaysAgo === 0 ? s.today : s.ago(app.lastCommitDaysAgo
 .rank{font:700 34px/1 var(--hand);color:var(--pencil)}
 .rank.small{font-size:14px;line-height:1.1;text-align:center}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
+.txt{min-width:0;flex:1}
 .name{font-weight:700;font-size:18px;margin:0}
 .name a{text-decoration:none;border-bottom:1.5px solid var(--faint)}
 .name a:hover{border-bottom-color:var(--ink)}

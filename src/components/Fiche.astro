@@ -5,6 +5,7 @@ import type { App } from '../data/apps';
 import { currentUser } from '../lib/session';
 import { stripeReady, sponsorDays, sponsorCents, sponsorCurrency } from '../lib/stripe';
 import { sponsorUntil, activeSponsor } from '../lib/db';
+import { softwareLd } from '../lib/seo';
 interface Props { locale: Locale; app: App; ownerId?: number; sample?: boolean; appId?: number }
 const { locale, app, ownerId, sample, appId } = Astro.props;
 const s = t(locale);
@@ -19,7 +20,7 @@ const price = new Intl.NumberFormat(locale, { style: 'currency', currency: spons
 const sp = Astro.url.searchParams.get('sponsor');
 const sponsorMsg = sp === 'merci' ? s.sponsorThanks : sp === 'erreur' ? s.sponsorErr : '';
 ---
-<Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={app.tagline ?? app.longest[locale]} image={`/api/og/${app.slug}.png${locale === 'fr' ? '' : '?lang=en'}`}>
+<Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={app.tagline ?? app.longest[locale]} image={`/api/og/${app.slug}.png${locale === 'fr' ? '' : '?lang=en'}`} jsonLd={sample ? undefined : softwareLd(app, locale)}>
   {sample && <p class="examples hand">{s.examples}</p>}
   <article class="sk fiche">
     <span class="stamp">{stamp}</span>

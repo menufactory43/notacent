@@ -7,6 +7,7 @@ import { apps as samples, ranked as rankedSamples } from '../data/apps';
 import { rankedApps, doneApps, activeSponsor } from '../lib/db';
 import { toView } from '../lib/view';
 import { githubReady } from '../lib/github';
+import { siteLd } from '../lib/seo';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
 const s = t(locale);
@@ -31,7 +32,7 @@ const link = (params: Record<string, string>) => {
   return localePath(locale, '/') + (qs ? `?${qs}` : '') + '#board';
 };
 ---
-<Base locale={locale} path="/">
+<Base locale={locale} path="/" jsonLd={isSample ? undefined : siteLd(locale, board)}>
   {notice && <p class="notice sk hand">{notice}</p>}
   <section class="hero">
     <div>

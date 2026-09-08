@@ -1,0 +1,27 @@
+# Not a Cent : tout est public, et fait pour être lu, par les moteurs comme par les assistants.
+User-agent: *
+Allow: /
+Disallow: /api/auth/
+Disallow: /api/cron/
+Disallow: /api/sponsor/
+Disallow: /app/*/modifier
+Disallow: /en/app/*/modifier
+
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+User-agent: Claude-User
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://notacent.vercel.app/sitemap.xml

@@ -43,7 +43,7 @@ const link = (params: Record<string, string>) => {
         <input type="url" name="repo" placeholder={s.placeholder} aria-label="URL" />
         <button class="sk sk-btn primary" type="submit">{s.add}</button>
       </form>
-      <small class="hint">{s.hint}</small>
+      <small class="hint">{s.hint} · <a href="https://github.com/menufactory43/notacent/blob/main/src/lib/metrics.ts">{s.hintSource}</a></small>
     </div>
     <aside class="sk note" aria-label={s.rules}>
       <span class="tape"></span>
@@ -88,6 +88,7 @@ h1 :global(mark){background:linear-gradient(transparent 35%,var(--hilite) 35%,va
 .paste input::placeholder{color:var(--pencil)}
 .paste:focus-within{box-shadow:0 0 0 3px var(--hilite)}
 .hint{display:block;margin-top:8px;font:500 17px/1.2 var(--hand);color:var(--pencil)}
+.hint a{color:inherit;text-decoration:underline dotted}
 .note{position:relative;padding:18px 20px;transform:rotate(1.2deg);font:500 21px/1.3 var(--hand)}
 .tape{position:absolute;top:-10px;left:50%;width:70px;height:20px;background:var(--hilite);opacity:.85;transform:translateX(-50%) rotate(-3deg)}
 .note ul{margin:8px 0 0;padding-left:18px}

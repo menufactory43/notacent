@@ -14,6 +14,9 @@ const fr = locale === 'fr';
     <p>{fr
       ? 'Quand un maker ajoute une app, il installe la GitHub App « Not a Cent » sur les repos de son choix, en lecture seule. On ne lit que les dates des commits de la branche par défaut, le nom, la description et le langage du repo. On ne lit jamais le code, et on ne demande aucune permission d\'écriture. Les repos privés sont acceptés : seuls les chiffres qui en sortent sont publics.'
       : 'When a maker adds an app, they install the “Not a Cent” GitHub App on the repos they choose, read-only. We only read commit dates on the default branch, and the repo name, description and language. We never read the code, and we never ask for write permission. Private repos are welcome: only the numbers that come out of them are public.'}</p>
+    <p>{fr
+      ? 'À l\'installation, GitHub affiche « Read access to code ». C\'est la permission minimale qu\'il impose pour lister les commits d\'un repo : sans elle, l\'API refuse même les dates. On a donc techniquement le droit de lire le code, mais on ne le fait pas. Le site est open source, chacun peut le vérifier : '
+      : 'At install time, GitHub shows “Read access to code”. It is the smallest permission GitHub requires to list a repo\'s commits: without it, the API refuses even the dates. So we technically could read the code, but we don\'t. The site is open source, anyone can check: '}<a href="https://github.com/menufactory43/notacent/blob/main/src/lib/metrics.ts">metrics.ts</a>.</p>
 
     <h2>{fr ? 'Ce qu\'on garde' : 'What we keep'}</h2>
     <ul>
@@ -36,7 +39,7 @@ const fr = locale === 'fr';
 
     <h2>{fr ? 'Qui' : 'Who'}</h2>
     <p>{fr ? 'Not a Cent est fait main par un développeur indépendant en France. Hébergé chez Vercel, base chez Neon (Europe). Contact : ' : 'Not a Cent is handmade by an independent developer in France. Hosted on Vercel, database at Neon (Europe). Contact: '}<a href="mailto:meffysto@gmail.com">meffysto@gmail.com</a>.</p>
-    <p class="mono small">{fr ? 'Dernière mise à jour : 8 septembre 2026.' : 'Last updated: September 8, 2026.'}</p>
+    <p class="mono small">{fr ? 'Dernière mise à jour : 9 septembre 2026.' : 'Last updated: September 9, 2026.'}</p>
   </article>
 </Base>
 <style>

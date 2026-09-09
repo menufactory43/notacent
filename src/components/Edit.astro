@@ -19,6 +19,8 @@ const batch = (Astro.cookies.get('nac_batch')?.value ?? '').split(',').filter(Bo
 const pos = batch.indexOf(app.slug);
 const inBatch = pos >= 0 && batch.length > 1;
 const next = inBatch ? batch[pos + 1] : undefined;
+// L'image déjà envoyée reste en base tant qu'on n'en choisit pas une autre : on la montre pour que ce soit clair.
+const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.image_url;
 ---
 <Base locale={locale} path={`/app/${slug}/modifier`} title={s.editTitle}>
   <section class="edit">
@@ -30,7 +32,12 @@ const next = inBatch ? batch[pos + 1] : undefined;
       <label><span>{s.fName}</span><input name="name" value={app.name} maxlength="80" /></label>
       <label><span>{s.fTagline}</span><input name="tagline" value={app.tagline ?? app.description ?? ''} maxlength="140" /></label>
       <label><span>{s.fUrl}</span><input name="url" type="url" value={app.url ?? app.homepage ?? ''} placeholder="https://" /></label>
-      <label><span>{s.fImage}</span><input name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /><small>{s.fImageHint}</small></label>
+      <label class="img"><span>{s.fImage}</span>
+        <div class="pick">
+          <img id="preview" src={current ?? ''} alt="" hidden={!current} />
+          <div><input name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /><small>{current ? s.fImageKeep : s.fImageHint}</small></div>
+        </div>
+      </label>
       <label><span>{s.fLongest}</span><textarea name="longest" rows="4" maxlength="600">{app.longest ?? ''}</textarea></label>
       <div class="grid">
         <label><span>{s.fTool}</span>
@@ -72,6 +79,15 @@ const next = inBatch ? batch[pos + 1] : undefined;
     )}
   </section>
 </Base>
+<script>
+  const input = document.querySelector<HTMLInputElement>('input[name=image]');
+  const img = document.getElementById('preview') as HTMLImageElement | null;
+  input?.addEventListener('change', () => {
+    const f = input.files?.[0];
+    if (!f || !img) return;
+    img.src = URL.createObjectURL(f); img.hidden = false;
+  });
+</script>
 <style>
 .edit{max-width:640px}
 h1{font:700 44px/1 var(--hand);margin:0 0 6px}
@@ -83,6 +99,9 @@ label span{font:700 17px/1.2 var(--hand);color:var(--pencil)}
 label small{color:var(--pencil);font-size:13px}
 .err{color:var(--redpen);font-size:18px;margin:0}
 input[type=file]{border-style:dashed;padding:10px 12px}
+.pick{display:flex;gap:14px;align-items:flex-start}
+.pick>div{flex:1;display:grid;gap:4px}
+#preview{width:96px;height:96px;object-fit:cover;border:2px solid var(--ink);border-radius:var(--sk2);background:var(--paper);flex:none}
 input,textarea,select{font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:2px solid var(--ink);border-radius:var(--sk2);padding:8px 12px;width:100%}
 textarea{resize:vertical}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}

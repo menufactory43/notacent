@@ -22,7 +22,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     image = Buffer.from(await file.arrayBuffer()); imageType = file.type;
   }
   const rows = (await sql.query(
-    `update apps set url = $1, image_url = $2, longest = $3, tool = $4, pricing = $5, status = $6, name = coalesce($7, name),
+    `update apps set url = $1, image_url = coalesce($2, image_url), longest = $3, tool = $4, pricing = $5, status = $6, name = coalesce($7, name),
        image = coalesce($10, image), image_type = coalesce($11, image_type), tagline = $12
      where slug = $8 and user_id = $9 returning id, slug`,
     [httpOnly(clean(f.get('url'), 500)), httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, user.id, image, imageType, clean(f.get('tagline'), 140)],

@@ -50,6 +50,7 @@ const sponsorMsg = sp === 'merci' ? s.sponsorThanks : sp === 'erreur' ? s.sponso
         {app.repo && <a class="sk sk-btn" href={app.repo} rel="noopener">{s.repo}</a>}
         {mine && <a class="sk sk-btn" href={localePath(locale, `/app/${app.slug}/modifier`)}>✎ {s.edit}</a>}
       </div>
+      {!user && !sample && <p class="yours hand"><a href={`/api/auth/github?lang=${locale}&back=${encodeURIComponent(localePath(locale, `/app/${app.slug}/modifier`))}`}>{s.yours}</a></p>}
       {sponsorMsg && <p class="sponsor-msg hand">{sponsorMsg}</p>}
       {until && <p class="sponsor-msg hand">★ {s.sponsorUntil(new Date(until).toLocaleDateString(locale))}</p>}
       {mine && stripeReady() && !until && (
@@ -84,6 +85,9 @@ h1{font:700 40px/1 var(--hand);margin:0 0 2px}
 .sponsor{margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .sponsor small{color:var(--pencil);font-size:16px}
 .sponsor-msg{margin:14px 0 0;color:var(--redpen);font-size:19px}
+.yours{margin:12px 0 0;font-size:17px}
+.yours a{color:var(--pencil);text-decoration:none;border-bottom:1.5px dashed var(--faint)}
+.yours a:hover{color:var(--ink);border-bottom-color:var(--ink)}
 @media (max-width:760px){.fiche{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
 </style>
 <script>

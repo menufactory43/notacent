@@ -25,7 +25,9 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
     )) as { id: number }[];
     await setSession(cookies, row.id);
     if (!installationId) return redirect(`https://github.com/apps/${appSlug()}/installations/new`, 302);
-    return redirect(`${lang}/ajouter`, 302);
+    const back = cookies.get('nac_back')?.value ?? '';
+    cookies.delete('nac_back', { path: '/' });
+    return redirect(/^\/(?!\/)/.test(back) ? back : `${lang}/ajouter`, 302);
   } catch (e) {
     console.error(e);
     return redirect(`${lang}/?erreur=github`, 302);

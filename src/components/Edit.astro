@@ -7,7 +7,7 @@ interface Props { locale: Locale; slug: string }
 const { locale, slug } = Astro.props;
 const s = t(locale);
 const user = await currentUser(Astro.cookies).catch(() => null);
-if (!user) return Astro.redirect(`/api/auth/github?lang=${locale}`, 302);
+if (!user) return Astro.redirect(`/api/auth/github?lang=${locale}&back=${encodeURIComponent(localePath(locale, `/app/${slug}/modifier`))}`, 302);
 const app = await appBySlug(slug).catch(() => null);
 if (!app || app.user_id !== user.id) return new Response(null, { status: 404 });
 const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre'];

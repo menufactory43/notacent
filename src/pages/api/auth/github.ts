@@ -7,6 +7,9 @@ export const GET: APIRoute = ({ url, cookies, redirect }) => {
   cookies.set('nac_state', state, { path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 600 });
   const repo = url.searchParams.get('repo');
   if (repo) cookies.set('nac_repo', repo, { path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 600 });
+  // Où revenir après la connexion (ex. la page de modification d'une fiche). Chemin interne seulement.
+  const back = url.searchParams.get('back') ?? '';
+  if (/^\/(?!\/)/.test(back)) cookies.set('nac_back', back, { path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 600 });
   const lang = url.searchParams.get('lang') === 'en' ? 'en' : 'fr';
   cookies.set('nac_lang', lang, { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' });
   const redirectUri = `${url.origin}/api/auth/callback`;

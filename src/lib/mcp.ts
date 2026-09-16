@@ -91,8 +91,8 @@ export function createServer() {
         ? ['App gratuite ou à dons ; les payantes sont hors classement.', 'Jours actifs = jours avec au moins un commit, lus depuis le repo GitHub (privé accepté, le code n\'est jamais lu).', '90 jours sans commit → « terminée » ou « en pause ».', 'Quatre champs à remplir : lien, image, ce qui a pris le plus de temps, outil principal.']
         : ['Free or donation-based apps only; paid apps are off the board.', 'Active days = days with at least one commit, read from the GitHub repo (private repos welcome, code is never read).', '90 days without a commit → "done" or "paused".', 'Four fields to fill: link, image, what took the longest, main tool.'],
       steps: fr
-        ? ['Ouvre le lien et clique « Ajouter mon app ».', 'Autorise la GitHub App Not a Cent sur les repos de ton choix (lecture seule).', 'Coche les repos à publier.', 'Complète la fiche : quatre champs.']
-        : ['Open the link and click "Add my app".', 'Authorize the Not a Cent GitHub App on the repos you choose (read-only).', 'Tick the repos to publish.', 'Fill in the card: four fields.'],
+        ? ['Ouvre le lien et clique « Classer mon app ».', 'Autorise la GitHub App Not a Cent sur les repos de ton choix (lecture seule).', 'Coche les repos à publier.', 'Complète la fiche : quatre champs.']
+        : ['Open the link and click "List my app".', 'Authorize the Not a Cent GitHub App on the repos you choose (read-only).', 'Tick the repos to publish.', 'Fill in the card: four fields.'],
     });
   });
 

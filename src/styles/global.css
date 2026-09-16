@@ -1,18 +1,19 @@
 :root{
   --paper:#FFFFFF; --ink:#1F1D2B; --pencil:#7C7A8A; --faint:#E6E4EC;
-  --hilite:#FFE45C; --hilite-ink:#5A4B00; --redpen:#D9432F; --paper-2:#FAF9FC;
+  --hilite:#FFE45C; --hilite-ink:#5A4B00; --mark:#FFE45C; --redpen:#D9432F; --paper-2:#FAF9FC;
   --hand:Caveat,"Comic Sans MS",cursive; --body:"Atkinson Hyperlegible",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
   --sk:255px 15px 225px 15px/15px 225px 15px 255px; --sk2:15px 225px 15px 255px/255px 15px 225px 15px;
 }
+/* Sombre = craie sur ardoise : encre adoucie, jaune assombri pour rester lisible sous du texte clair. */
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --paper:#16151C; --ink:#EDEAF3; --pencil:#9B98A8; --faint:#2C2A36;
-    --hilite:#D8BF2E; --hilite-ink:#1C1700; --redpen:#F0705E; --paper-2:#1D1C25;
+    --paper:#1A1B20; --ink:#D9D5CC; --pencil:#8F8C86; --faint:#2E2F36;
+    --hilite:#E3CA4E; --hilite-ink:#1C1700; --mark:#6E5F18; --redpen:#EE7A66; --paper-2:#212228;
   }
 }
 :root[data-theme="dark"]{
-  --paper:#16151C; --ink:#EDEAF3; --pencil:#9B98A8; --faint:#2C2A36;
-  --hilite:#D8BF2E; --hilite-ink:#1C1700; --redpen:#F0705E; --paper-2:#1D1C25;
+  --paper:#1A1B20; --ink:#D9D5CC; --pencil:#8F8C86; --faint:#2E2F36;
+  --hilite:#E3CA4E; --hilite-ink:#1C1700; --mark:#6E5F18; --redpen:#EE7A66; --paper-2:#212228;
 }
 *{box-sizing:border-box}
 html{color-scheme:light dark}

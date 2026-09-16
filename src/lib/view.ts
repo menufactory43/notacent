@@ -13,5 +13,6 @@ export function toView(a: DbApp): App {
     longest: { fr: a.longest ?? a.description ?? '', en: a.longest ?? a.description ?? '' },
     url: a.url ?? a.homepage ?? undefined, repo: a.private ? undefined : `https://github.com/${a.full_name}`,
     weekly: a.weekly?.length ? a.weekly : Array(26).fill(0), imageUrl: a.has_image ? `/api/img/${a.slug}` : a.image_url ?? undefined, sponsored: a.sponsored ?? false, tagline: a.tagline ?? a.description ?? undefined,
+    stars: a.stars ?? 0, platform: a.platform ?? undefined, takeover: a.takeover ?? false,
   };
 }

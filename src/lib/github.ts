@@ -60,3 +60,10 @@ export async function installationToken(installationId: number): Promise<string>
   cache = { id: installationId, token: data.token, exp: new Date(data.expires_at).getTime() };
   return data.token;
 }
+
+// Ce que GitHub dit d'un repo en un appel : étoiles, sujets, page d'accueil. On n'y lit pas le code.
+export interface GhRepoInfo { stargazers_count: number; topics: string[]; language: string | null; homepage: string | null; description: string | null; name: string }
+export async function repoInfo(token: string, fullName: string): Promise<GhRepoInfo> {
+  const { data } = await gh<GhRepoInfo>(`/repos/${fullName}`, token);
+  return { stargazers_count: data.stargazers_count ?? 0, topics: data.topics ?? [], language: data.language, homepage: data.homepage, description: data.description, name: data.name };
+}

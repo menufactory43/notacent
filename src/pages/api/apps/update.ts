@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
 import { currentUser } from '../../../lib/session';
+import { PLATFORMS } from '../../../lib/platform';
 export const prerender = false;
 const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre'];
 const clean = (v: FormDataEntryValue | null, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '') || null;
@@ -15,20 +16,24 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const tool = TOOLS.includes(String(f.get('tool'))) ? String(f.get('tool')) : null;
   const pricing = ['free', 'donations', 'paid'].includes(String(f.get('pricing'))) ? String(f.get('pricing')) : 'free';
   const status = ['polishing', 'done', 'paused'].includes(String(f.get('status'))) ? String(f.get('status')) : 'polishing';
+  const platform = (PLATFORMS as readonly string[]).includes(String(f.get('platform'))) ? String(f.get('platform')) : null;
+  const takeover = f.get('takeover') === 'on';
   const file = f.get('image');
   let image: Buffer | null = null, imageType: string | null = null;
   if (file instanceof File && file.size > 0) {
     if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type) || file.size > 2_000_000) return redirect(`${lang}/app/${slug}/modifier?erreur=image`, 302);
     image = Buffer.from(await file.arrayBuffer()); imageType = file.type;
   }
+  const [before] = (await sql.query(`select takeover from apps where slug = $1 and user_id = $2`, [slug, user.id])) as { takeover: boolean }[];
   const rows = (await sql.query(
     `update apps set url = $1, image_url = coalesce($2, image_url), longest = $3, tool = $4, pricing = $5, status = $6, name = coalesce($7, name),
-       image = coalesce($10, image), image_type = coalesce($11, image_type), tagline = $12
+       image = coalesce($10, image), image_type = coalesce($11, image_type), tagline = $12, platform = coalesce($13, platform), takeover = $14
      where slug = $8 and user_id = $9 returning id, slug`,
-    [httpOnly(clean(f.get('url'), 500)), httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, user.id, image, imageType, clean(f.get('tagline'), 140)],
+    [httpOnly(clean(f.get('url'), 500)), httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, user.id, image, imageType, clean(f.get('tagline'), 140), platform, takeover],
   )) as { id: number; slug: string }[];
   if (!rows.length) return redirect(`${lang}/?erreur=fiche`, 302);
   if (status !== 'polishing') await sql.query(`insert into activity (app_id, kind, payload) values ($1, 'status', $2)`, [rows[0].id, JSON.stringify({ status })]);
+  if (takeover && before && !before.takeover) await sql.query(`insert into activity (app_id, kind) values ($1, 'takeover')`, [rows[0].id]);
   const batch = (cookies.get('nac_batch')?.value ?? '').split(',').filter((x) => x && x !== rows[0].slug);
   if (batch.length) { cookies.set('nac_batch', batch.join(','), { path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 3600 }); return redirect(`${lang}/app/${batch[0]}/modifier`, 302); }
   cookies.delete('nac_batch', { path: '/' });

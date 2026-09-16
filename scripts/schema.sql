@@ -60,3 +60,22 @@ create table if not exists sponsors (
 );
 create index if not exists sponsors_active on sponsors (ends_at desc);
 alter table apps add column if not exists tagline text;
+-- Étoiles GitHub : elles ne classent pas, elles disent qui n'a pas encore été vu.
+alter table apps add column if not exists stars int default 0;
+-- Plateforme (Mac, iOS, Web, CLI…) : déduite du repo, corrigée par le maker. Sert aux pages « Parcourir ».
+alter table apps add column if not exists platform text;
+-- « Ouverte à une reprise » : un signal posé par le maker, on met en relation, on ne vend rien.
+alter table apps add column if not exists takeover boolean default false;
+create index if not exists apps_browse on apps (published, tool, platform, language);
+-- Alertes gratuites : un filtre enregistré, un mail hebdo quand des apps le matchent.
+create table if not exists alerts (
+  id serial primary key,
+  email text not null,
+  locale text default 'fr',
+  filter jsonb not null default '{}',
+  token text unique not null,
+  confirmed boolean default true,
+  last_sent timestamptz,
+  created_at timestamptz default now()
+);
+create unique index if not exists alerts_unique on alerts (email, filter);

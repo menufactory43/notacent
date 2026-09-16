@@ -1,38 +1,37 @@
 ---
 import { t, localePath, type Locale } from '../i18n/strings';
 import { recentActivity } from '../lib/db';
+// « En ce moment » : le fil, dans la colonne du hero. Une raison de revenir.
 interface Props { locale: Locale }
 const { locale } = Astro.props;
 const s = t(locale);
-const rows = await recentActivity(8).catch(() => []);
+const rows = await recentActivity(5).catch(() => []);
+const what = (r: (typeof rows)[number]) =>
+  r.kind === 'arrived' ? s.kindArrived : r.kind === 'sponsor' ? s.kindSponsor : r.kind === 'takeover' ? s.kindTakeover : r.kind === 'day' ? s.kindDay(Number(r.payload.n ?? 0)) : r.payload.status === 'done' ? s.kindDone : s.kindPaused;
 const items = rows.length
-  ? rows.map((r) => ({
-      l: r.name[0], name: r.name, href: localePath(locale, `/app/${r.slug}`),
-      what: r.kind === 'arrived' ? s.kindArrived : r.kind === 'sponsor' ? s.kindSponsor : r.kind === 'day' ? s.kindDay(Number(r.payload.n ?? 0)) : r.payload.status === 'done' ? s.kindDone : s.kindPaused,
-      when: s.agoAuto(Date.now() - new Date(r.created_at).getTime()),
-    }))
+  ? rows.map((r) => ({ l: r.name[0], name: r.name, href: localePath(locale, `/app/${r.slug}`), what: what(r), when: s.agoAuto(Date.now() - new Date(r.created_at).getTime()) }))
   : [
-      { l: 'S', name: 'Sémaphore', href: '#', what: s.nthDay(168), when: s.ago(12, 'min') },
-      { l: '¢', name: 'Not a Cent', href: '#', what: s.nthDay(1), when: s.ago(1, 'h') },
-      { l: 'P', name: 'Pixelwave', href: '#', what: s.arrived, when: s.ago(3, 'h') },
-      { l: 'C', name: 'Correspondance', href: '#', what: s.nthDay(214), when: s.ago(2, 'j') },
+      { l: 'S', name: 'Sémaphore', href: localePath(locale, '/app/semaphore'), what: s.nthDay(168), when: s.ago(12, 'min') },
+      { l: 'D', name: 'Daybard', href: localePath(locale, '/app/daybard'), what: s.kindTakeover, when: s.ago(3, 'h') },
+      { l: 'C', name: 'Correspondance', href: localePath(locale, '/app/correspondance'), what: s.kindWeek, when: s.ago(1, 'j') },
+      { l: '¢', name: 'Not a Cent', href: localePath(locale, '/app/notacent'), what: s.arrived, when: s.ago(2, 'j') },
     ];
 ---
-<div class="activity">
-  <h2>{s.activity}</h2>
-  <div class="feed">
-    {items.map((i) => (
-      <a class="sk" href={i.href}><div class="logo-app">{i.l}</div><div><b>{i.name}</b>{i.what}<br /><span class="when">{i.when}</span></div></a>
-    ))}
-  </div>
-</div>
+<aside class="sk activity" aria-label={s.now}>
+  <h2>{s.now}</h2>
+  {items.map((i) => (
+    <a href={i.href}><div class="logo-app">{i.l}</div><div class="t"><b>{i.name}</b> <span>{i.what}</span><br /><span class="when hand">{i.when}</span></div></a>
+  ))}
+  <a class="all hand" href={localePath(locale, '/intention/new')}>{s.allFeed} →</a>
+</aside>
 <style>
-.activity{margin:28px 0 0}
-h2{font:700 24px/1 var(--hand);margin:0 0 10px;display:flex;align-items:center;gap:8px}
-h2::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--redpen);display:inline-block}
-.feed{display:flex;gap:10px;overflow-x:auto;padding:6px 2px 10px;scrollbar-width:thin}
-.feed a{flex:0 0 200px;padding:10px 12px;font-size:13px;color:var(--pencil);display:flex;gap:10px;align-items:center;text-decoration:none}
-.feed .logo-app{width:32px;height:32px;font-size:16px}
-.feed b{color:var(--ink);font-weight:700;display:block}
-.when{font:500 14px/1 var(--hand)}
+.activity{padding:16px 18px 12px;display:flex;flex-direction:column;gap:10px;transform:rotate(.6deg);background:var(--paper-2)}
+h2{font:700 26px/1 var(--hand);margin:0;display:flex;align-items:center;gap:8px}
+h2::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--redpen);display:inline-block}
+.activity>a{display:flex;gap:10px;align-items:center;text-decoration:none;font-size:14px;color:var(--pencil)}
+.activity .logo-app{width:34px;height:34px;font-size:17px}
+.t{min-width:0}
+.t b{color:var(--ink)}
+.when{font:500 15px/1 var(--hand)}
+.all{border-top:2px dashed var(--faint);padding-top:10px;margin-top:2px;font:700 17px/1 var(--hand)!important;color:var(--pencil)}
 </style>

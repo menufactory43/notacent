@@ -1,0 +1,49 @@
+---
+import { t, type Locale } from '../i18n/strings';
+import { browseCounts, INTENTS, type Browse } from '../lib/db';
+import { browsePath, browseLabel, TOOLS, PLATFORMS } from '../lib/browse';
+import { apps as samples } from '../data/apps';
+// « Parcourir » : chaque lien est une page indexable avec son titre et son classement.
+interface Props { locale: Locale; sample?: boolean }
+const { locale, sample } = Astro.props;
+const s = t(locale);
+type Counts = Record<string, number>;
+let counts: { tool: Counts; platform: Counts; language: Counts; intent: Counts } = await browseCounts().catch(() => ({ tool: {}, platform: {}, language: {}, intent: {} }));
+if (sample) {
+  const tally = (k: 'tool' | 'platform' | 'language') => samples.reduce((m, a) => { const v = a[k]; if (v) m[v] = (m[v] ?? 0) + 1; return m; }, {} as Record<string, number>);
+  counts = { tool: tally('tool'), platform: tally('platform'), language: tally('language'), intent: { radar: 3, takeover: 1, veteran: 0, new: 1, done: 0 } };
+}
+const link = (b: Browse, n?: number) => ({ href: browsePath(b, locale), label: browseLabel(b, locale), n });
+const tools = TOOLS.filter((x) => x !== 'Autre').map((v) => link({ kind: 'tool', value: v }, counts.tool[v] ?? 0));
+const platforms = PLATFORMS.filter((x) => x !== 'Autre').map((v) => link({ kind: 'platform', value: v }, counts.platform[v] ?? 0));
+const languages = Object.entries(counts.language).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([v, n]) => link({ kind: 'language', value: v }, n));
+const intents = INTENTS.map((v) => link({ kind: 'intent', value: v }, counts.intent[v] ?? 0));
+const cols = [[s.byTool, tools], [s.byPlatform, platforms], [s.byLanguage, languages], [s.byIntent, intents]] as const;
+---
+<section class="browse">
+  <div class="sh">
+    <h2>{s.browseTitle}</h2>
+    <span class="hand sub">{s.browseSub}</span>
+  </div>
+  <div class="grid">
+    {cols.map(([title, items]) => (
+      <div class="col">
+        <b class="hand">{title}</b>
+        {items.map((i) => <a href={i.href}>{i.label}{typeof i.n === 'number' && <span class="mono n">{i.n}</span>}</a>)}
+      </div>
+    ))}
+  </div>
+</section>
+<style>
+.browse{margin-top:52px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0 0 14px}
+.sh h2{font:700 30px/1 var(--hand);margin:0}
+.sub{font:500 18px/1 var(--hand);color:var(--pencil)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;border-top:2px dashed var(--faint);padding-top:16px}
+.col{display:flex;flex-direction:column;gap:4px;font-size:15px}
+.col>b{font:700 20px/1.2 var(--hand);margin-bottom:4px}
+.col a{text-decoration:none}
+.col a:hover{text-decoration:underline}
+.n{font-size:12px;color:var(--pencil);margin-left:6px}
+@media (max-width:760px){.grid{grid-template-columns:1fr 1fr;gap:14px}}
+</style>

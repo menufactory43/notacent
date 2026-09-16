@@ -1,0 +1,70 @@
+---
+import { t, localePath, type Locale } from '../i18n/strings';
+import type { App } from '../data/apps';
+// Les pépites de la semaine : trois tampons décernés par le repo. On ne les vend pas, on ne les choisit pas.
+interface Props { locale: Locale; week: App | null; streak: App | null; radar: App | null }
+const { locale, week, streak, radar } = Astro.props;
+const s = t(locale);
+const weekDays = (a: App) => (a.weekly[24] ?? 0) + (a.weekly[25] ?? 0);
+const cards = [
+  week && { app: week, stamp: s.stampWeek, big: String(weekDays(week)), unit: '', small: s.weekDays(weekDays(week)) },
+  streak && { app: streak, stamp: s.stampStreak, big: String(streak.bestStreakWeeks), unit: s.weeks, small: s.streakWeeks },
+  radar && { app: radar, stamp: s.stampRadar, big: String(radar.activeDays), unit: s.days.split(' ')[0], small: s.radarFor(radar.activeDays, radar.stars ?? 0) },
+].filter(Boolean) as { app: App; stamp: string; big: string; unit: string; small: string }[];
+const week_ = (() => { const d = new Date(); const start = new Date(d.getFullYear(), 0, 1); return Math.ceil(((d.getTime() - start.getTime()) / 86_400_000 + start.getDay() + 1) / 7); })();
+---
+{cards.length > 0 && (
+<section class="gems">
+  <div class="sh">
+    <h2>{s.gemsTitle}</h2>
+    <span class="hand sub">{locale === 'fr' ? 'semaine' : 'week'} {week_} · {s.gemsSub}</span>
+  </div>
+  <div class="grid">
+    {cards.map((c) => (
+      <article class="sk gem">
+        <span class="stamp hand">{c.stamp}</span>
+        <a class="shot" href={localePath(locale, `/app/${c.app.slug}`)} aria-hidden="true" tabindex="-1">
+          {c.app.imageUrl ? <img src={c.app.imageUrl} alt="" loading="lazy" /> : <span class="hand init">{c.app.name[0]}</span>}
+        </a>
+        <div class="body">
+          <p class="name"><a href={localePath(locale, `/app/${c.app.slug}`)}>{c.app.name}</a></p>
+          {c.app.tagline && <p class="tagline">{c.app.tagline}</p>}
+          <p class="by">@{c.app.owner} <span class="tool">{c.app.tool}</span> · {c.app.language}</p>
+          <div class="foot">
+            <div><b class="mono">{c.big} {c.unit && <i class="hand">{c.unit}</i>}</b><span class="hand">{c.small}</span></div>
+            <a class="sk bravo hand" href={localePath(locale, `/app/${c.app.slug}`)}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 11V6a2 2 0 1 1 4 0v5"/><path d="M11 10V4a2 2 0 1 1 4 0v6"/><path d="M15 10V6a2 2 0 1 1 4 0v8a7 7 0 0 1-14 0v-2a2 2 0 1 1 4 0"/></svg>
+              {s.bravo.toLowerCase()} · <span class="mono">{c.app.bravos}</span>
+            </a>
+          </div>
+        </div>
+      </article>
+    ))}
+  </div>
+</section>
+)}
+<style>
+.gems{margin:0 0 52px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0 0 14px}
+.sh h2{font:700 30px/1 var(--hand);margin:0}
+.sub{font:500 18px/1 var(--hand);color:var(--pencil)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;padding-top:8px}
+.gem{position:relative;display:flex;flex-direction:column;padding:0;overflow:visible}
+.stamp{position:absolute;top:-14px;right:14px;transform:rotate(-6deg);border:3px double var(--redpen);color:var(--redpen);font:700 19px/1 var(--hand);padding:5px 10px;border-radius:12px 40px 14px 44px/40px 12px 44px 14px;background:var(--paper);z-index:1}
+.shot{display:grid;place-items:center;height:150px;border-bottom:2px solid var(--ink);background:var(--paper-2);border-radius:240px 12px 0 0/12px 200px 0 0;overflow:hidden}
+.shot img{width:100%;height:100%;object-fit:cover}
+.init{font-size:72px;color:var(--faint)}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:4px}
+.name{font-weight:700;font-size:20px;margin:0}
+.name a{text-decoration:none}
+.tagline{margin:0;font-size:14px}
+.by{color:var(--pencil);font-size:14px;margin:0}
+.tool{font:500 15px/1 var(--hand);color:var(--ink);border:1.5px solid var(--faint);border-radius:8px 30px 10px 34px/30px 8px 34px 10px;padding:1px 7px;margin-left:4px}
+.foot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:8px}
+.foot b{display:block;font-size:32px;line-height:1;font-weight:500}
+.foot i{font-style:normal;font:500 18px/1 var(--hand)}
+.foot>div>span{font:500 15px/1.2 var(--hand);color:var(--pencil)}
+.bravo{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;font:700 17px/1 var(--hand);text-decoration:none;min-height:40px}
+.bravo .mono{font-weight:500}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+</style>

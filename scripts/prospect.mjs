@@ -127,9 +127,8 @@ for (const name of names) {
       if (m.active_days < 20 || m.active_days_30 < 2) { console.log(`  · ${r.full_name} : ${m.active_days} j, ${m.active_days_30} ce mois, passe`); continue; }
       const owner = (await gh(`/users/${r.owner.login}`)) ?? {};
       const release = await gh(`/repos/${r.full_name}/releases/latest`);
-      const life = (new Date(m.last_commit) - new Date(m.first_commit)) / DAY;
-      // Score pépite : durée × activité ÷ (étoiles + 5). Beaucoup de travail, longtemps, que personne n'a vu.
-      const score = (Math.min(life, 730) / 30) * m.active_days / (r.stargazers_count + 5);
+      // Score pépite : jours actifs × plus longue série ÷ (étoiles + 5). Du travail régulier, que personne n'a vu.
+      const score = m.active_days * m.best_streak_weeks / (r.stargazers_count + 5);
       await sql.query(
         `insert into outreach (repo_id, full_name, name, description, language, homepage, topics, stars, contributors, has_release, repo_created, pushed_at,
            owner_id, owner_login, owner_name, owner_avatar, owner_email, commit_email, owner_blog, owner_twitter, owner_location, metrics, score, query)

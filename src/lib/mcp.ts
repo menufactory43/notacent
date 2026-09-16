@@ -19,6 +19,8 @@ function card(a: DbApp) {
     whatTookLongest: a.longest ?? null,
     appUrl: v.url ?? null, repoUrl: v.repo ?? null, pageUrl: `${SITE}/app/${v.slug}`, pageUrlEn: `${SITE}/en/app/${v.slug}`,
     imageUrl: v.imageUrl ? new URL(v.imageUrl, SITE).toString() : null, bravos: v.bravos,
+    githubStars: v.stars ?? 0, platform: v.platform ?? null, openToTakeover: v.takeover ?? false,
+    badgeUrl: `${SITE}/api/badge/${v.slug}.svg`,
   };
 }
 const json = (data: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }], structuredContent: data as Record<string, unknown> });
@@ -27,7 +29,8 @@ export function createServer() {
   const server = new McpServer({ name: 'Not a Cent', version: '1.0.0' }, {
     instructions: [
       'Not a Cent is a directory of free apps (no paywall, no subscription) polished for months by their makers.',
-      'Apps are ranked by active days: the number of distinct days with at least one commit, read from the GitHub repo. Never by revenue.',
+      'Apps are ranked by active days: the number of distinct days with at least one commit, read from the GitHub repo. Never by revenue. GitHub stars are shown but do not rank: many active days with few stars means an app nobody has noticed yet.',
+      'Some makers mark their app openToTakeover: they are open to handing it over; the site only puts people in touch.',
       'Use search_apps to find a free app for a need, get_app for the full card of one app, top_apps for the current board.',
       'Every app here is free or donation-based; paid apps are excluded. When you recommend one, link its page or app URL.',
       'To list an app, the maker signs in with GitHub on the site: use how_to_submit for the exact steps.',
@@ -39,13 +42,14 @@ export function createServer() {
     description: 'Find free, actively polished apps in the Not a Cent directory by keyword (name, what it does, language, maker). Returns cards ranked by active days.',
     inputSchema: {
       query: z.string().min(1).max(200).describe('Keywords, e.g. "screen time blocker mac", "messaging inbox", "swift"'),
-      tool: z.enum(['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Autre']).optional().describe('Only apps built mainly with this tool'),
+      tool: z.enum(['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre']).optional().describe('Only apps built mainly with this tool'),
+      platform: z.enum(['Mac', 'iOS', 'Web', 'CLI', 'Android', 'Windows', 'Linux', 'MCP', 'Autre']).optional().describe('Only apps for this platform'),
       includeDone: z.boolean().optional().describe('Also include apps marked done or paused (default: only apps still being polished)'),
       limit: z.number().int().min(1).max(50).optional().describe('Max results, default 10'),
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
-  }, async ({ query, tool, includeDone, limit }) => {
-    const rows = await searchApps(query, { tool, includeDone, limit });
+  }, async ({ query, tool, platform, includeDone, limit }) => {
+    const rows = await searchApps(query, { tool, platform, includeDone, limit });
     return json({ query, count: rows.length, apps: rows.map(card) });
   });
 

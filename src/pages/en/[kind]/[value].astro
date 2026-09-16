@@ -1,0 +1,8 @@
+---
+import Liste from '../../../components/Liste.astro';
+import { browseFromParams } from '../../../lib/browse';
+export const prerender = false;
+const b = browseFromParams(Astro.params.kind ?? '', Astro.params.value ?? '');
+if (!b) return new Response(null, { status: 404 });
+---
+<Liste locale="en" browse={b} />

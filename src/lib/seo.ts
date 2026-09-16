@@ -21,7 +21,27 @@ export function softwareLd(app: App, locale: Locale) {
       { '@type': 'PropertyValue', name: 'activeDays', value: app.activeDays, description: 'Days with at least one commit, read from the GitHub repo' },
       { '@type': 'PropertyValue', name: 'commits', value: app.commits },
       { '@type': 'PropertyValue', name: 'mainTool', value: app.tool },
+      { '@type': 'PropertyValue', name: 'githubStars', value: app.stars ?? 0 },
+      ...(app.platform ? [{ '@type': 'PropertyValue', name: 'platform', value: app.platform }] : []),
+      ...(app.takeover ? [{ '@type': 'PropertyValue', name: 'openToTakeover', value: true, description: 'The maker is open to handing the app over' }] : []),
     ],
+  };
+}
+
+// Fil d'Ariane : la page dit d'où elle vient, le moteur aussi.
+export function breadcrumbLd(locale: Locale, items: [string, string][]) {
+  const base = locale === 'fr' ? SITE : `${SITE}/en`;
+  return {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: items.map(([name, path], i) => ({ '@type': 'ListItem', position: i + 1, name, item: path === '/' ? base : `${base}${path}` })),
+  };
+}
+// Une page « Parcourir » : une liste ordonnée d'apps, avec son titre.
+export function listLd(locale: Locale, name: string, apps: App[], path: string) {
+  return {
+    '@context': 'https://schema.org', '@type': 'ItemList', '@id': `${SITE}${locale === 'fr' ? '' : '/en'}${path}`, name,
+    itemListOrder: 'https://schema.org/ItemListOrderDescending', numberOfItems: apps.length,
+    itemListElement: apps.map((a, i) => ({ '@type': 'ListItem', position: i + 1, item: softwareLd(a, locale) })),
   };
 }
 
@@ -31,7 +51,7 @@ export function siteLd(locale: Locale, apps: App[]) {
   return [
     {
       '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${SITE}/#site`, url: home, name: 'Not a Cent', inLanguage: locale,
-      description: fr ? 'Annuaire d\'apps gratuites peaufinées pendant des mois, classées par jours de travail lus dans le repo GitHub, jamais par revenu.' : 'Directory of free apps polished for months, ranked by days of work read from the GitHub repo, never by revenue.',
+      description: fr ? 'Le travail vérifié, pas le revenu : des apps gratuites peaufinées pendant des mois, classées par jours de commit lus dans le repo GitHub. Être listé ne coûte pas un centime.' : 'Verified work, not revenue: free apps polished for months, ranked by commit days read from the GitHub repo. Being listed costs not a cent.',
       publisher: { '@type': 'Organization', name: 'Not a Cent', url: SITE, logo: `${SITE}/favicon.svg` },
     },
     {

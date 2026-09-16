@@ -1,0 +1,9 @@
+---
+import Liste from '../../components/Liste.astro';
+import { browseFromParams } from '../../lib/browse';
+export const prerender = false;
+// /outil/claude-code, /plateforme/mac, /langage/swift, /intention/radar : une page par filtre.
+const b = browseFromParams(Astro.params.kind ?? '', Astro.params.value ?? '');
+if (!b) return new Response(null, { status: 404 });
+---
+<Liste locale="fr" browse={b} />

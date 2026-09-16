@@ -1,0 +1,68 @@
+---
+import Base from '../layouts/Base.astro';
+import Row from './Row.astro';
+import Browse from './Browse.astro';
+import { t, localePath, type Locale } from '../i18n/strings';
+import { browseApps, type Browse as BrowseFilter } from '../lib/db';
+import { toView } from '../lib/view';
+import { browseLabel, browseLede, browsePath } from '../lib/browse';
+import { listLd, breadcrumbLd } from '../lib/seo';
+import { apps as samples } from '../data/apps';
+// Une page « Parcourir » : un titre, une phrase, un classement, une alerte. Indexable, régénérée à chaque visite.
+interface Props { locale: Locale; browse: BrowseFilter }
+const { locale, browse } = Astro.props;
+const s = t(locale);
+const title = browseLabel(browse, locale);
+const lede = browseLede(browse, locale);
+const rows = await browseApps(browse).catch(() => []);
+const real = rows.map(toView);
+// Sans base branchée, on montre les échantillons qui correspondent, pour que la page ne soit jamais vide en dev.
+const sample = !rows.length && !(import.meta.env.DATABASE_URL ?? process.env.DATABASE_URL);
+const board = sample
+  ? samples.filter((a) => (browse.kind === 'tool' ? a.tool === browse.value : browse.kind === 'platform' ? a.platform === browse.value : browse.kind === 'language' ? a.language === browse.value : browse.value === 'takeover' ? a.takeover : true))
+  : real;
+const path = browsePath(browse, 'fr');
+const rss = `/flux/${path.split('/').slice(1).join('/')}.xml`;
+const alertMsg = { ok: s.alertOk, exists: s.alertExists, bad: s.alertBad }[Astro.url.searchParams.get('alerte') ?? ''] ?? '';
+---
+<Base locale={locale} path={path} title={title} description={lede} jsonLd={[breadcrumbLd(locale, [[s.home, '/'], [title, path]]), listLd(locale, title, board, path)]}>
+  <p class="crumb"><a href={localePath(locale, '/')}>{s.home}</a> › <span>{title}</span></p>
+  <section class="head">
+    <div>
+      <h1>{title}</h1>
+      <p class="lede">{lede}</p>
+    </div>
+    <form class="sk alert" method="post" action="/api/alertes">
+      <input type="hidden" name="kind" value={browse.kind} /><input type="hidden" name="value" value={browse.value} /><input type="hidden" name="lang" value={locale} /><input type="hidden" name="back" value={localePath(locale, path)} />
+      <label class="hand" for="alert-email">{s.alertBtn}</label>
+      <div class="line"><input id="alert-email" name="email" type="email" required placeholder={s.alertPlaceholder} /><button class="sk sk-btn primary" type="submit">OK</button></div>
+      <small>{alertMsg ? <b class="hand msg">{alertMsg}</b> : s.alertNote} · <a href={rss}>{s.rss}</a></small>
+    </form>
+  </section>
+  {board.length === 0 && <p class="nobody hand">{s.nobody} {s.nobodyHint} <a href={localePath(locale, '/ajouter')}>{s.add}</a></p>}
+  <div class="cols hand" aria-hidden="true"><span></span><span></span><span>{s.colWeeks}</span><span class="r">{s.colDays}</span><span class="r">{s.colBravos}</span></div>
+  <div class="board">
+    {board.map((a, i) => <Row app={a} rank={i + 1} locale={locale} seed={i + 1} />)}
+  </div>
+  <Browse locale={locale} sample={sample} />
+</Base>
+<style>
+.crumb{color:var(--pencil);font-size:14px;margin:0 0 18px}
+.crumb a{color:inherit}
+.crumb span{color:var(--ink)}
+.head{display:grid;grid-template-columns:1.3fr .9fr;gap:32px;align-items:start;margin-bottom:28px}
+h1{font:700 clamp(36px,6vw,54px)/1 var(--hand);margin:0 0 10px;text-wrap:balance}
+.lede{max-width:52ch;margin:0;font-size:17px}
+.alert{padding:14px 16px;display:flex;flex-direction:column;gap:8px;background:var(--paper-2)}
+.alert label{font:700 20px/1 var(--hand)}
+.line{display:flex;gap:8px}
+.line input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:2px solid var(--ink);border-radius:var(--sk2);padding:8px 12px}
+.alert small{color:var(--pencil);font-size:13px}
+.alert small a{color:inherit}
+.msg{color:var(--redpen);font-size:17px}
+.nobody{color:var(--redpen);font-size:18px;margin:0 0 14px}
+.cols{display:grid;grid-template-columns:36px 1fr 120px 130px 72px;gap:16px;padding:0 18px;font:500 15px/1 var(--hand);color:var(--pencil);margin:6px 0 4px}
+.cols .r{text-align:right}
+.board{display:grid;gap:14px}
+@media (max-width:760px){.head{grid-template-columns:1fr}.cols{display:none}}
+</style>

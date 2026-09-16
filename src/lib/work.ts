@@ -1,4 +1,10 @@
 // Les calculs purs, sans GitHub : importables depuis les scripts node (prospect.mjs) comme depuis le site.
+// Un commit de robot n'est pas du travail : dependabot, renovate, github-actions et consorts sont ignorés.
+export interface CommitLike { author?: { login?: string; type?: string } | null; commit: { author?: { name?: string; email?: string; date?: string }; committer?: { name?: string; email?: string; date?: string } } }
+const BOT = /\[bot\]|dependabot|renovate|github-actions|actions-user|greenkeeper|semantic-release|snyk|imgbot|allcontributors|copilot/i;
+export const isBot = (c: CommitLike) =>
+  c.author?.type === 'Bot' || BOT.test(c.author?.login ?? '') || BOT.test(c.commit.author?.name ?? '') || BOT.test(c.commit.author?.email ?? '') || BOT.test(c.commit.committer?.name ?? '');
+
 export interface Metrics {
   commits: number; active_days: number; active_days_30: number; best_streak_weeks: number;
   first_commit: string | null; last_commit: string | null; weekly: number[];

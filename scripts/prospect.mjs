@@ -4,11 +4,12 @@
 //   npm run prospect                    toutes les recherches, 40 candidats retenus chacune
 //   npm run prospect -- mac cli-rust    seulement ces recherches
 //   npm run prospect -- --limit 20      moins de candidats par recherche
+//   npm run prospect -- --refresh       relit les commits des candidats déjà trouvés (après un changement de règle)
 //
 // Jeton GitHub : GITHUB_TOKEN dans .env.local, sinon celui de `gh auth login`.
 import { execSync } from 'node:child_process';
 import { neon } from '@neondatabase/serverless';
-import { compute } from '../src/lib/work.ts';
+import { compute, isBot } from '../src/lib/work.ts';
 import { guessPlatform } from '../src/lib/platform.ts';
 
 const url = process.env.DATABASE_URL;
@@ -85,6 +86,7 @@ async function commits(fullName, ownerLogin) {
     });
     if (!res.ok) break;
     for (const c of await res.json()) {
+      if (isBot(c)) continue;
       const d = c.commit?.author?.date ?? c.commit?.committer?.date;
       if (d) dates.push(d);
       const e = c.commit?.author?.email ?? '';
@@ -95,6 +97,25 @@ async function commits(fullName, ownerLogin) {
     next = m ? m[1] : null;
   }
   return { dates, email };
+}
+
+const score = (m, stars) => m.active_days * m.best_streak_weeks / (stars + 5);
+
+if (args.includes('--refresh')) {
+  const rows = await sql.query(`select id, full_name, owner_login, stars, metrics from outreach where status = 'found' order by score desc`);
+  let dropped = 0;
+  for (const row of rows) {
+    const { dates } = await commits(row.full_name, row.owner_login);
+    const m = compute(dates);
+    if (m.active_days < 20 || m.active_days_30 < 2) {
+      await sql.query(`update outreach set status = 'ignored', note = 'refresh : trop peu de travail humain', metrics = $2 where id = $1`, [row.id, JSON.stringify({ ...row.metrics, ...m })]);
+      dropped++; console.log(`  · ${row.full_name} : ${m.active_days} j, ${m.active_days_30} ce mois, écarté`); continue;
+    }
+    await sql.query(`update outreach set metrics = $2, score = $3 where id = $1`, [row.id, JSON.stringify({ ...row.metrics, ...m }), score(m, row.stars)]);
+    console.log(`  ✓ ${row.full_name} · ${row.metrics.active_days} → ${m.active_days} j · ${m.best_streak_weeks} sem`);
+  }
+  console.log(`\n${rows.length} candidats relus, ${dropped} écartés`);
+  process.exit(0);
 }
 
 let found = 0, kept = 0;
@@ -128,7 +149,7 @@ for (const name of names) {
       const owner = (await gh(`/users/${r.owner.login}`)) ?? {};
       const release = await gh(`/repos/${r.full_name}/releases/latest`);
       // Score pépite : jours actifs × plus longue série ÷ (étoiles + 5). Du travail régulier, que personne n'a vu.
-      const score = m.active_days * m.best_streak_weeks / (r.stargazers_count + 5);
+      const sc = score(m, r.stargazers_count);
       await sql.query(
         `insert into outreach (repo_id, full_name, name, description, language, homepage, topics, stars, contributors, has_release, repo_created, pushed_at,
            owner_id, owner_login, owner_name, owner_avatar, owner_email, commit_email, owner_blog, owner_twitter, owner_location, metrics, score, query)
@@ -136,11 +157,11 @@ for (const name of names) {
          on conflict (repo_id) do update set stars = excluded.stars, pushed_at = excluded.pushed_at, metrics = excluded.metrics, score = excluded.score`,
         [r.id, r.full_name, r.name, r.description, r.language, r.homepage, r.topics ?? [], r.stargazers_count, contributors.length || 1, Boolean(release), r.created_at, r.pushed_at,
          r.owner.id, r.owner.login, owner.name ?? null, owner.avatar_url ?? null, owner.email ?? null, commitEmail, owner.blog || null, owner.twitter_username ?? null, owner.location ?? null,
-         JSON.stringify({ ...m, platform: guessPlatform({ language: r.language, topics: r.topics, name: r.name, description: r.description, homepage: r.homepage }) }), score, name],
+         JSON.stringify({ ...m, platform: guessPlatform({ language: r.language, topics: r.topics, name: r.name, description: r.description, homepage: r.homepage }) }), sc, name],
       );
       known.add(String(r.id));
       kept++;
-      console.log(`  ✓ ${r.full_name} · ${m.active_days} j · ${m.best_streak_weeks} sem · ★ ${r.stargazers_count} · score ${score.toFixed(1)} · ${owner.email ? 'email profil' : commitEmail ? 'email commit' : 'pas d\'email'}`);
+      console.log(`  ✓ ${r.full_name} · ${m.active_days} j · ${m.best_streak_weeks} sem · ★ ${r.stargazers_count} · score ${sc.toFixed(0)} · ${owner.email ? 'email profil' : commitEmail ? 'email commit' : 'pas d\'email'}`);
     } catch (e) { console.error(`  ✗ ${r.full_name}`, e.message); }
   }
 }

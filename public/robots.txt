@@ -24,4 +24,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://notacent.vercel.app/sitemap.xml
+Sitemap: https://notacent.app/sitemap.xml

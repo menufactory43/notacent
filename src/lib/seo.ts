@@ -1,6 +1,6 @@
 import type { App } from '../data/apps';
 import type { Locale } from '../i18n/strings';
-export const SITE = 'https://notacent.vercel.app';
+export const SITE = 'https://notacent.app';
 
 // Données structurées : ce qu'un moteur, et l'assistant qui s'en sert, lisent d'une app sans deviner.
 export function softwareLd(app: App, locale: Locale) {

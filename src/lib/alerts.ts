@@ -6,7 +6,7 @@ import type { Locale } from '../i18n/strings';
 
 const env = (k: string) => (import.meta.env[k] ?? process.env[k] ?? '') as string;
 export const mailReady = () => Boolean(env('RESEND_API_KEY'));
-const FROM = () => env('ALERT_FROM') || 'Not a Cent <alertes@notacent.vercel.app>';
+const FROM = () => env('ALERT_FROM') || 'Not a Cent <alertes@notacent.app>';
 
 // Un mail par alerte, une fois par semaine, seulement s'il y a des apps à montrer. Envoyé par Resend, sans SDK.
 export async function sendAlerts(): Promise<{ sent: number; skipped: number }> {
@@ -30,7 +30,7 @@ export async function sendAlerts(): Promise<{ sent: number; skipped: number }> {
 <p style="font-size:22px;font-weight:700;margin:0 0 6px">Not a Cent · ${esc(label)}</p>
 <p style="color:#6B6979;margin:0 0 20px">${locale === 'fr' ? 'Ce qui est arrivé cette semaine dans ton filtre. Les chiffres viennent du repo.' : 'What landed in your filter this week. The numbers come from the repo.'}</p>
 ${lines.join('\n')}
-<p style="color:#6B6979;font-size:13px;margin-top:24px">${locale === 'fr' ? 'Tu reçois ce mail parce que tu as créé une alerte sur' : 'You get this because you created an alert on'} <a href="${SITE}" style="color:#6B6979">notacent.vercel.app</a>. <a href="${unsub}" style="color:#6B6979">${locale === 'fr' ? 'Ne plus recevoir' : 'Unsubscribe'}</a></p>
+<p style="color:#6B6979;font-size:13px;margin-top:24px">${locale === 'fr' ? 'Tu reçois ce mail parce que tu as créé une alerte sur' : 'You get this because you created an alert on'} <a href="${SITE}" style="color:#6B6979">notacent.app</a>. <a href="${unsub}" style="color:#6B6979">${locale === 'fr' ? 'Ne plus recevoir' : 'Unsubscribe'}</a></p>
 </div>`;
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${env('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },

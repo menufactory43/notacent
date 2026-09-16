@@ -32,7 +32,7 @@ Le site expose un serveur [MCP](https://modelcontextprotocol.io) sans état ni a
 `how_to_submit`. Il sert exactement ce que les pages montrent ; publier une app passe toujours par GitHub.
 
     node scripts/mcp-smoke.mjs                                 # contre le serveur de dev
-    node scripts/mcp-smoke.mjs https://notacent.vercel.app/api/mcp
+    node scripts/mcp-smoke.mjs https://notacent.app/api/mcp
 
-Pour l'essayer dans Claude Code : `claude mcp add --transport http notacent https://notacent.vercel.app/api/mcp`.
+Pour l'essayer dans Claude Code : `claude mcp add --transport http notacent https://notacent.app/api/mcp`.
 Soumission aux annuaires : voir INSTALLATION.md.

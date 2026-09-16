@@ -21,10 +21,10 @@ export const POST: APIRoute = ({ request }) => handle(request);
 export const GET: APIRoute = ({ request }) => {
   if (!(request.headers.get('accept') ?? '').includes('text/event-stream')) {
     return Response.json({
-      name: 'Not a Cent', protocol: 'Model Context Protocol', transport: 'streamable-http', endpoint: 'https://notacent.vercel.app/api/mcp', auth: 'none',
+      name: 'Not a Cent', protocol: 'Model Context Protocol', transport: 'streamable-http', endpoint: 'https://notacent.app/api/mcp', auth: 'none',
       tools: ['search_apps', 'get_app', 'top_apps', 'how_to_submit'], readOnly: true,
-      privacy: 'https://notacent.vercel.app/en/confidentialite',
-      try: 'claude mcp add --transport http notacent https://notacent.vercel.app/api/mcp',
+      privacy: 'https://notacent.app/en/confidentialite',
+      try: 'claude mcp add --transport http notacent https://notacent.app/api/mcp',
     }, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   return handle(request);

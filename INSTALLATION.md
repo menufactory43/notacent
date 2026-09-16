@@ -9,8 +9,8 @@ https://github.com/settings/apps/new (GitHub demande une vérification par e-mai
 | Champ | Valeur |
 |---|---|
 | GitHub App name | `Not a Cent` |
-| Homepage URL | `https://notacent.vercel.app` |
-| Callback URL | `https://notacent.vercel.app/api/auth/callback` |
+| Homepage URL | `https://notacent.app` |
+| Callback URL | `https://notacent.app/api/auth/callback` |
 | Expire user authorization tokens | décoché |
 | Request user authorization (OAuth) during installation | **coché** |
 | Setup URL | vide |
@@ -55,7 +55,7 @@ Le code est prêt, il s'active dès que les clés existent. Sans elles, le bouto
 pbpaste | npx vercel env add STRIPE_SECRET_KEY production --yes
 ```
 
-2. Sur https://dashboard.stripe.com/webhooks, ajoute un endpoint `https://notacent.vercel.app/api/sponsor/webhook` qui écoute `checkout.session.completed`, copie son secret de signature, puis :
+2. Sur https://dashboard.stripe.com/webhooks, ajoute un endpoint `https://notacent.app/api/sponsor/webhook` qui écoute `checkout.session.completed`, copie son secret de signature, puis :
 
 ```
 pbpaste | npx vercel env add STRIPE_WEBHOOK_SECRET production --yes
@@ -76,14 +76,14 @@ Le serveur (`/api/mcp`) est public, sans OAuth, en lecture seule ; la politique 
 `/confidentialite` et `/en/confidentialite`. Avant de soumettre, vérifie qu'il répond en production :
 
 ```
-node scripts/mcp-smoke.mjs https://notacent.vercel.app/api/mcp
+node scripts/mcp-smoke.mjs https://notacent.app/api/mcp
 ```
 
 ## ChatGPT (Apps SDK)
 
 1. https://platform.openai.com → Apps → **Submit**. Il faut un compte développeur OpenAI vérifié.
-2. Serveur MCP : `https://notacent.vercel.app/api/mcp`, authentification : aucune.
-3. Métadonnées : nom « Not a Cent », description « Free apps polished for months, ranked by days of work read from the repo, not by revenue », icône `public/favicon.svg`, politique de confidentialité `https://notacent.vercel.app/en/confidentialite`, pays : tous.
+2. Serveur MCP : `https://notacent.app/api/mcp`, authentification : aucune.
+3. Métadonnées : nom « Not a Cent », description « Free apps polished for months, ranked by days of work read from the repo, not by revenue », icône `public/favicon.svg`, politique de confidentialité `https://notacent.app/en/confidentialite`, pays : tous.
 4. Consignes de test pour le reviewer : « Ask: *find me a free Mac app for messaging* → the assistant calls `search_apps`. Ask: *what took the maker of Correspondance the longest?* → `get_app`. » Aucun compte de test nécessaire.
 5. Le tableau de bord donne l'état de la revue et les retours.
 
@@ -91,7 +91,7 @@ node scripts/mcp-smoke.mjs https://notacent.vercel.app/api/mcp
 
 La soumission se fait dans Claude.ai › réglages d'organisation › Connectors, ce qui demande un plan **Team ou Enterprise**.
 Même URL, même politique de confidentialité ; les outils portent déjà les annotations `readOnlyHint` que la revue exige.
-En attendant, n'importe qui peut l'ajouter à la main : `claude mcp add --transport http notacent https://notacent.vercel.app/api/mcp`.
+En attendant, n'importe qui peut l'ajouter à la main : `claude mcp add --transport http notacent https://notacent.app/api/mcp`.
 
 # Brancher les alertes par mail (Resend)
 

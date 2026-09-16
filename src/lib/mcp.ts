@@ -7,7 +7,7 @@ import { toView } from './view';
 // Aucune authentification : tout ce qu'il sert est déjà public sur le site.
 // Soumettre passe par GitHub, donc l'outil renvoie le chemin, il ne publie pas lui-même.
 
-const SITE = 'https://notacent.vercel.app';
+const SITE = 'https://notacent.app';
 
 function card(a: DbApp) {
   const v = toView(a);
@@ -56,7 +56,7 @@ export function createServer() {
   server.registerTool('get_app', {
     title: 'Get one app',
     description: 'Full card of one app by its slug: what it does, what took the maker the longest, active days, commits, streak, links.',
-    inputSchema: { slug: z.string().min(1).max(100).describe('The app slug, as returned by search_apps or seen in notacent.vercel.app/app/<slug>') },
+    inputSchema: { slug: z.string().min(1).max(100).describe('The app slug, as returned by search_apps or seen in notacent.app/app/<slug>') },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, async ({ slug }) => {
     const a = await appBySlug(slug.toLowerCase());

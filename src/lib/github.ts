@@ -5,7 +5,7 @@ const env = (k: string) => (import.meta.env[k] ?? process.env[k] ?? '') as strin
 export const appSlug = () => env('GITHUB_APP_SLUG');
 export const clientId = () => env('GITHUB_CLIENT_ID');
 export const githubReady = () => Boolean(clientId() && env('GITHUB_CLIENT_SECRET'));
-const UA = 'notacent (+https://notacent.vercel.app)';
+const UA = 'notacent (+https://notacent.app)';
 
 export async function gh<T>(path: string, token: string, init: RequestInit = {}): Promise<{ data: T; next: string | null }> {
   const res = await fetch(path.startsWith('http') ? path : `https://api.github.com${path}`, {

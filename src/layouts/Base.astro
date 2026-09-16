@@ -40,6 +40,7 @@ const ogImage = new URL(image ?? (locale === 'fr' ? '/og.png' : '/og-en.png'), A
   <link rel="alternate" hreflang="en" href={new URL(localePath('en', path), Astro.site ?? Astro.url)} />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="sitemap" href="/sitemap.xml" />
+  <script defer src="/_vercel/insights/script.js"></script>
   {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

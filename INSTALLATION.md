@@ -92,3 +92,16 @@ node scripts/mcp-smoke.mjs https://notacent.vercel.app/api/mcp
 La soumission se fait dans Claude.ai › réglages d'organisation › Connectors, ce qui demande un plan **Team ou Enterprise**.
 Même URL, même politique de confidentialité ; les outils portent déjà les annotations `readOnlyHint` que la revue exige.
 En attendant, n'importe qui peut l'ajouter à la main : `claude mcp add --transport http notacent https://notacent.vercel.app/api/mcp`.
+
+# Brancher les alertes par mail (Resend)
+
+Les alertes sont gratuites : un filtre (outil, plateforme, langage, intention), un mail par semaine au plus, seulement quand des apps sont arrivées dedans. Elles partent à la fin du cron quotidien. Sans clé, elles sont enregistrées mais rien n'est envoyé.
+
+1. Sur https://resend.com, crée une clé API et vérifie un domaine d'envoi, puis :
+
+```
+pbpaste | npx vercel env add RESEND_API_KEY production --yes
+echo "Not a Cent <alertes@ton-domaine.fr>" | npx vercel env add ALERT_FROM production --yes
+```
+
+2. Redéploie. Le lien de désinscription est dans chaque mail (`/api/alertes?token=…&stop=1`).

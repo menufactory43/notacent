@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
 import { currentUser } from '../../../lib/session';
 import { PLATFORMS } from '../../../lib/platform';
+import { pingIndexNow, appPaths } from '../../../lib/indexnow';
 export const prerender = false;
 const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre'];
 const clean = (v: FormDataEntryValue | null, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '') || null;
@@ -32,6 +33,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     [httpOnly(clean(f.get('url'), 500)), httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, user.id, image, imageType, clean(f.get('tagline'), 140), platform, takeover],
   )) as { id: number; slug: string }[];
   if (!rows.length) return redirect(`${lang}/?erreur=fiche`, 302);
+  await pingIndexNow(appPaths(rows[0].slug));
   if (status !== 'polishing') await sql.query(`insert into activity (app_id, kind, payload) values ($1, 'status', $2)`, [rows[0].id, JSON.stringify({ status })]);
   if (takeover && before && !before.takeover) await sql.query(`insert into activity (app_id, kind) values ($1, 'takeover')`, [rows[0].id]);
   const batch = (cookies.get('nac_batch')?.value ?? '').split(',').filter((x) => x && x !== rows[0].slug);

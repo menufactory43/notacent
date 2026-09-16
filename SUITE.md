@@ -1,6 +1,6 @@
 # Où on en est, et la suite
 
-Mis à jour le 17 septembre 2026, à la fin de la session qui a mis le site sur notacent.app.
+Mis à jour le 17 septembre 2026, à la fin de la session qui a codé les fiches non réclamées et les coulisses.
 
 ## Le positionnement
 
@@ -33,38 +33,37 @@ Jamais l'entrée, jamais le badge, jamais le dofollow, jamais les tampons.
 
 ## La suite, dans l'ordre
 
-### 1. Fiches non réclamées et prospection (à attaquer demain)
+### 1. Fiches non réclamées et prospection (codé, à déployer puis à faire tourner)
 
 Le problème : 11 apps. Personne, humain ou IA, ne recommande un annuaire à 11 fiches.
 
-Le mécanisme : une fiche créée sous un compte maker avec son identifiant GitHub, sans jeton. Quand il se connecte, le compte fusionne (le upsert sur github_id existe déjà dans le callback) et la fiche est à lui. Réclamer = se connecter.
+Ce que font les annuaires pour grandir, dans l'ordre : préremplir large à partir de données publiques et laisser réclamer (AlternativeTo, Crunchbase, les annuaires MCP), le badge dans le README comme lien entrant (PeerPush, TrustMRR, Product Hunt), la donnée qu'on cite (classements, pages par catégorie), puis un lancement groupé quand l'annuaire a l'air plein. La prospection à froid n'est pas un moteur, c'est un accélérateur sur les plus belles fiches.
 
-À coder :
-- Table `outreach` : app_id, email, sent_at, status (listed / sent / claimed / no / ignored), note.
-- Page privée `/coulisses` réservée au login `ADMIN_LOGIN`. Trois colonnes, clavier : J/K pour naviguer, L lister, E composer le mail, X ignorer.
-- Recherches prêtes via l'API GitHub Search : apps Mac SwiftUI actives depuis 6 mois avec < 50 étoiles ; outils CLI Rust/Go ; repos avec un `CLAUDE.md` ; etc. Score pépite = durée × activité ÷ (étoiles + 5).
-- Chaque candidat : nom, phrase, langage, étoiles, premier et dernier push, site, nombre de contributeurs, email public du profil GitHub (l'email des commits derrière une case à cocher).
-- Lister : lit les dates de commit avec le jeton admin, crée la fiche en pointillé « non réclamée » (déjà rendue par Row.astro via la mention).
-- Composer : texte brut personnalisé avec les vrais chiffres (rang, jours, série), bouton copier + export CSV pour Mailmeteor. Un mail par maker, jamais de relance automatique.
-- Un « non » retire la fiche et bloque le login de ce github_id.
-- Une fiche non réclamée n'a ni tampon « à reprendre » ni lien dofollow tant que le maker n'a pas mis son URL.
+Le mécanisme : une fiche créée sous un compte maker avec son identifiant GitHub, sans jeton (`users.claimed = false`). Quand il se connecte, le upsert du callback retrouve le compte, le passe en `claimed`, et la fiche est à lui : il atterrit direct sur la page de modification. Réclamer = se connecter.
 
-Envoi : depuis le Gmail de Gabriel avec Mailmeteor (50 par jour max), pas via Resend (interdit pour la prospection). Plus tard : domaine dédié + Google Workspace + chauffe, le montage PeerPush.
+Ce qui est codé :
+- `npm run prospect` (`scripts/prospect.mjs`) : quatorze recherches GitHub (Mac, menubar, SwiftUI, iOS, CLI Rust et Go, TUI, Tauri, Electron, MCP, indie, side-project, claude-code), filtre sur une personne, un site, une description, au plus 3 contributeurs, au moins 20 jours actifs et 2 ce mois. Score pépite = durée × activité ÷ (étoiles + 5). Email du profil public, sinon email des commits mis de côté. Jeton : `GITHUB_TOKEN` ou celui de `gh auth login`. Tout va dans la table `outreach`, rien n'est publié.
+- `/coulisses` (login `ADMIN_LOGIN`) : trois colonnes, à lister / listées / envoyées. J K pour bouger, L lister, E composer, X ignorer. Composer génère le mail (FR ou EN selon le profil) avec les vrais chiffres et le rang, bouton copier, bouton « ouvrir dans Gmail » prérempli, « marquer envoyé ». Export CSV sur `/api/coulisses`.
+- Une fiche non réclamée : bordure en pointillé et mention dans le classement, bloc « fiche non réclamée » avec le bouton « Réclamer ma fiche » à la place du badge, lien de sortie en nofollow, pas de tampon « à reprendre ». Le cron la relit chaque nuit avec le jeton de l'admin.
+- « A dit non » : la fiche part, le compte fantôme est bloqué (plus jamais relisté), les adresses sont effacées. Le login reste possible : s'il vient lui-même, c'est son choix.
+- Réclamée : événement « a réclamé sa fiche » dans le fil, adresses effacées, statut `claimed` dans les coulisses.
+- Confidentialité : paragraphe « Les fiches non réclamées » (source, base légale, effacement, opposition en une réponse).
 
-Texte de référence :
+Le rituel :
+1. `npm run prospect`, puis dans `/coulisses`, lister les 200 à 300 candidats qui tiennent la route (une vraie app, un vrai site). Le site paraît vivant, Google indexe autant de pages en plus.
+2. Écrire à la main aux 50 meilleures fiches, celles qui ont une adresse et un score haut. Le mail vend le badge et le rang, pas la fiche. 5 par jour la première semaine, 10 la deuxième, 20 ensuite. Un mail par maker, jamais de relance.
+3. Lancer sur Show HN et Product Hunt une fois que l'annuaire a l'air plein, le classement comme angle.
 
-> Bonjour Léa,
-> J'ai trouvé Sémaphore sur GitHub : 167 jours de commits depuis janvier, 19 semaines d'affilée. Ça méritait une fiche sur Not a Cent, un annuaire où on classe les apps par travail vérifié, pas par revenu. Elle est 2e des apps Mac.
-> notacent.app/app/semaphore
-> C'est gratuit, ça ne le sera jamais. Si tu te connectes avec GitHub, la fiche est à toi : une phrase, une image, et un badge « 167 jours actifs, vérifié » pour ton README. Si tu préfères qu'elle disparaisse, réponds « non » et je la retire.
-> Gabriel
+Envoi : depuis un Google Workspace sur un domaine cousin (notacent.co ou équivalent, environ 10 € l'an plus 7 € le mois), SPF, DKIM et DMARC posés dès le premier jour, jamais depuis notacent.app ni Resend (interdit pour la prospection). Pas de publipostage ni de pixel d'ouverture : la seule mesure qui compte, c'est `claimed`, et le site la connaît seul. À 50 par jour en continu, et seulement là, Instantly avec trois boîtes.
 
-Objectif : 100 apps listées, rituel hebdo ensuite.
+Une règle GitHub à respecter : ses conditions interdisent d'utiliser les données de l'API pour du mail non sollicité en masse. Ce qui nous protège : volume faible, un mail écrit pour une personne, une fiche déjà créée pour elle, un « non » qui efface tout.
+
+Objectif : 300 fiches listées, 100 réclamées, rituel hebdo ensuite.
 
 ### 2. Indexation et découverte par les IA (dix minutes, à faire demain aussi)
 
 - Bing Webmaster Tools : https://www.bing.com/webmasters, import depuis Search Console. C'est l'index de ChatGPT.
-- IndexNow (clé + ping à chaque nouvelle fiche), petit ajout au cron.
+- IndexNow : fait. Clé `INDEXNOW_KEY`, servie sur `/indexnow.txt`, ping à chaque fiche listée, publiée ou modifiée, et toutes les pages après le cron. Reste à vérifier sur Bing Webmaster (onglet IndexNow) que les envois arrivent.
 - Vérifier que le domaine Resend est « Verified » sur https://resend.com/domains.
 
 ### 3. Pages « alternative à » (une demi-journée)
@@ -85,7 +84,7 @@ Mise en avant payante, « à reprendre » épinglé, palier alertes payant, news
 
 ## Repères
 
-- Secrets sur Vercel : STRIPE_SECRET_KEY (clé restreinte), STRIPE_WEBHOOK_SECRET, SPONSOR_PRICE_CENTS=2900, RESEND_API_KEY, ALERT_FROM, CRON_SECRET, GitHub App.
+- Secrets sur Vercel : STRIPE_SECRET_KEY (clé restreinte), STRIPE_WEBHOOK_SECRET, SPONSOR_PRICE_CENTS=2900, RESEND_API_KEY, ALERT_FROM, CRON_SECRET, ADMIN_LOGIN, INDEXNOW_KEY, GitHub App.
 - Installation et branchements : INSTALLATION.md.
 - Mockup de référence (canvas) : https://claude.ai/artifact/WqpFyx2GvMMkkGrkBvXgRA
 - Le cron local passe par les jetons utilisateur (pas de clé privée GitHub App en local), en prod par le jeton d'installation.

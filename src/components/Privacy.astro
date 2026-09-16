@@ -27,6 +27,11 @@ const fr = locale === 'fr';
     </ul>
     <p>{fr ? 'Le geste « bravo » et les clics sont comptés par app, jamais par personne.' : '“Nice one” and clicks are counted per app, never per person.'}</p>
 
+    <h2>{fr ? 'Les fiches non réclamées' : 'Unclaimed cards'}</h2>
+    <p>{fr
+      ? 'Certaines fiches sont créées par nous, à la main, à partir d\'un repo public : le nom, la description, le langage, le site et les dates de commit que GitHub montre à tout le monde. Elles portent la mention « non réclamée », n\'ont ni badge ni lien dofollow, et le maker peut les prendre en main en se connectant avec GitHub. On lui écrit une fois, à l\'adresse publique de son profil GitHub (ou, à défaut, celle de ses commits), pour le prévenir. Cette adresse ne sert qu\'à ce mail et elle est effacée dès qu\'il répond ou réclame sa fiche. Jamais de relance. Un « non » en réponse suffit : la fiche disparaît et le repo n\'est plus jamais listé. Base légale : notre intérêt légitime à montrer du travail public, avec ton droit d\'opposition en une réponse.'
+      : 'Some cards are created by us, by hand, from a public repo: the name, description, language, website and commit dates GitHub shows to everyone. They are marked “unclaimed”, carry no badge and no dofollow link, and the maker can take them over by signing in with GitHub. We write once, to the public email on their GitHub profile (or, failing that, the one on their commits), to let them know. That address is used for this one email only and deleted as soon as they reply or claim the card. Never a follow-up. A “no” in reply is enough: the card disappears and the repo is never listed again. Legal basis: our legitimate interest in showing public work, with your right to object in one reply.'}</p>
+
     <h2>{fr ? 'Les assistants (ChatGPT, Claude…)' : 'Assistants (ChatGPT, Claude…)'}</h2>
     <p>{fr
       ? 'Not a Cent expose un serveur MCP public en lecture seule (/api/mcp). Un assistant peut y chercher une app, lire une fiche ou le classement : exactement ce que cette page web montre déjà, rien de plus. Aucune donnée de l\'assistant ni de son utilisateur n\'est conservée ; il n\'y a ni compte ni jeton de ce côté. Publier une app passe toujours par ce site et GitHub.'
@@ -39,7 +44,7 @@ const fr = locale === 'fr';
 
     <h2>{fr ? 'Qui' : 'Who'}</h2>
     <p>{fr ? 'Not a Cent est fait main par un développeur indépendant en France. Hébergé chez Vercel, base chez Neon (Europe). Contact : ' : 'Not a Cent is handmade by an independent developer in France. Hosted on Vercel, database at Neon (Europe). Contact: '}<a href="mailto:meffysto@gmail.com">meffysto@gmail.com</a>.</p>
-    <p class="mono small">{fr ? 'Dernière mise à jour : 9 septembre 2026.' : 'Last updated: September 9, 2026.'}</p>
+    <p class="mono small">{fr ? 'Dernière mise à jour : 17 septembre 2026.' : 'Last updated: September 17, 2026.'}</p>
   </article>
 </Base>
 <style>

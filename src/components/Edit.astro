@@ -29,6 +29,7 @@ const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.ima
     <p class="lede">{s.editLede}{inBatch && <span class="hand batch"> · {s.batchOf(pos + 1, batch.length)}</span>}</p>
     <form method="post" action="/api/apps/update" class="sk" enctype="multipart/form-data">
       {Astro.url.searchParams.get('erreur') === 'image' && <p class="err hand">{s.errImage}</p>}
+      {Astro.url.searchParams.get('reclamee') === '1' && <p class="ok hand">{s.claimed}</p>}
       <input type="hidden" name="slug" value={app.slug} />
       <label><span>{s.fName}</span><input name="name" value={app.name} maxlength="80" /></label>
       <label><span>{s.fTagline}</span><input name="tagline" value={app.tagline ?? app.description ?? ''} maxlength="140" /></label>
@@ -103,6 +104,7 @@ label{display:grid;gap:4px}
 label span{font:700 17px/1.2 var(--hand);color:var(--pencil)}
 label small{color:var(--pencil);font-size:13px}
 .err{color:var(--redpen);font-size:18px;margin:0}
+.ok{color:var(--ink);font-size:20px;margin:0;background:var(--mark);display:inline-block;padding:2px 8px}
 input[type=file]{border-style:dashed;padding:10px 12px}
 .pick{display:flex;gap:14px;align-items:flex-start}
 .pick>div{flex:1;display:grid;gap:4px}

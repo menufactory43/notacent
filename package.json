@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
-    "og": "node --experimental-strip-types scripts/og.mjs"
+    "og": "node --experimental-strip-types scripts/og.mjs",
+    "prospect": "node --env-file=.env.local --experimental-strip-types scripts/prospect.mjs"
   },
   "dependencies": {
     "@astrojs/vercel": "^11.0.10",

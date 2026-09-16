@@ -79,3 +79,43 @@ create table if not exists alerts (
   created_at timestamptz default now()
 );
 create unique index if not exists alerts_unique on alerts (email, filter);
+-- Fiches non réclamées : un compte créé depuis l'identifiant GitHub public, sans jeton. Se connecter = réclamer.
+alter table users add column if not exists claimed boolean default true;
+-- « Non » : la fiche part et on ne relistera jamais ce github_id. Le login reste possible, c'est alors son choix.
+alter table users add column if not exists blocked boolean default false;
+-- Prospection : les candidats trouvés par scripts/prospect.mjs, puis l'état de chaque mail (un seul, jamais de relance).
+create table if not exists outreach (
+  id serial primary key,
+  repo_id bigint unique not null,
+  full_name text not null,
+  name text not null,
+  description text,
+  language text,
+  homepage text,
+  topics text[] default '{}',
+  stars int default 0,
+  contributors int default 1,
+  has_release boolean default false,
+  repo_created timestamptz,
+  pushed_at timestamptz,
+  owner_id bigint not null,
+  owner_login text not null,
+  owner_name text,
+  owner_avatar text,
+  owner_email text,
+  commit_email text,
+  owner_blog text,
+  owner_twitter text,
+  owner_location text,
+  metrics jsonb default '{}',
+  score real default 0,
+  query text,
+  status text default 'found',
+  app_id int references apps(id) on delete set null,
+  note text,
+  listed_at timestamptz,
+  sent_at timestamptz,
+  answered_at timestamptz,
+  found_at timestamptz default now()
+);
+create index if not exists outreach_status on outreach (status, score desc);

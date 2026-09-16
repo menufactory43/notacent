@@ -4,6 +4,7 @@ import { currentUser } from '../../../lib/session';
 import { installationRepos, repoInfo } from '../../../lib/github';
 import { guessPlatform } from '../../../lib/platform';
 import { commitDates, compute } from '../../../lib/metrics';
+import { pingIndexNow, appPaths } from '../../../lib/indexnow';
 export const prerender = false;
 
 const slugify = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'app';
@@ -42,6 +43,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     slugs.push(row.slug);
   }
   if (!slugs.length) return redirect(`${lang}/ajouter`, 302);
+  await pingIndexNow(['/', '/en', ...slugs.flatMap(appPaths)]);
   // Plusieurs repos cochés : on enchaîne les fiches, une par une, dans l'ordre de publication.
   cookies.set('nac_batch', slugs.join(','), { path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 3600 });
   return redirect(`${lang}/app/${slugs[0]}/modifier`, 302);

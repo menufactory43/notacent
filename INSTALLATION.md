@@ -105,3 +105,36 @@ echo "Not a Cent <alertes@ton-domaine.fr>" | npx vercel env add ALERT_FROM produ
 ```
 
 2. Redéploie. Le lien de désinscription est dans chaque mail (`/api/alertes?token=…&stop=1`).
+
+# Les coulisses et la prospection
+
+`/coulisses` n'existe que pour le login GitHub nommé dans `ADMIN_LOGIN` (404 pour tout le monde d'autre) :
+
+```
+printf menufactory43 | npx vercel env add ADMIN_LOGIN production --yes
+echo "ADMIN_LOGIN=menufactory43" >> .env.local
+```
+
+Le même jeton que cet admin a laissé en se connectant sert au cron pour relire, chaque nuit, les fiches non réclamées (elles n'ont pas de jeton à elles).
+
+Chercher des candidats, en local, avec le jeton de `gh auth login` (ou `GITHUB_TOKEN` dans `.env.local`) :
+
+```
+npm run prospect                      # toutes les recherches, 40 candidats retenus chacune
+npm run prospect -- mac cli-rust      # seulement celles-là
+npm run prospect -- --limit 10        # plus court
+```
+
+Rien n'est publié par le script : lister, composer le mail et marquer envoyé se font dans `/coulisses`, à la main. L'export CSV des fiches listées avec une adresse est sur `/api/coulisses`.
+
+# IndexNow (Bing, et donc ChatGPT)
+
+Une clé de 32 caractères hexadécimaux, servie sur `/indexnow.txt` pour prouver qu'elle est à nous. Le site la pousse lui-même à chaque fiche listée, publiée ou modifiée, et pour toutes les pages à la fin du cron.
+
+```
+KEY=$(node -e "console.log(require('crypto').randomBytes(16).toString('hex'))")
+printf "$KEY" | npx vercel env add INDEXNOW_KEY production --yes
+echo "INDEXNOW_KEY=$KEY" >> .env.local
+```
+
+Les envois se vérifient sur https://www.bing.com/webmasters, onglet IndexNow.

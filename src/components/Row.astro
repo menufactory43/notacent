@@ -9,7 +9,7 @@ const s = t(locale);
 const last = app.lastCommitDaysAgo === 0 ? s.today : s.ago(app.lastCommitDaysAgo, 'j');
 const stampLabel = stamp === 'week' ? s.stampWeekShort : stamp === 'streak' ? s.stampStreak : stamp === 'radar' ? s.stampRadar : '';
 ---
-<article class:list={['sk', 'row', { sponsor: app.sponsored }]}>
+<article class:list={['sk', 'row', { sponsor: app.sponsored, unclaimed: app.unclaimed }]}>
   {app.sponsored
     ? <><div class="rank small">{s.sponsored}</div><span class="label">{s.sponsoredLabel}</span></>
     : <div class="rank">{rank}</div>}
@@ -20,6 +20,7 @@ const stampLabel = stamp === 'week' ? s.stampWeekShort : stamp === 'streak' ? s.
         <a href={localePath(locale, `/app/${app.slug}`)}>{app.name}</a>
         {stampLabel && <span class="stamp red">{stampLabel}</span>}
         {app.takeover && <span class="stamp ink">{s.stampTakeover}</span>}
+        {app.unclaimed && <span class="unclaimed-tag hand">{s.unclaimedStamp}</span>}
       </p>
       {app.tagline && <p class="tagline">{app.tagline}</p>}
       <p class="by">@{app.owner} <span class="tool">{app.tool}</span> · {app.language}{app.platform && <> · {app.platform}</>} · {s.last} <b>{last}</b></p>
@@ -55,6 +56,8 @@ const stampLabel = stamp === 'week' ? s.stampWeekShort : stamp === 'streak' ? s.
 .bravo .mono{font-weight:500}
 .margin{position:absolute;right:-8px;top:-14px;transform:rotate(3deg);font:700 17px/1 var(--hand);color:var(--redpen);background:var(--paper);padding:0 4px}
 .sponsor{border-style:dashed;border-color:var(--pencil);background:var(--paper-2)}
+.unclaimed{border-style:dashed;border-color:var(--faint)}
+.unclaimed-tag{font:500 15px/1 var(--hand);color:var(--pencil);border-bottom:1.5px dashed var(--pencil)}
 .label{font:700 15px/1 var(--hand);color:var(--pencil);position:absolute;top:-11px;left:24px;background:var(--paper-2);padding:0 6px}
 @media (max-width:760px){
   .row{grid-template-columns:1fr 1fr;gap:10px}

@@ -31,6 +31,7 @@ export interface App {
   stars?: number;
   platform?: string;
   takeover?: boolean;
+  unclaimed?: boolean; // fiche créée depuis le repo public, pas encore réclamée par son maker
 }
 
 function weekly(shape: 'up' | 'steady' | 'burst' | 'new', seed: number) {

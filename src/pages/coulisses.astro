@@ -1,0 +1,151 @@
+---
+import Base from '../layouts/Base.astro';
+import { currentUser } from '../lib/session';
+import { appBySlug } from '../lib/db';
+import { isAdmin, candidates, candidate, counts, composeMail, guessLocale, type Candidate } from '../lib/outreach';
+export const prerender = false;
+// Les coulisses : trois colonnes, à lister / listées / envoyées. Clavier : J K pour bouger, L lister, E composer, X ignorer.
+const user = await currentUser(Astro.cookies).catch(() => null);
+if (!isAdmin(user?.login)) return new Response(null, { status: 404 });
+const [found, listed, sent, n] = await Promise.all([candidates('found'), candidates('listed'), candidates(['sent', 'claimed', 'no']), counts()]);
+const msg = Astro.url.searchParams.get('msg') ?? '';
+const focus = Astro.url.searchParams.get('focus') ?? '';
+const composeId = Number(Astro.url.searchParams.get('compose') ?? 0);
+const target = composeId ? await candidate(composeId) : null;
+const lang = (Astro.url.searchParams.get('lang') as 'fr' | 'en' | null) ?? (target ? guessLocale(target) : 'en');
+const useCommit = Astro.url.searchParams.get('commit') === '1';
+const row = target?.slug ? await appBySlug(target.slug) : null;
+const mail = target ? await composeMail(target, lang, row) : null;
+const to = target ? (target.owner_email ?? (useCommit ? target.commit_email : null)) : null;
+const gmail = mail ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to ?? '')}&su=${encodeURIComponent(mail.subject)}&body=${encodeURIComponent(mail.body)}` : '';
+const d = (s: string | null | undefined) => (s ? new Date(s).toLocaleDateString('fr', { day: 'numeric', month: 'short', year: '2-digit' }) : '');
+const days = (c: Candidate) => c.active_days ?? c.metrics.active_days;
+const streak = (c: Candidate) => c.best_streak_weeks ?? c.metrics.best_streak_weeks;
+const cols: { key: string; title: string; items: Candidate[] }[] = [
+  { key: 'found', title: `À lister · ${n.found}`, items: found },
+  { key: 'listed', title: `Listées, à écrire · ${n.listed}`, items: listed },
+  { key: 'sent', title: `Envoyées · ${n.sent} · réclamées ${n.claimed} · non ${n.no}`, items: sent },
+];
+---
+<Base locale="fr" path="/coulisses" title="Coulisses">
+  <section class="coulisses">
+    <header class="top">
+      <h1>Coulisses</h1>
+      <p class="hand keys">J K bouger · L lister · E composer · X ignorer · <a href="/api/coulisses">CSV</a> · <code>npm run prospect</code> pour chercher</p>
+      {msg && <p class="sk msg hand">{msg}</p>}
+    </header>
+
+    {mail && target && (
+      <section class="sk compose" id="compose">
+        <div class="ch">
+          <b>{target.name}</b> · @{target.owner_login}
+          <span class="seg" role="group"><a href={`/coulisses?compose=${target.id}&lang=fr${useCommit ? '&commit=1' : ''}`} aria-current={lang === 'fr' ? 'page' : undefined}>FR</a><a href={`/coulisses?compose=${target.id}&lang=en${useCommit ? '&commit=1' : ''}`} aria-current={lang === 'en' ? 'page' : undefined}>EN</a></span>
+          <a class="close" href="/coulisses">fermer</a>
+        </div>
+        <p class="to mono">
+          à : {to ?? <i>pas d'adresse</i>}
+          {!target.owner_email && target.commit_email && !useCommit && <a class="chip" href={`/coulisses?compose=${target.id}&lang=${lang}&commit=1`}>utiliser l'email des commits</a>}
+          {target.owner_twitter && <a class="chip" href={`https://x.com/${target.owner_twitter}`} rel="noopener">@{target.owner_twitter}</a>}
+          {target.owner_blog && <a class="chip" href={target.owner_blog} rel="noopener">site</a>}
+        </p>
+        <p class="to mono">objet : {mail.subject}</p>
+        <textarea id="body" rows="14">{mail.body}</textarea>
+        <div class="actions">
+          <button class="sk sk-btn" type="button" id="copy" data-subject={mail.subject}>copier</button>
+          <a class="sk sk-btn primary" href={gmail} target="_blank" rel="noopener">ouvrir dans Gmail ↗</a>
+          <form method="post" action="/api/coulisses" class="inline"><input type="hidden" name="id" value={target.id} /><input type="hidden" name="action" value="sent" /><button class="sk sk-btn" type="submit">marquer envoyé</button></form>
+        </div>
+      </section>
+    )}
+
+    <div class="cols">
+      {cols.map((col) => (
+        <div class="col" data-col={col.key}>
+          <h2 class="hand">{col.title}</h2>
+          {col.items.length === 0 && <p class="empty hand">rien ici</p>}
+          {col.items.map((c) => (
+            <article class:list={['sk', 'card', c.status, { focus: String(c.id) === focus }]} data-id={c.id} tabindex="0">
+              <div class="head">
+                <img src={c.owner_avatar ?? ''} alt="" width="28" height="28" loading="lazy" />
+                <b>{c.slug ? <a href={`/app/${c.slug}`}>{c.name}</a> : <a href={`https://github.com/${c.full_name}`} rel="noopener">{c.name}</a>}</b>
+                <span class="mono score">{c.score.toFixed(0)}</span>
+              </div>
+              <p class="desc">{c.description}</p>
+              <p class="meta mono">
+                {c.language ?? '?'} · {c.app_platform ?? c.metrics.platform ?? '?'} · ★ {c.stars} · <b>{days(c)} j</b> · {streak(c)} sem · {d(c.first_commit ?? c.metrics.first_commit)} → {d(c.pushed_at)} · {c.contributors} contrib.{c.has_release && ' · release'} · {c.query}
+              </p>
+              <p class="meta">
+                @{c.owner_login}{c.owner_name && <> · {c.owner_name}</>}{c.owner_location && <> · {c.owner_location}</>}
+                {' · '}{c.owner_email ? <span class="ok">{c.owner_email}</span> : c.commit_email ? <span class="soft">email commits</span> : <span class="soft">pas d'email</span>}
+                {c.homepage && <> · <a href={c.homepage} rel="noopener">{c.homepage.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a></>}
+                {c.status !== 'found' && c.status !== 'listed' && <> · <b>{c.status}</b>{c.sent_at && <> {d(c.sent_at)}</>}</>}
+              </p>
+              <div class="acts">
+                {c.status === 'found' && <form method="post" action="/api/coulisses"><input type="hidden" name="id" value={c.id} /><input type="hidden" name="action" value="list" /><input type="hidden" name="focus" value={c.id} /><button class="chip" type="submit" data-key="l">L · lister</button></form>}
+                {c.status === 'listed' && <a class="chip" href={`/coulisses?compose=${c.id}#compose`} data-key="e">E · composer</a>}
+                {(c.status === 'found' || c.status === 'listed') && <form method="post" action="/api/coulisses"><input type="hidden" name="id" value={c.id} /><input type="hidden" name="action" value="ignore" /><button class="chip" type="submit" data-key="x">X · ignorer</button></form>}
+                {(c.status === 'listed' || c.status === 'sent') && <form method="post" action="/api/coulisses"><input type="hidden" name="id" value={c.id} /><input type="hidden" name="action" value="no" /><button class="chip" type="submit">a dit non</button></form>}
+                {c.status === 'sent' && <form method="post" action="/api/coulisses"><input type="hidden" name="id" value={c.id} /><input type="hidden" name="action" value="note" /><input type="hidden" name="status" value="sent" /><input name="note" placeholder="note" value={c.note ?? ''} /></form>}
+              </div>
+            </article>
+          ))}
+        </div>
+      ))}
+    </div>
+  </section>
+</Base>
+<script>
+  // J/K bougent la sélection dans la colonne, L E X déclenchent le bouton correspondant de la carte sélectionnée.
+  const cards = [...document.querySelectorAll<HTMLElement>('.card')];
+  let i = Math.max(0, cards.findIndex((c) => c.classList.contains('focus')));
+  const pick = (n: number) => { cards[i]?.classList.remove('focus'); i = Math.max(0, Math.min(cards.length - 1, n)); cards[i]?.classList.add('focus'); cards[i]?.scrollIntoView({ block: 'nearest' }); };
+  if (cards.length) pick(i);
+  document.addEventListener('keydown', (e) => {
+    if ((e.target as HTMLElement).matches('input, textarea')) return;
+    if (e.key === 'j') pick(i + 1);
+    else if (e.key === 'k') pick(i - 1);
+    else if (['l', 'e', 'x'].includes(e.key)) cards[i]?.querySelector<HTMLElement>(`[data-key="${e.key}"]`)?.click();
+  });
+  cards.forEach((c, k) => c.addEventListener('focus', () => pick(k)));
+  document.getElementById('copy')?.addEventListener('click', async (e) => {
+    const body = (document.getElementById('body') as HTMLTextAreaElement).value;
+    await navigator.clipboard.writeText(body);
+    (e.currentTarget as HTMLElement).textContent = 'copié';
+  });
+</script>
+<style>
+.coulisses h1{font:700 44px/1 var(--hand);margin:0}
+.top{margin-bottom:18px}
+.keys{color:var(--pencil);font-size:19px;margin:4px 0 0}
+.keys code{font:500 14px var(--mono)}
+.msg{display:inline-block;padding:6px 12px;margin:10px 0 0;font-size:19px}
+.compose{padding:16px 18px;margin:0 0 22px;display:flex;flex-direction:column;gap:8px;background:var(--paper-2)}
+.ch{display:flex;gap:12px;align-items:center;font-size:18px}
+.ch .close{margin-left:auto;color:var(--pencil)}
+.to{font-size:13px;color:var(--pencil);margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+textarea{font:15px/1.45 var(--body);padding:12px;border:2px solid var(--ink);border-radius:var(--sk2);background:var(--paper);color:var(--ink);resize:vertical}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.inline{margin:0}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start}
+.col h2{font:700 24px/1 var(--hand);margin:0 0 10px}
+.empty{color:var(--pencil);font-size:19px}
+.card{padding:12px 14px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px;outline:none}
+.card.focus{border-color:var(--redpen);box-shadow:4px 4px 0 var(--faint)}
+.card.claimed{border-color:var(--ink)}
+.card.no{opacity:.55}
+.head{display:flex;gap:10px;align-items:center}
+.head img{border-radius:50%;background:var(--faint)}
+.head b{font-size:17px;flex:1}
+.head a{color:inherit;text-decoration:none;border-bottom:1.5px solid var(--faint)}
+.score{color:var(--redpen);font-weight:500}
+.desc{margin:0;font-size:14px;color:var(--ink)}
+.meta{margin:0;font-size:12.5px;color:var(--pencil);line-height:1.5;word-break:break-word}
+.meta b{color:var(--ink);font-weight:500}
+.meta a{color:inherit}
+.ok{color:var(--ink)}
+.soft{font-style:italic}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.acts form{margin:0}
+.acts input[name=note]{font:14px var(--body);border:1.5px solid var(--faint);border-radius:8px;padding:3px 8px;background:var(--paper);color:var(--ink);width:160px}
+@media (max-width:1000px){.cols{grid-template-columns:1fr}}
+</style>

@@ -5,6 +5,10 @@ import { guessPlatform } from '../../../lib/platform';
 import { sendAlerts } from '../../../lib/alerts';
 import { commitDates, compute, statusFor } from '../../../lib/metrics';
 import { open } from '../../../lib/crypto';
+import { adminLogin } from '../../../lib/outreach';
+import { pingIndexNow, appPaths } from '../../../lib/indexnow';
+import { browsePath } from '../../../lib/browse';
+import { browseCounts, INTENTS } from '../../../lib/db';
 export const prerender = false;
 // Relit chaque repo publié, une fois par nuit. Appelé par Vercel Cron avec le CRON_SECRET.
 export const GET: APIRoute = async ({ request }) => {
@@ -13,11 +17,15 @@ export const GET: APIRoute = async ({ request }) => {
   const apps = (await sql.query(
     `select a.id, a.full_name, a.active_days, a.status, a.private, a.platform, a.language, a.name, a.description, a.homepage, u.installation_id, u.access_token from apps a join users u on u.id = a.user_id where a.published`,
   )) as { id: number; full_name: string; active_days: number; status: string; private: boolean; platform: string | null; language: string | null; name: string; description: string | null; homepage: string | null; installation_id: number | null; access_token: string | null }[];
+  // Les fiches non réclamées n'ont pas de jeton : on lit leur repo public avec celui de l'admin.
+  const [admin] = adminLogin() ? ((await sql.query(`select access_token from users where login = $1`, [adminLogin()])) as { access_token: string | null }[]) : [];
+  const fallback = open(admin?.access_token ?? null);
   let ok = 0, failed = 0;
   for (const a of apps) {
     try {
       let token = open(a.access_token);
       if (a.installation_id) { try { token = await installationToken(a.installation_id); } catch (e) { console.error('jeton d\'installation', e); } }
+      if (!token && !a.private) token = fallback;
       if (!token) throw new Error('aucun jeton');
       const m = compute(await commitDates(token, a.full_name));
       const status = statusFor(m.last_commit, a.status);
@@ -35,5 +43,13 @@ export const GET: APIRoute = async ({ request }) => {
   }
   // Une fois les chiffres à jour : les alertes dues partent, s'il y a de quoi les remplir.
   const alerts = await sendAlerts().catch((e) => { console.error('alertes', e); return { sent: 0, skipped: 0 }; });
-  return Response.json({ ok, failed, alerts });
+  // Les chiffres ont changé sur chaque fiche, l'accueil et les pages Parcourir : on le dit à IndexNow.
+  const slugs = (await sql.query(`select slug from apps where published`)) as { slug: string }[];
+  const counts = await browseCounts().catch(() => ({ tool: {}, platform: {}, language: {}, intent: {} }));
+  const browse = [
+    ...Object.keys(counts.tool).map((v) => ({ kind: 'tool' as const, value: v })), ...Object.keys(counts.platform).map((v) => ({ kind: 'platform' as const, value: v })),
+    ...Object.keys(counts.language).map((v) => ({ kind: 'language' as const, value: v })), ...INTENTS.map((v) => ({ kind: 'intent' as const, value: v })),
+  ];
+  const indexnow = await pingIndexNow(['/', '/en', ...slugs.flatMap((r) => appPaths(r.slug)), ...browse.flatMap((b) => [browsePath(b, 'fr'), browsePath(b, 'en')])]);
+  return Response.json({ ok, failed, alerts, indexnow });
 };

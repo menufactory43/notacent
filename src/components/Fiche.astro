@@ -37,6 +37,9 @@ const badgeUrl = `${SITE}/api/badge/${app.slug}.svg${locale === 'en' ? '?lang=en
 const pageUrl = `${SITE}${localePath(locale, `/app/${app.slug}`)}`;
 const snippet = `<a href="${pageUrl}"><img src="${badgeUrl}" alt="${s.badgeAlt(app.activeDays)}"></a>`;
 const host = (() => { try { return app.url ? new URL(app.url).host : ''; } catch { return ''; } })();
+// Fiche non réclamée : créée depuis le repo public. Pas de dofollow ni de badge tant que le maker ne l'a pas prise en main.
+const unclaimed = Boolean(app.unclaimed) && !mine;
+const claimHref = `/api/auth/github?lang=${locale}&back=${encodeURIComponent(localePath(locale, `/app/${app.slug}/modifier`))}`;
 const crumbs: [string, string][] = [[s.home, '/'], ...(toolLink ? [[toolLink.label, toolLink.href.replace(/^\/en/, '')] as [string, string]] : []), ...(platLink ? [[platLink.label, platLink.href.replace(/^\/en/, '')] as [string, string]] : []), [app.name, `/app/${app.slug}`]];
 const ld = sample ? undefined : [softwareLd(app, locale), breadcrumbLd(locale, crumbs)];
 ---
@@ -67,12 +70,12 @@ const ld = sample ? undefined : [softwareLd(app, locale), breadcrumbLd(locale, c
       </div>
       <div class="actions">
         <button class="sk sk-btn primary bravo" type="button" data-slug={app.slug} data-already={s.already}>✋ {s.bravo} · <span class="count mono">{app.bravos}</span></button>
-        {app.url && <a class="sk sk-btn" href={sample ? app.url : `/api/apps/go?slug=${app.slug}`} rel="noopener">{s.open} ↗</a>}
+        {app.url && <a class="sk sk-btn" href={sample ? app.url : `/api/apps/go?slug=${app.slug}`} rel={unclaimed ? 'nofollow noopener' : 'noopener'}>{s.open} ↗</a>}
         {app.repo && <a class="sk sk-btn" href={app.repo} rel="noopener">{s.repo}</a>}
         {mine && <a class="sk sk-btn" href={localePath(locale, `/app/${app.slug}/modifier`)}>✎ {s.edit}</a>}
       </div>
-      {host && <p class="dofollow hand">{s.dofollow(host)} · {app.clicks.toLocaleString(locale)} {s.clicks} · {s.verifiedAt}</p>}
-      {!user && !sample && <p class="yours hand"><a href={`/api/auth/github?lang=${locale}&back=${encodeURIComponent(localePath(locale, `/app/${app.slug}/modifier`))}`}>{s.yours}</a></p>}
+      {host && !unclaimed && <p class="dofollow hand">{s.dofollow(host)} · {app.clicks.toLocaleString(locale)} {s.clicks} · {s.verifiedAt}</p>}
+      {!user && !sample && !unclaimed && <p class="yours hand"><a href={claimHref}>{s.yours}</a></p>}
       {sponsorMsg && <p class="sponsor-msg hand">{sponsorMsg}</p>}
       {until && <p class="sponsor-msg hand">★ {s.sponsorUntil(new Date(until).toLocaleDateString(locale))}</p>}
       {mine && stripeReady() && !until && (
@@ -97,12 +100,23 @@ const ld = sample ? undefined : [softwareLd(app, locale), breadcrumbLd(locale, c
         <small class="hand">{s.takeoverNote}</small>
       </section>
     )}
-    <section class="sk badge-block">
-      <h2 class="hand">{s.badgeTitle}</h2>
-      <span class="badge"><b class="mono">{app.activeDays}</b> {s.days} <span class="hand v">{s.verified}</span></span>
-      <pre><code>{snippet}</code></pre>
-      <small>{s.badgeHint}</small>
-    </section>
+    {unclaimed ? (
+      <section class="sk takeover claim">
+        <span class="tstamp hand">{s.unclaimedTitle}</span>
+        <p>{s.unclaimedText(app.owner, app.activeDays)}</p>
+        <div class="actions">
+          <a class="sk sk-btn primary" href={claimHref}>{s.claimBtn}</a>
+        </div>
+        <small class="hand">{s.unclaimedNote}</small>
+      </section>
+    ) : (
+      <section class="sk badge-block">
+        <h2 class="hand">{s.badgeTitle}</h2>
+        <span class="badge"><b class="mono">{app.activeDays}</b> {s.days} <span class="hand v">{s.verified}</span></span>
+        <pre><code>{snippet}</code></pre>
+        <small>{s.badgeHint}</small>
+      </section>
+    )}
   </div>
 
   {related.length > 0 && (

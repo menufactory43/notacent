@@ -17,6 +17,7 @@ export const GET: APIRoute = async ({ request }) => {
      from apps a join users u on u.id = a.user_id where a.published`,
   )) as { id: number; full_name: string; active_days: number; commits: number; status: string; private: boolean; platform: string | null; language: string | null; name: string; description: string | null; homepage: string | null; active_dates: string[] | null; installation_id: number | null }[];
   let ok = 0, failed = 0;
+  const errors: { app: string; why: string }[] = [];
   for (const a of apps) {
     try {
       const read = await readDates({ full_name: a.full_name, private: a.private, installation_id: a.installation_id, known: a.active_dates ?? [] });
@@ -33,7 +34,7 @@ export const GET: APIRoute = async ({ request }) => {
       if (m.active_days > a.active_days) await sql.query(`insert into activity (app_id, kind, payload) values ($1, 'day', $2)`, [a.id, JSON.stringify({ n: m.active_days })]);
       if (status !== a.status) await sql.query(`insert into activity (app_id, kind, payload) values ($1, 'status', $2)`, [a.id, JSON.stringify({ status })]);
       ok++;
-    } catch (e) { failed++; console.error(a.full_name, e); }
+    } catch (e) { failed++; console.error(a.full_name, e); errors.push({ app: a.full_name, why: String((e as Error).message ?? e).slice(0, 160) }); }
   }
   // Une fois les chiffres à jour : les alertes dues partent, s'il y a de quoi les remplir.
   const alerts = await sendAlerts().catch((e) => { console.error('alertes', e); return { sent: 0, skipped: 0 }; });
@@ -45,5 +46,5 @@ export const GET: APIRoute = async ({ request }) => {
     ...Object.keys(counts.language).map((v) => ({ kind: 'language' as const, value: v })), ...INTENTS.map((v) => ({ kind: 'intent' as const, value: v })),
   ];
   const indexnow = await pingIndexNow(['/', '/en', ...slugs.flatMap((r) => appPaths(r.slug)), ...browse.flatMap((b) => [browsePath(b, 'fr'), browsePath(b, 'en')])]);
-  return Response.json({ ok, failed, alerts, indexnow });
+  return Response.json({ ok, failed, errors, alerts, indexnow });
 };

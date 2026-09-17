@@ -27,8 +27,9 @@ export async function readDates(r: RepoRead): Promise<DatesRead> {
   }
   if (!r.installation_id) throw new Error(`repo privé sans installation : ${r.full_name}`);
   const token = await installationToken(r.installation_id);
-  // Les stats se calculent en arrière-plan la première fois (202) : on laisse GitHub le temps, cinq essais.
-  // Si les contributeurs manquent encore, on garde les jours de l'année (commit_activity) et le nombre de commits déjà connu.
+  const known = new Set((r.known ?? []).map(day));
+  let commits: number | undefined;
+  // 1. Les statistiques, quand GitHub veut bien les calculer (202 sans fin sur certains repos : on n'attend pas plus de cinq essais).
   const stat = async <T,>(path: string): Promise<T | null> => {
     for (let i = 0; i < 5; i++) {
       const res = await gh<T>(path, token);
@@ -38,8 +39,41 @@ export async function readDates(r: RepoRead): Promise<DatesRead> {
     return null;
   };
   const [contributors, activity] = await Promise.all([stat<StatContributor[]>(`/repos/${r.full_name}/stats/contributors`), stat<StatActivity[]>(`/repos/${r.full_name}/stats/commit_activity`)]);
-  if (!contributors && !activity) throw new Error(`statistiques indisponibles : ${r.full_name}`);
-  const fromStats = datesFromStats(contributors ?? [], activity ?? []);
-  const ledger = [...new Set([...(r.known ?? []).map(day), ...fromStats.dates])].sort();
-  return { dates: ledger, commits: contributors ? fromStats.commits : undefined, ledger };
+  if (contributors || activity) {
+    const fromStats = datesFromStats(contributors ?? [], activity ?? []);
+    for (const d of fromStats.dates) known.add(d);
+    if (contributors) commits = fromStats.commits;
+  }
+  // 2. L'activité du repo : chaque push humain vaut un jour actif. C'est ce qui fait grandir le registre nuit après nuit.
+  try {
+    let url: string | null = `/repos/${r.full_name}/activity?activity_type=push&per_page=100`;
+    let pages = 0;
+    while (url && pages++ < 5) {
+      const res: { data: { timestamp: string; actor: { login?: string; type?: string } | null }[] | null; next: string | null } = await gh(url, token);
+      for (const a of res.data ?? []) if (a.actor?.type !== 'Bot' && !/\[bot\]/.test(a.actor?.login ?? '')) known.add(day(a.timestamp));
+      url = res.next;
+    }
+  } catch (e) { console.error('activité', r.full_name, e); }
+  // 3. Premier passage sur un repo sans statistiques : on remonte la branche par défaut, un commit à la fois (« lire un commit » est sous Metadata).
+  if (known.size < 5 && !contributors) {
+    try {
+      const { data: info } = await gh<{ default_branch: string }>(`/repos/${r.full_name}`, token);
+      let ref: string | null = info.default_branch;
+      let n = 0;
+      const started = Date.now();
+      while (ref && n++ < 400 && Date.now() - started < 45_000) {
+        type Walk = { sha: string; parents: { sha: string }[]; author?: { login?: string; type?: string } | null; commit: { author?: { name?: string; email?: string; date?: string } } };
+        const res: { data: Walk | null } = await gh<Walk>(`/repos/${r.full_name}/commits/${ref}`, token);
+        const c = res.data;
+        if (!c) break;
+        if (!isBot(c as CommitLike) && c.commit.author?.date) known.add(day(c.commit.author.date));
+        ref = c.parents?.[0]?.sha ?? null;
+      }
+      if (n > 1) commits = commits ?? n;
+    } catch (e) { console.error('remontée', r.full_name, e); }
+  }
+  if (!known.size) throw new Error(`rien de lisible : ${r.full_name}`);
+  const ledger = [...known].sort();
+  return { dates: ledger, commits, ledger };
 }
+

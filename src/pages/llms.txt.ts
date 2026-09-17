@@ -23,6 +23,7 @@ Every app listed here is free or donation-based; paid apps are excluded from the
 
 - Site: ${SITE} (French), ${SITE}/en (English)
 - MCP server for assistants, read-only, no auth: ${SITE}/api/mcp (tools: search_apps, get_app, top_apps, how_to_submit)
+- Method (what is read, what is excluded, limits): ${SITE}/en/methode
 - Privacy: ${SITE}/en/confidentialite
 - To list an app (makers): ${SITE}/en/ajouter, GitHub sign-in, read-only, private repos welcome
 - Badge for makers: ${SITE}/api/badge/<slug>.svg (active days, refreshed daily)

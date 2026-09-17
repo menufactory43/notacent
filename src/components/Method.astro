@@ -1,0 +1,65 @@
+---
+// La page Méthode : comment on compte, ce qu'on exclut, ce qu'on ne sait pas. Un annuaire « vérifié » doit montrer comment il vérifie.
+import Base from '../layouts/Base.astro';
+import type { Locale } from '../i18n/strings';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const fr = locale === 'fr';
+const code = 'https://github.com/menufactory43/notacent/blob/main/src/lib';
+---
+<Base locale={locale} path="/methode" title={fr ? 'Méthode' : 'Method'} description={fr ? 'Comment Not a Cent compte les jours actifs : ce qu\'on lit dans le repo GitHub, ce qu\'on exclut, et ce que le chiffre ne dit pas.' : 'How Not a Cent counts active days: what we read in the GitHub repo, what we exclude, and what the number does not say.'}>
+  <article class="sk page">
+    <h1>{fr ? 'Méthode' : 'Method'}</h1>
+    <p class="hand lede">{fr ? 'Un chiffre « vérifié » ne vaut que si on montre comment on vérifie.' : 'A “verified” number is only worth something if we show how we verify.'}</p>
+
+    <h2>{fr ? 'Ce qu\'on compte' : 'What we count'}</h2>
+    <p>{fr
+      ? 'Un jour actif est un jour calendaire (UTC) avec au moins un commit humain sur la branche par défaut du repo. Dix commits le même jour comptent pour un jour. Un commit à 23 h 59 et un autre à 0 h 01 comptent pour deux. C\'est le seul chiffre qui classe.'
+      : 'An active day is a calendar day (UTC) with at least one human commit on the repo\'s default branch. Ten commits on the same day count as one day. One commit at 23:59 and another at 00:01 count as two. It is the only number that ranks.'}</p>
+    <ul>
+      <li>{fr ? 'Commits : le total des commits humains lus.' : 'Commits: the total of human commits read.'}</li>
+      <li>{fr ? 'Série max : le plus grand nombre de semaines d\'affilée (lundi à dimanche) avec au moins un jour actif.' : 'Best streak: the longest run of consecutive weeks (Monday to Sunday) with at least one active day.'}</li>
+      <li>{fr ? 'Durée de vie : les mois entre le premier et le dernier commit.' : 'Lifetime: the months between the first and the last commit.'}</li>
+      <li>{fr ? 'Auteurs : les personnes distinctes trouvées dans l\'historique, robots exclus. Et la part du maker : les commits signés de son compte GitHub. Quand elle tombe sous 80 %, la fiche le dit.' : 'Authors: the distinct people found in the history, bots excluded. And the maker\'s share: the commits signed by their GitHub account. When it drops under 80%, the card says so.'}</li>
+      <li>{fr ? 'Étoiles GitHub : affichées, jamais utilisées pour classer. Elles disent qui n\'a pas encore été vu.' : 'GitHub stars: shown, never used to rank. They tell who has not been noticed yet.'}</li>
+    </ul>
+
+    <h2>{fr ? 'Ce qu\'on exclut' : 'What we exclude'}</h2>
+    <ul>
+      <li>{fr ? 'Les robots : dependabot, renovate, github-actions, semantic-release, snyk, imgbot, copilot et tout compte marqué « Bot » par GitHub. Leurs commits ne font ni un jour ni un auteur.' : 'Bots: dependabot, renovate, github-actions, semantic-release, snyk, imgbot, copilot and any account GitHub flags as “Bot”. Their commits make neither a day nor an author.'}</li>
+      <li>{fr ? 'Les autres branches : on ne lit que la branche par défaut. Le travail sur une branche jamais fusionnée n\'apparaît pas.' : 'Other branches: only the default branch is read. Work on a branch never merged does not show.'}</li>
+      <li>{fr ? 'Le contenu : jamais une ligne de code, jamais un message de commit. Seulement des dates et des noms d\'auteurs.' : 'Content: never a line of code, never a commit message. Only dates and author names.'}</li>
+      <li>{fr ? 'Les apps payantes : elles peuvent avoir une fiche, elles ne sont pas dans le classement.' : 'Paid apps: they can have a card, they are not on the board.'}</li>
+    </ul>
+
+    <h2>{fr ? 'Comment on lit' : 'How we read'}</h2>
+    <p>{fr
+      ? 'Un repo public est lu comme n\'importe qui peut le lire sur github.com, avec le jeton du site, sans rien demander au maker : la liste des commits de la branche par défaut, page par page, jusqu\'à 5 000 commits. Chaque fiche est relue chaque nuit. La ligne « lu le » sur la fiche est la date de cette dernière lecture.'
+      : 'A public repo is read the way anyone can read it on github.com, with the site\'s own token, asking the maker for nothing: the default branch\'s commit list, page by page, up to 5,000 commits. Every card is re-read every night. The “read on” line on the card is the date of that last read.'}</p>
+    <p>{fr
+      ? 'Un repo privé est lu par ses statistiques, avec la seule permission « métadonnées » de la GitHub App : les commits par semaine et par auteur depuis le début, le détail par jour sur les 52 dernières semaines, et les pushes récents. Les jours plus vieux qu\'un an ne sont connus qu\'à la semaine ; on les note au dimanche de la semaine. Un registre garde chaque jour vu, et grandit nuit après nuit. Le premier passage sur un repo dont GitHub n\'a pas encore calculé les statistiques remonte la branche commit par commit, jusqu\'à 400.'
+      : 'A private repo is read through its statistics, with the GitHub App\'s single “metadata” permission: commits per week and per author since the beginning, the per-day detail over the last 52 weeks, and recent pushes. Days older than a year are only known by the week; we record them on that week\'s Sunday. A ledger keeps every day seen and grows night after night. The first pass on a repo whose statistics GitHub has not computed yet walks the branch commit by commit, up to 400.'}</p>
+
+    <h2>{fr ? 'Ce que le chiffre ne dit pas' : 'What the number does not say'}</h2>
+    <ul>
+      <li>{fr ? 'Un jour actif ne dit pas combien d\'heures. Un commit d\'une ligne et une journée entière pèsent pareil.' : 'An active day does not say how many hours. A one-line commit and a full day weigh the same.'}</li>
+      <li>{fr ? 'L\'historique peut venir d\'ailleurs. Un repo créé à partir d\'un autre projet hérite de ses commits. C\'est pour ça que la fiche montre le nombre d\'auteurs : à plus d\'un, le chiffre n\'est pas celui d\'une seule personne, et on le dit sur la fiche.' : 'The history can come from elsewhere. A repo started from another project inherits its commits. That is why the card shows the number of authors: above one, the number is not one person\'s, and the card says so.'}</li>
+      <li>{fr ? 'On ne détecte pas les commits réécrits, les dates falsifiées ou les commits vides. Un maker qui veut tricher le peut ; il triche alors devant tout le monde, sur son propre repo.' : 'We do not detect rewritten commits, forged dates or empty commits. A maker who wants to cheat can; they then cheat in front of everyone, on their own repo.'}</li>
+      <li>{fr ? 'Les repos privés lus par les statistiques comptent tous les auteurs pour le détail par jour, robots compris : GitHub ne permet pas de les distinguer à ce niveau.' : 'Private repos read through statistics count every author for the per-day detail, bots included: GitHub does not let us tell them apart at that level.'}</li>
+    </ul>
+
+    <h2>{fr ? 'Le code' : 'The code'}</h2>
+    <p>{fr ? 'Tout ce qui est écrit ici est dans le code du site, ouvert : ' : 'Everything written here is in the site\'s code, open: '}<a href={`${code}/work.ts`}>work.ts</a>{fr ? ' pour les calculs et la liste des robots, ' : ' for the maths and the bot list, '}<a href={`${code}/metrics.ts`}>metrics.ts</a>{fr ? ' pour la lecture GitHub. Si tu trouves une erreur, ouvre une issue.' : ' for the GitHub read. If you find a mistake, open an issue.'}</p>
+    <p class="mono small">{fr ? 'Dernière mise à jour : 17 septembre 2026.' : 'Last updated: September 17, 2026.'}</p>
+  </article>
+</Base>
+<style>
+.page{padding:32px 36px;max-width:760px;margin:0 auto}
+.page h1{font:700 44px/1 var(--hand);margin:0 0 6px}
+.page .lede{font-size:22px;color:var(--pencil);margin:0 0 28px}
+.page h2{font:700 26px/1.1 var(--hand);margin:28px 0 8px}
+.page p,.page li{font-size:17px;line-height:1.5}
+.page ul{padding-left:22px}
+.page .small{font-size:13px;color:var(--pencil)}
+@media (max-width:760px){.page{padding:24px 20px}}
+</style>

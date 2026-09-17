@@ -32,6 +32,10 @@ export interface App {
   platform?: string;
   takeover?: boolean;
   unclaimed?: boolean; // fiche créée depuis le repo public, pas encore réclamée par son maker
+  ownerCommits?: number; // commits signés par le maker lui-même
+  authors?: number; // auteurs humains du repo : 1 = une personne, plus = une équipe ou un historique hérité
+  refreshedAt?: string; // ISO, dernière lecture du repo
+  activeDates?: string[]; // les jours actifs exacts (AAAA-MM-JJ), pour le calendrier
 }
 
 function weekly(shape: 'up' | 'steady' | 'burst' | 'new', seed: number) {

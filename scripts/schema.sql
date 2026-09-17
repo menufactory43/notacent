@@ -122,3 +122,7 @@ create index if not exists outreach_status on outreach (status, score desc);
 -- Le registre des jours actifs : les dates connues avec au moins un commit. Pour un repo privé lu en « Metadata »
 -- seul, GitHub ne donne le détail par jour que sur 52 semaines ; le cron ajoute chaque nuit ce qu'il voit.
 alter table apps add column if not exists active_dates date[] default '{}';
+-- Le nombre d'auteurs humains du repo : un chiffre qui dit si l'historique est celui d'une personne ou d'une équipe.
+alter table apps add column if not exists authors int default 1;
+-- Les commits du maker lui-même : quand l'historique vient d'ailleurs, c'est ce chiffre qui dit sa part.
+alter table apps add column if not exists owner_commits int;

@@ -49,15 +49,17 @@ export function statusFor(last_commit: string | null, current: string, now = Dat
 export interface StatWeek { w: number; a: number; d: number; c: number }
 export interface StatContributor { author: { login?: string; type?: string } | null; total: number; weeks: StatWeek[] }
 export interface StatActivity { week: number; days: number[]; total: number }
-export function datesFromStats(contributors: StatContributor[], activity: StatActivity[]): { dates: string[]; commits: number } {
+export function datesFromStats(contributors: StatContributor[], activity: StatActivity[], maker?: string): { dates: string[]; commits: number; authors: number; ownerCommits?: number } {
   const days = new Set<string>();
   const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
-  let commits = 0;
+  let commits = 0, authors = 0, ownerCommits: number | undefined;
   const oldest = activity.length ? Math.min(...activity.map((a) => a.week)) : Infinity;
   for (const w of activity) for (let i = 0; i < 7; i++) if ((w.days[i] ?? 0) > 0) days.add(iso((w.week + i * 86_400) * 1000));
   for (const c of contributors) {
     if (c.author && (c.author.type === 'Bot' || BOT.test(c.author.login ?? ''))) continue;
+    if (c.total > 0) authors++;
+    if (maker && c.author?.login?.toLowerCase() === maker.toLowerCase()) ownerCommits = c.weeks.reduce((n, w) => n + w.c, 0);
     for (const w of c.weeks) { if (w.c > 0) { commits += w.c; if (w.w < oldest) days.add(iso(w.w * 1000)); } }
   }
-  return { dates: [...days].sort(), commits };
+  return { dates: [...days].sort(), commits, authors, ownerCommits };
 }

@@ -70,8 +70,8 @@ Trouvé en route : les jours actifs comptent tous les commits humains de la bran
 
 ### 2. Indexation et découverte par les IA (dix minutes, à faire demain aussi)
 
-- Bing Webmaster Tools : https://www.bing.com/webmasters, import depuis Search Console. C'est l'index de ChatGPT.
-- IndexNow : fait. Clé `INDEXNOW_KEY`, servie sur `/indexnow.txt`, ping à chaque fiche listée, publiée ou modifiée, et toutes les pages après le cron. Reste à vérifier sur Bing Webmaster (onglet IndexNow) que les envois arrivent.
+- Bing Webmaster Tools : fait le 17 septembre 2026, importé depuis Search Console. C'est l'index de ChatGPT.
+- IndexNow : fait. Clé `INDEXNOW_KEY`, servie sur `/indexnow.txt`, ping à chaque fiche listée, publiée ou modifiée, et toutes les pages après le cron. Vérifier sur Bing Webmaster (onglet IndexNow) que les envois arrivent.
 - Vérifier que le domaine Resend est « Verified » sur https://resend.com/domains.
 
 ### 3. Pages « alternative à » (une demi-journée)
@@ -80,7 +80,19 @@ Un champ « alternative à » sur la fiche, des pages `/alternative-a/notion`. C
 
 ### 4. Se lister partout
 
-PeerPush et TrustMRR (oui), Product Hunt, Show HN, Indie Hackers, r/SideProject, les annuaires de LaunchDirectories. Pour le MCP : Smithery, mcp.so, Glama, PulseMCP, et la soumission ChatGPT Apps décrite dans INSTALLATION.md.
+Quand l'annuaire a l'air plein (300 fiches listées), dans cet ordre, avec le même texte partout : « ranked by verified work in the repo, not revenue ».
+
+1. Hacker News, en Show HN. Le public exact : des devs qui ont un repo et une app. Un seul essai, le matin heure US.
+2. Product Hunt, le même jour ou le lendemain, pour la portée et le badge.
+3. Les petits, une matinée, un par un, chacun donne un lien et une poignée de visites : Peerlist, DevHunt, Uneed, Microlaunch, TinyLaunch, Fazier, LaunchIgniter, Tiny Startup, PeerPush, TrustMRR.
+4. Rendement faible, coût nul : Indie Hackers, r/SideProject, Betalist, SideProjectors, SaaSHub, Toolfolio, SaaS Genius, les annuaires de LaunchDirectories.
+5. Non : There's an AI for that, on n'est pas un outil d'IA.
+
+Pour le MCP : Smithery, mcp.so, Glama, PulseMCP, et la soumission ChatGPT Apps décrite dans INSTALLATION.md.
+
+Ceux qu'on étudie plutôt qu'on n'utilise : TrustMRR et PeerPush sont nos voisins directs. OpenAlternative et AlternativeTo sont le modèle des pages « alternative à » de l'étape 3, et la preuve que c'est la requête que les gens tapent.
+
+Vérifié le 17 septembre 2026, à ne pas refaire : les sites de lancement ne sont pas une source de candidats pour la prospection. Uneed, Microlaunch, TinyLaunch, DevHunt, Peerlist, PeerPush, Fazier et LaunchIgniter n'ont ni flux RSS ni lien GitHub sur leurs pages produit (au mieux l'URL du site, rendue côté client). OpenAlternative a un flux et le repo de chaque outil, mais il liste des projets établis : sur 49 outils du flux, 44 avaient plus de 80 étoiles, les autres étaient trop jeunes ou portés par une organisation. Zéro candidat. La recherche GitHub reste la seule source.
 
 ### 4 bis. X, le rituel et la règle du tweet
 

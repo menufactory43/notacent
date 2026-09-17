@@ -61,10 +61,10 @@ export async function listCandidate(id: number): Promise<{ ok: true; slug: strin
   const m = c.metrics;
   const [row] = (await sql.query(
     `insert into apps (user_id, repo_id, full_name, slug, name, description, language, private, homepage, url,
-       first_commit, last_commit, commits, active_days, active_days_30, best_streak_weeks, weekly, published, refreshed_at, stars, platform)
-     values ($1,$2,$3,$4,$5,$6,$7,false,$8,$8,$9,$10,$11,$12,$13,$14,$15,true,now(),$16,$17)
+       first_commit, last_commit, commits, active_days, active_days_30, best_streak_weeks, weekly, published, refreshed_at, stars, platform, authors)
+     values ($1,$2,$3,$4,$5,$6,$7,false,$8,$8,$9,$10,$11,$12,$13,$14,$15,true,now(),$16,$17,$18)
      on conflict (repo_id) do update set published = true returning id, slug`,
-    [u.id, c.repo_id, c.full_name, slug, c.name, c.description, c.language, c.homepage, m.first_commit, m.last_commit, m.commits, m.active_days, m.active_days_30, m.best_streak_weeks, m.weekly ?? [], c.stars, m.platform ?? 'Autre'],
+    [u.id, c.repo_id, c.full_name, slug, c.name, c.description, c.language, c.homepage, m.first_commit, m.last_commit, m.commits, m.active_days, m.active_days_30, m.best_streak_weeks, m.weekly ?? [], c.stars, m.platform ?? 'Autre', Math.max(1, c.contributors || 1)],
   )) as { id: number; slug: string }[];
   await sql.query(`insert into activity (app_id, kind) values ($1, 'arrived')`, [row.id]);
   await sql.query(`update outreach set status = 'listed', app_id = $2, listed_at = now() where id = $1`, [id, row.id]);

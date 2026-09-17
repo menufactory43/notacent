@@ -6,7 +6,7 @@ export const prerender = false;
 export const GET: APIRoute = async () => {
   const apps = [...(await rankedApps('all', 1000).catch(() => [])), ...(await doneApps(1000).catch(() => []))];
   const pages: { fr: string; en: string; mod?: string; prio: string }[] = [
-    { fr: '/', en: '/en', prio: '1.0' }, { fr: '/ajouter', en: '/en/ajouter', prio: '0.5' }, { fr: '/confidentialite', en: '/en/confidentialite', prio: '0.2' },
+    { fr: '/', en: '/en', prio: '1.0' }, { fr: '/ajouter', en: '/en/ajouter', prio: '0.5' }, { fr: '/methode', en: '/en/methode', prio: '0.6' }, { fr: '/confidentialite', en: '/en/confidentialite', prio: '0.2' },
     ...apps.map((a) => ({ fr: `/app/${a.slug}`, en: `/en/app/${a.slug}`, mod: new Date(a.last_commit ?? a.created_at).toISOString().slice(0, 10), prio: '0.8' })),
   ];
   // Les pages « Parcourir » : chaque valeur qui a au moins une app, plus les intentions.

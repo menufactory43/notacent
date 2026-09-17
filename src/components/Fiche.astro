@@ -9,6 +9,7 @@ import { toView } from '../lib/view';
 import { softwareLd, breadcrumbLd, SITE } from '../lib/seo';
 import { browsePath, browseLabel } from '../lib/browse';
 import { apps as samples } from '../data/apps';
+import Calendar from './Calendar.astro';
 interface Props { locale: Locale; app: App; ownerId?: number; sample?: boolean; appId?: number; row?: DbApp }
 const { locale, app, ownerId, sample, appId, row } = Astro.props;
 const s = t(locale);
@@ -42,8 +43,13 @@ const unclaimed = Boolean(app.unclaimed) && !mine;
 const claimHref = `/api/auth/github?lang=${locale}&back=${encodeURIComponent(localePath(locale, `/app/${app.slug}/modifier`))}`;
 const crumbs: [string, string][] = [[s.home, '/'], ...(toolLink ? [[toolLink.label, toolLink.href.replace(/^\/en/, '')] as [string, string]] : []), ...(platLink ? [[platLink.label, platLink.href.replace(/^\/en/, '')] as [string, string]] : []), [app.name, `/app/${app.slug}`]];
 const ld = sample ? undefined : [softwareLd(app, locale), breadcrumbLd(locale, crumbs)];
+// La provenance : lu quand, combien de commits, combien de mains. Sans le nombre d'auteurs, le chiffre peut tromper (un historique hérité d'un autre projet).
+const readOn = app.refreshedAt ? new Date(app.refreshedAt).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+const authors = app.authors ?? 1;
+const sinceLong = new Date(app.firstCommit).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+const metaDesc = s.metaDesc(app.name, app.activeDays, sinceLong, app.tagline ?? undefined);
 ---
-<Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={app.tagline ?? app.longest[locale]} image={`/api/og/${app.slug}.png${locale === 'fr' ? '' : '?lang=en'}`} jsonLd={ld}>
+<Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={metaDesc} image={`/api/og/${app.slug}.png${locale === 'fr' ? '' : '?lang=en'}`} jsonLd={ld}>
   {sample && <p class="examples hand">{s.examples}</p>}
   <p class="crumb">{crumbs.slice(0, -1).map((c) => <><a href={localePath(locale, c[1])}>{c[0]}</a> › </>)}<span>{app.name}</span></p>
   <article class="sk fiche">
@@ -68,13 +74,15 @@ const ld = sample ? undefined : [softwareLd(app, locale), breadcrumbLd(locale, c
         <div><b class="mono">{app.bestStreakWeeks} <i>{s.weeks}</i></b><span>{s.streak}</span></div>
         <div><b class="mono">★ {(app.stars ?? 0).toLocaleString(locale)}</b><span>{s.stars}</span></div>
       </div>
+      <p class="prov mono">{readOn ? s.readOn(readOn) : s.verifiedAt} · {app.commits.toLocaleString(locale)} {s.commits} · {s.authors(authors)} · {s.provenanceHint} · <a href={localePath(locale, '/methode')}>{s.methodLink}</a></p>
+      {authors > 1 && app.ownerCommits != null && app.ownerCommits < app.commits * 0.8 && <p class="warn hand">{s.ownerShare(app.owner, app.ownerCommits, app.commits, authors)}</p>}
       <div class="actions">
         <button class="sk sk-btn primary bravo" type="button" data-slug={app.slug} data-already={s.already}>✋ {s.bravo} · <span class="count mono">{app.bravos}</span></button>
         {app.url && <a class="sk sk-btn" href={sample ? app.url : `/api/apps/go?slug=${app.slug}`} rel={unclaimed ? 'nofollow noopener' : 'noopener'}>{s.open} ↗</a>}
         {app.repo && <a class="sk sk-btn" href={app.repo} rel="noopener">{s.repo}</a>}
         {mine && <a class="sk sk-btn" href={localePath(locale, `/app/${app.slug}/modifier`)}>✎ {s.edit}</a>}
       </div>
-      {host && !unclaimed && <p class="dofollow hand">{s.dofollow(host)} · {app.clicks.toLocaleString(locale)} {s.clicks} · {s.verifiedAt}</p>}
+      {host && !unclaimed && <p class="dofollow hand">{s.dofollow(host)} · {app.clicks.toLocaleString(locale)} {s.clicks}</p>}
       {!user && !sample && !unclaimed && <p class="yours hand"><a href={claimHref}>{s.yours}</a></p>}
       {sponsorMsg && <p class="sponsor-msg hand">{sponsorMsg}</p>}
       {until && <p class="sponsor-msg hand">★ {s.sponsorUntil(new Date(until).toLocaleDateString(locale))}</p>}
@@ -87,6 +95,11 @@ const ld = sample ? undefined : [softwareLd(app, locale), breadcrumbLd(locale, c
       )}
     </div>
   </article>
+
+  <section class="sk work">
+    <h2 class="hand">{s.calTitle}</h2>
+    {app.activeDates?.length ? <Calendar dates={app.activeDates} locale={locale} totalDays={app.activeDays} /> : <p class="hand empty">{s.calEmpty}</p>}
+  </section>
 
   <div class="under">
     {app.takeover && (
@@ -141,6 +154,12 @@ const ld = sample ? undefined : [softwareLd(app, locale), breadcrumbLd(locale, c
 .crumb span{color:var(--ink)}
 .meta a{color:inherit}
 .dofollow{margin:10px 0 0;font:500 15px/1.3 var(--hand);color:var(--pencil)}
+.prov{font-size:12px;color:var(--pencil);margin:-8px 0 14px}
+.prov a{color:inherit}
+.warn{margin:-6px 0 14px;font-size:16px;color:var(--redpen)}
+.work{margin-top:26px;padding:18px 20px}
+.work h2{font:700 24px/1 var(--hand);margin:0 0 12px}
+.work .empty{color:var(--pencil);font-size:17px;margin:0}
 .under{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:26px}
 .under>:only-child{grid-column:1/-1;max-width:560px}
 .takeover{padding:18px 20px;display:flex;flex-direction:column;gap:10px;position:relative;border-style:dashed}

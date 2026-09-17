@@ -3,32 +3,39 @@ import { isBot, datesFromStats, type CommitLike, type StatContributor, type Stat
 export { compute, statusFor, type Metrics } from './work';
 
 // Lit toutes les dates de commit de la branche par défaut. 100 par page, donc ~12 appels pour 1 200 commits.
-export async function commitDates(token: string, fullName: string, maxPages = 50): Promise<string[]> {
+export async function commitDates(token: string, fullName: string, maker?: string, maxPages = 50): Promise<{ dates: string[]; authors: number; ownerCommits: number }> {
   const dates: string[] = [];
+  const authors = new Set<string>();
+  let ownerCommits = 0;
   let url: string | null = `/repos/${fullName}/commits?per_page=100`;
   let pages = 0;
   while (url && pages++ < maxPages) {
     const r: { data: CommitLike[]; next: string | null } = await gh(url, token);
-    for (const c of r.data) { if (isBot(c)) continue; const d = c.commit.author?.date ?? c.commit.committer?.date; if (d) dates.push(d); }
+    for (const c of r.data) {
+      if (isBot(c)) continue;
+      const d = c.commit.author?.date ?? c.commit.committer?.date; if (d) dates.push(d);
+      const who = c.author?.login ?? c.commit.author?.email ?? c.commit.author?.name; if (who) authors.add(who.toLowerCase());
+      if (maker && c.author?.login?.toLowerCase() === maker.toLowerCase()) ownerCommits++;
+    }
     url = r.next;
   }
-  return dates;
+  return { dates, authors: Math.max(1, authors.size), ownerCommits };
 }
 
 // Un repo, ses dates. Public : toutes les dates de commit, avec le jeton serveur, comme n'importe qui peut les lire.
 // Privé : les statistiques via l'installation (permission « Metadata » seule), fusionnées avec le registre des jours déjà connus.
-export interface RepoRead { full_name: string; private: boolean; installation_id?: number | null; known?: string[] | null }
-export interface DatesRead { dates: string[]; commits?: number; ledger: string[] }
+export interface RepoRead { full_name: string; private: boolean; installation_id?: number | null; known?: string[] | null; maker?: string }
+export interface DatesRead { dates: string[]; commits?: number; authors?: number; ownerCommits?: number; ledger: string[] }
 const day = (d: string) => new Date(d).toISOString().slice(0, 10);
 export async function readDates(r: RepoRead): Promise<DatesRead> {
   if (!r.private) {
-    const dates = await commitDates(await serverToken(), r.full_name);
-    return { dates, ledger: [...new Set(dates.map(day))].sort() };
+    const { dates, authors, ownerCommits } = await commitDates(await serverToken(), r.full_name, r.maker);
+    return { dates, authors, ownerCommits, ledger: [...new Set(dates.map(day))].sort() };
   }
   if (!r.installation_id) throw new Error(`repo privé sans installation : ${r.full_name}`);
   const token = await installationToken(r.installation_id);
   const known = new Set((r.known ?? []).map(day));
-  let commits: number | undefined;
+  let commits: number | undefined, authors: number | undefined, ownerCommits: number | undefined;
   // 1. Les statistiques, quand GitHub veut bien les calculer (202 sans fin sur certains repos : on n'attend pas plus de cinq essais).
   const stat = async <T,>(path: string): Promise<T | null> => {
     for (let i = 0; i < 5; i++) {
@@ -40,9 +47,9 @@ export async function readDates(r: RepoRead): Promise<DatesRead> {
   };
   const [contributors, activity] = await Promise.all([stat<StatContributor[]>(`/repos/${r.full_name}/stats/contributors`), stat<StatActivity[]>(`/repos/${r.full_name}/stats/commit_activity`)]);
   if (contributors || activity) {
-    const fromStats = datesFromStats(contributors ?? [], activity ?? []);
+    const fromStats = datesFromStats(contributors ?? [], activity ?? [], r.maker);
     for (const d of fromStats.dates) known.add(d);
-    if (contributors) commits = fromStats.commits;
+    if (contributors) { commits = fromStats.commits; authors = fromStats.authors; ownerCommits = fromStats.ownerCommits; }
   }
   // 2. L'activité du repo : chaque push humain vaut un jour actif. C'est ce qui fait grandir le registre nuit après nuit.
   try {
@@ -74,6 +81,6 @@ export async function readDates(r: RepoRead): Promise<DatesRead> {
   }
   if (!known.size) throw new Error(`rien de lisible : ${r.full_name}`);
   const ledger = [...known].sort();
-  return { dates: ledger, commits, ledger };
+  return { dates: ledger, commits, authors, ownerCommits, ledger };
 }
 

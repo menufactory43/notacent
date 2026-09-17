@@ -20,6 +20,9 @@ export function softwareLd(app: App, locale: Locale) {
     additionalProperty: [
       { '@type': 'PropertyValue', name: 'activeDays', value: app.activeDays, description: 'Days with at least one commit, read from the GitHub repo' },
       { '@type': 'PropertyValue', name: 'commits', value: app.commits },
+      { '@type': 'PropertyValue', name: 'authors', value: app.authors ?? 1, description: 'Human authors found in the commit history, bots excluded' },
+      ...(app.ownerCommits != null ? [{ '@type': 'PropertyValue', name: 'makerCommits', value: app.ownerCommits, description: 'Commits authored by the maker themself' }] : []),
+      ...(app.refreshedAt ? [{ '@type': 'PropertyValue', name: 'readOn', value: app.refreshedAt.slice(0, 10), description: 'Last time the repo was read' }] : []),
       { '@type': 'PropertyValue', name: 'mainTool', value: app.tool },
       { '@type': 'PropertyValue', name: 'githubStars', value: app.stars ?? 0 },
       ...(app.platform ? [{ '@type': 'PropertyValue', name: 'platform', value: app.platform }] : []),

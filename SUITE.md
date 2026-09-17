@@ -111,6 +111,8 @@ Classement de la semaine, tampon gagné, passage en pause, avec la ligne « spon
 
 Mise en avant payante, « à reprendre » épinglé, palier alertes payant, newsletter éditoriale hebdo opt-in, voile sur les captures claires en mode sombre.
 
+Emplacements publicitaires, le montage TrustMRR : vignettes dans les marges sur desktop et bannières sur mobile, 20 places fixes en rotation toutes les 10 secondes, 1 499 $ le mois en libre-service Stripe, file d'attente avec 999 $ d'acompte quand c'est plein, pour 200 000 visites mensuelles (environ 15 centimes la visite). À ouvrir chez nous à partir de 20 000 visites par mois sur Vercel Analytics, au même ratio (autour de 150 € le mois pour commencer), ce qui demande de redessiner la page avec des marges. Avant ça, le spot sponsor à 29 € est la même idée à notre échelle, et une pub sur un site sans trafic est le signal inverse de ce qu'on construit.
+
 ## Repères
 
 - Secrets sur Vercel : STRIPE_SECRET_KEY (clé restreinte), STRIPE_WEBHOOK_SECRET, SPONSOR_PRICE_CENTS=2900, RESEND_API_KEY, ALERT_FROM, CRON_SECRET, ADMIN_LOGIN, INDEXNOW_KEY, GITHUB_OAUTH_ID, GITHUB_OAUTH_SECRET, GitHub App (privés seulement).

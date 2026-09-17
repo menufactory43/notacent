@@ -32,6 +32,7 @@ export interface App {
   platform?: string;
   takeover?: boolean;
   unclaimed?: boolean; // fiche créée depuis le repo public, pas encore réclamée par son maker
+  comakers?: string[]; // co-makers confirmés, logins GitHub
   ownerCommits?: number; // commits signés par le maker lui-même
   authors?: number; // auteurs humains du repo : 1 = une personne, plus = une équipe ou un historique hérité
   refreshedAt?: string; // ISO, dernière lecture du repo

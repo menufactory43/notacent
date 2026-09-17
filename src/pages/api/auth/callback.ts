@@ -4,6 +4,7 @@ import { sql } from '../../../lib/db';
 import { setSession } from '../../../lib/session';
 import { seal } from '../../../lib/crypto';
 import { claim, adminLogin } from '../../../lib/outreach';
+import { confirmMaker } from '../../../lib/db';
 export const prerender = false;
 // Retour de l'OAuth App « Public data only » : on apprend qui se connecte, c'est tout.
 // Le jeton n'est gardé que pour l'admin (il sert de jeton serveur pour lire les repos publics). Pour les autres, rien n'est stocké.
@@ -27,6 +28,8 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
        returning id`, [u.id, u.login, u.name, u.avatar_url, stored, installationId],
     )) as { id: number }[];
     await setSession(cookies, row.id);
+    // Quelqu'un l'a ajouté comme co-maker d'une fiche : le lien devient visible maintenant qu'il est venu.
+    await confirmMaker(u.login).catch((e) => console.error('co-maker', e));
     // Un compte « non réclamé » (fiche créée depuis le repo public) devient le sien à cette connexion.
     if (before && !before.claimed) {
       const slugs = await claim(row.id, u.id).catch((e) => { console.error('réclamation', e); return [] as string[]; });

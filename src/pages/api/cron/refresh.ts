@@ -13,14 +13,15 @@ export const GET: APIRoute = async ({ request }) => {
   const secret = import.meta.env.CRON_SECRET ?? process.env.CRON_SECRET;
   if (!hasDb || !secret || request.headers.get('authorization') !== `Bearer ${secret}`) return new Response('non', { status: 401 });
   const apps = (await sql.query(
-    `select a.id, a.full_name, a.active_days, a.commits, a.status, a.private, a.platform, a.language, a.name, a.description, a.homepage, a.active_dates, u.installation_id, u.login
+    `select a.id, a.full_name, a.active_days, a.commits, a.status, a.private, a.platform, a.language, a.name, a.description, a.homepage, a.active_dates, u.installation_id, u.login,
+       (select coalesce(array_agg(m.login), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers
      from apps a join users u on u.id = a.user_id where a.published`,
-  )) as { id: number; full_name: string; active_days: number; commits: number; status: string; private: boolean; platform: string | null; language: string | null; name: string; description: string | null; homepage: string | null; active_dates: string[] | null; installation_id: number | null; login: string }[];
+  )) as { id: number; full_name: string; active_days: number; commits: number; status: string; private: boolean; platform: string | null; language: string | null; name: string; description: string | null; homepage: string | null; active_dates: string[] | null; installation_id: number | null; login: string; comakers: string[] }[];
   let ok = 0, failed = 0;
   const errors: { app: string; why: string }[] = [];
   for (const a of apps) {
     try {
-      const read = await readDates({ full_name: a.full_name, private: a.private, installation_id: a.installation_id, known: a.active_dates ?? [], maker: a.login });
+      const read = await readDates({ full_name: a.full_name, private: a.private, installation_id: a.installation_id, known: a.active_dates ?? [], makers: [a.login, ...a.comakers] });
       const m = compute(read.dates, Date.now(), read.commits ?? (a.private ? a.commits : undefined));
       const status = statusFor(m.last_commit, a.status);
       const token = a.private ? (a.installation_id ? await installationToken(a.installation_id) : null) : await serverToken();

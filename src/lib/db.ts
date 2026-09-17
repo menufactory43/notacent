@@ -10,11 +10,11 @@ export interface DbApp {
   first_commit: string | null; last_commit: string | null; commits: number; active_days: number;
   active_days_30: number; best_streak_weeks: number; weekly: number[]; bravos: number; clicks: number;
   published: boolean; refreshed_at: string | null; created_at: string; login?: string; has_image?: boolean; sponsored?: boolean;
-  stars: number; platform: string | null; takeover: boolean; unclaimed?: boolean; authors: number; active_dates: (string | Date)[] | null; owner_commits: number | null;
+  stars: number; platform: string | null; takeover: boolean; unclaimed?: boolean; authors: number; active_dates: (string | Date)[] | null; owner_commits: number | null; comakers: string[];
 }
 
 // Les colonnes d'une fiche, une fois pour toutes : chaque requête les lit telles quelles.
-const COLS = `a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image, coalesce(a.stars, 0) as stars, a.platform, coalesce(a.takeover, false) as takeover, (not coalesce(u.claimed, true)) as unclaimed, coalesce(a.authors, 1) as authors, a.active_dates, a.owner_commits`;
+const COLS = `a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image, coalesce(a.stars, 0) as stars, a.platform, coalesce(a.takeover, false) as takeover, (not coalesce(u.claimed, true)) as unclaimed, coalesce(a.authors, 1) as authors, a.active_dates, a.owner_commits, (select coalesce(array_agg(m.login order by m.added_at), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers`;
 const FROM = `from apps a join users u on u.id = a.user_id`;
 // Le classement : publiée, pas payante, encore en cours.
 const ON_BOARD = `a.published and a.pricing <> 'paid' and a.status = 'polishing'`;
@@ -79,6 +79,26 @@ export async function appsByUser(userId: number): Promise<Pick<DbApp, 'id' | 'sl
   if (!hasDb) return [];
   return (await sql.query(`select id, slug, name, tagline, longest, tool, published from apps where user_id = $1 order by created_at`, [userId])) as Pick<DbApp, 'id' | 'slug' | 'name' | 'tagline' | 'longest' | 'tool' | 'published'>[];
 }
+
+// ---- Co-makers : ajoutés par le propriétaire, visibles une fois connectés.
+export const GH_LOGIN = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i;
+export interface Maker { login: string; confirmed: boolean }
+export async function makersOf(appId: number): Promise<Maker[]> {
+  return (await sql.query(`select login, confirmed from makers where app_id = $1 order by added_at`, [appId])) as Maker[];
+}
+// Remplace la liste : ceux qui partent partent, ceux qui restent gardent leur état, les nouveaux attendent.
+export async function setMakers(appId: number, logins: string[]) {
+  const keep = logins.map((l) => l.toLowerCase());
+  await sql.query(`delete from makers where app_id = $1 and not (lower(login) = any($2))`, [appId, keep]);
+  for (const login of logins) await sql.query(`insert into makers (app_id, login) values ($1, $2) on conflict do nothing`, [appId, login]);
+}
+// À la connexion : les liens en attente à ce login deviennent visibles.
+export async function confirmMaker(login: string): Promise<number> {
+  const rows = (await sql.query(`update makers set confirmed = true, login = $1 where lower(login) = lower($1) and not confirmed returning app_id`, [login])) as unknown[];
+  return rows.length;
+}
+// Peut modifier : le propriétaire, ou un co-maker confirmé.
+export const canEdit = (app: DbApp, user: { id: number; login: string }) => app.user_id === user.id || app.comakers.some((l) => l.toLowerCase() === user.login.toLowerCase());
 
 // ---- Parcourir : chaque filtre est une page.
 

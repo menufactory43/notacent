@@ -11,7 +11,7 @@ export function softwareLd(app: App, locale: Locale) {
     description: app.tagline ?? app.longest[locale] ?? undefined,
     applicationCategory: 'UtilitiesApplication', operatingSystem: os, inLanguage: locale,
     isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR', availability: 'https://schema.org/InStock' },
-    author: { '@type': 'Person', name: app.owner, url: `https://github.com/${app.owner}` },
+    author: [app.owner, ...(app.comakers ?? [])].map((l) => ({ '@type': 'Person', name: l, url: `https://github.com/${l}` })),
     ...(app.url ? { installUrl: app.url, downloadUrl: app.url } : {}),
     ...(app.repo ? { codeRepository: app.repo } : {}),
     ...(app.imageUrl ? { image: new URL(app.imageUrl, SITE).toString() } : {}),

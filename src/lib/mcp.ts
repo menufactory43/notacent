@@ -12,7 +12,7 @@ const SITE = 'https://notacent.app';
 function card(a: DbApp) {
   const v = toView(a);
   return {
-    slug: v.slug, name: v.name, tagline: v.tagline ?? null, by: v.owner, tool: v.tool, language: v.language || null,
+    slug: v.slug, name: v.name, tagline: v.tagline ?? null, by: [v.owner, ...(v.comakers ?? [])].join(', '), tool: v.tool, language: v.language || null,
     pricing: v.pricing, status: v.status,
     activeDays: v.activeDays, activeDaysLast30: v.activeDays30, commits: v.commits, bestStreakWeeks: v.bestStreakWeeks,
     firstCommit: v.firstCommit.slice(0, 10), lastCommitDaysAgo: v.lastCommitDaysAgo, lifetimeMonths: v.lifetimeMonths,

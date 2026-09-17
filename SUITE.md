@@ -48,6 +48,7 @@ Ce qui est codé :
 - « A dit non » : la fiche part, le compte fantôme est bloqué (plus jamais relisté), les adresses sont effacées. Le login reste possible : s'il vient lui-même, c'est son choix.
 - Réclamée : événement « a réclamé sa fiche » dans le fil, adresses effacées, statut `claimed` dans les coulisses.
 - Confidentialité : paragraphe « Les fiches non réclamées » (source, base légale, effacement, opposition en une réponse).
+- La fiche dit d'où vient le chiffre : « lu le », commits, auteurs, et la part du maker quand elle tombe sous 80 % des commits. Le calendrier des jours actifs sur 53 semaines est le visuel à partager. La page /methode explique tout. Jusqu'à deux co-makers par fiche (table `makers`), ajoutés par login depuis la page de modification, visibles à leur première connexion, avec droit de modification ; leurs commits comptent dans la part du maker. Une personne à deux comptes GitHub se règle pareil.
 
 Le rituel :
 1. `npm run prospect`, puis dans `/coulisses`, lister les 200 à 300 candidats qui tiennent la route (une vraie app, un vrai site). Le site paraît vivant, Google indexe autant de pages en plus.

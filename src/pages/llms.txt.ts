@@ -7,7 +7,7 @@ export const prerender = false;
 export const GET: APIRoute = async () => {
   const polishing = (await rankedApps('all', 1000).catch(() => [])).map(toView);
   const done = (await doneApps(1000).catch(() => [])).map(toView);
-  const line = (a: ReturnType<typeof toView>) => `- [${a.name}](${SITE}/en/app/${a.slug}): ${a.tagline ?? a.longest.en ?? ''} Free, ${a.pricing === 'donations' ? 'donations welcome' : 'no paywall'}. ${a.platform ? `${a.platform}, ` : ''}${a.language || ''} by @${a.owner}, built with ${a.tool}, ${a.activeDays} active days, ${a.commits} commits since ${a.firstCommit.slice(0, 10)}, ${a.stars ?? 0} GitHub stars${a.takeover ? ', open to a takeover' : ''}.${a.url ? ` App: ${a.url}` : ''}${a.repo ? ` Repo: ${a.repo}` : ''}`;
+  const line = (a: ReturnType<typeof toView>) => `- [${a.name}](${SITE}/en/app/${a.slug}): ${a.tagline ?? a.longest.en ?? ''} Free, ${a.pricing === 'donations' ? 'donations welcome' : 'no paywall'}. ${a.platform ? `${a.platform}, ` : ''}${a.language || ''} by ${[a.owner, ...(a.comakers ?? [])].map((l) => `@${l}`).join(', ')}, built with ${a.tool}, ${a.activeDays} active days, ${a.commits} commits since ${a.firstCommit.slice(0, 10)}, ${a.stars ?? 0} GitHub stars${a.takeover ? ', open to a takeover' : ''}.${a.url ? ` App: ${a.url}` : ''}${a.repo ? ` Repo: ${a.repo}` : ''}`;
   const counts = await browseCounts().catch(() => ({ tool: {}, platform: {}, language: {}, intent: {} as Record<string, number> }));
   const browse = [
     ...Object.entries(counts.tool).map(([v, n]) => ({ b: { kind: 'tool' as const, value: v }, n })),

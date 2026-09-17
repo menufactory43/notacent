@@ -14,7 +14,9 @@ interface Props { locale: Locale; app: App; ownerId?: number; sample?: boolean; 
 const { locale, app, ownerId, sample, appId, row } = Astro.props;
 const s = t(locale);
 const user = await currentUser(Astro.cookies).catch(() => null);
-const mine = Boolean(user && ownerId && user.id === ownerId);
+const comakers = app.comakers ?? [];
+const mine = Boolean(user && ((ownerId && user.id === ownerId) || comakers.some((l) => l.toLowerCase() === user.login.toLowerCase())));
+const makers = [app.owner, ...comakers];
 const since = new Date(app.firstCommit).toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 const stamp = app.pricing === 'donations' ? s.donations : app.pricing === 'paid' ? '€' : s.free;
 const stateNote = app.status === 'done' ? s.doneStatus : app.status === 'paused' ? s.paused : '';
@@ -60,7 +62,7 @@ const metaDesc = s.metaDesc(app.name, app.activeDays, sinceLong, app.tagline ?? 
     <div class="cartel">
       <h1>{app.name} {stateNote && <span class="state hand">· {stateNote}</span>}</h1>
       {app.tagline && <p class="tagline">{app.tagline}</p>}
-      <p class="meta">{s.by} <a href={`https://github.com/${app.owner}`} rel="noopener">@{app.owner}</a> · {toolLink ? <a href={toolLink.href}>{app.tool}</a> : app.tool} · {langLink ? <a href={langLink.href}>{app.language}</a> : app.language}{platLink && <> · <a href={platLink.href}>{app.platform}</a></>} · {s.since} <span class="mono">{since}</span></p>
+      <p class="meta">{s.by} {makers.map((l, i) => <>{i > 0 && (i === makers.length - 1 ? ` ${s.and} ` : ', ')}<a href={`https://github.com/${l}`} rel="noopener">@{l}</a></>)} · {toolLink ? <a href={toolLink.href}>{app.tool}</a> : app.tool} · {langLink ? <a href={langLink.href}>{app.language}</a> : app.language}{platLink && <> · <a href={platLink.href}>{app.platform}</a></>} · {s.since} <span class="mono">{since}</span></p>
       {app.longest[locale] && (
         <blockquote class="quote">
           {app.longest[locale]}
@@ -75,7 +77,7 @@ const metaDesc = s.metaDesc(app.name, app.activeDays, sinceLong, app.tagline ?? 
         <div><b class="mono">★ {(app.stars ?? 0).toLocaleString(locale)}</b><span>{s.stars}</span></div>
       </div>
       <p class="prov mono">{readOn ? s.readOn(readOn) : s.verifiedAt} · {app.commits.toLocaleString(locale)} {s.commits} · {s.authors(authors)} · {s.provenanceHint} · <a href={localePath(locale, '/methode')}>{s.methodLink}</a></p>
-      {authors > 1 && app.ownerCommits != null && app.ownerCommits < app.commits * 0.8 && <p class="warn hand">{s.ownerShare(app.owner, app.ownerCommits, app.commits, authors)}</p>}
+      {authors > 1 && app.ownerCommits != null && app.ownerCommits < app.commits * 0.8 && <p class="warn hand">{s.ownerShare(makers.join(', @'), app.ownerCommits, app.commits, authors)}</p>}
       <div class="actions">
         <button class="sk sk-btn primary bravo" type="button" data-slug={app.slug} data-already={s.already}>✋ {s.bravo} · <span class="count mono">{app.bravos}</span></button>
         {app.url && <a class="sk sk-btn" href={sample ? app.url : `/api/apps/go?slug=${app.slug}`} rel={unclaimed ? 'nofollow noopener' : 'noopener'}>{s.open} ↗</a>}

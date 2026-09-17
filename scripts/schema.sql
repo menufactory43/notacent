@@ -126,3 +126,12 @@ alter table apps add column if not exists active_dates date[] default '{}';
 alter table apps add column if not exists authors int default 1;
 -- Les commits du maker lui-même : quand l'historique vient d'ailleurs, c'est ce chiffre qui dit sa part.
 alter table apps add column if not exists owner_commits int;
+-- Les co-makers : jusqu'à deux logins GitHub ajoutés par le propriétaire de la fiche. Le lien reste « en attente »
+-- jusqu'à ce que la personne se connecte une fois : personne ne peut s'afficher au nom de quelqu'un d'autre.
+create table if not exists makers (
+  app_id int references apps(id) on delete cascade,
+  login text not null,
+  confirmed boolean default false,
+  added_at timestamptz default now(),
+  primary key (app_id, login)
+);

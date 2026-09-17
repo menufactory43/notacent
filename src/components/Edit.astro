@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
 import { currentUser } from '../lib/session';
-import { appBySlug, appsByUser } from '../lib/db';
+import { appBySlug, appsByUser, makersOf, canEdit } from '../lib/db';
 import { PLATFORMS } from '../lib/platform';
 interface Props { locale: Locale; slug: string }
 const { locale, slug } = Astro.props;
@@ -10,7 +10,9 @@ const s = t(locale);
 const user = await currentUser(Astro.cookies).catch(() => null);
 if (!user) return Astro.redirect(`/api/auth/github?lang=${locale}&back=${encodeURIComponent(localePath(locale, `/app/${slug}/modifier`))}`, 302);
 const app = await appBySlug(slug).catch(() => null);
-if (!app || app.user_id !== user.id) return new Response(null, { status: 404 });
+if (!app || !canEdit(app, user)) return new Response(null, { status: 404 });
+const owner = app.user_id === user.id;
+const makers = await makersOf(app.id).catch(() => []);
 const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre'];
 const mine = (await appsByUser(user.id).catch(() => [])).filter((a) => a.published);
 const others = mine.filter((a) => a.slug !== app.slug);
@@ -63,16 +65,21 @@ const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.ima
           <select name="platform">{PLATFORMS.map((x) => <option value={x} selected={app.platform === x}>{x}</option>)}</select>
         </label>
       </div>
+      <label><span>{s.fMakers}</span>
+        {owner
+          ? <><input name="makers" value={makers.map((m) => m.login).join(', ')} placeholder="login, login" maxlength="80" /><small>{s.fMakersHint}{makers.some((m) => !m.confirmed) && <> · {makers.filter((m) => !m.confirmed).map((m) => `@${m.login}`).join(', ')} : {s.pending}</>}</small></>
+          : <><input value={makers.map((m) => m.login).join(', ')} disabled /><small>{s.fMakersRO}</small></>}
+      </label>
       <label class="check"><input type="checkbox" name="takeover" checked={app.takeover} /><span><b>{s.fTakeover}</b><small>{s.fTakeoverHint}</small></span></label>
       <div class="actions">
         <button class="sk sk-btn primary" type="submit">{next ? s.saveNext : s.save}</button>
         {next ? <a class="back hand" href={localePath(locale, `/app/${next}/modifier`)}>{s.skip} →</a> : <a class="back hand" href={localePath(locale, `/app/${app.slug}`)}>← {app.name}</a>}
       </div>
     </form>
-    <form method="post" action="/api/apps/remove" class="remove" onsubmit={`return confirm(${JSON.stringify(s.removeConfirm)})`}>
+    {owner && <form method="post" action="/api/apps/remove" class="remove" onsubmit={`return confirm(${JSON.stringify(s.removeConfirm)})`}>
       <input type="hidden" name="slug" value={app.slug} />
       <button type="submit" class="hand danger">{s.remove}</button>
-    </form>
+    </form>}
     {others.length > 0 && (
       <aside class="others">
         <h2 class="hand">{s.otherCards}</h2>

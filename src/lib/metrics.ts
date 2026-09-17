@@ -3,10 +3,11 @@ import { isBot, datesFromStats, type CommitLike, type StatContributor, type Stat
 export { compute, statusFor, type Metrics } from './work';
 
 // Lit toutes les dates de commit de la branche par défaut. 100 par page, donc ~12 appels pour 1 200 commits.
-export async function commitDates(token: string, fullName: string, maker?: string, maxPages = 50): Promise<{ dates: string[]; authors: number; ownerCommits: number }> {
+export async function commitDates(token: string, fullName: string, makers: string[] = [], maxPages = 50): Promise<{ dates: string[]; authors: number; ownerCommits: number }> {
   const dates: string[] = [];
   const authors = new Set<string>();
   let ownerCommits = 0;
+  const mine = new Set(makers.map((l) => l.toLowerCase()));
   let url: string | null = `/repos/${fullName}/commits?per_page=100`;
   let pages = 0;
   while (url && pages++ < maxPages) {
@@ -15,7 +16,7 @@ export async function commitDates(token: string, fullName: string, maker?: strin
       if (isBot(c)) continue;
       const d = c.commit.author?.date ?? c.commit.committer?.date; if (d) dates.push(d);
       const who = c.author?.login ?? c.commit.author?.email ?? c.commit.author?.name; if (who) authors.add(who.toLowerCase());
-      if (maker && c.author?.login?.toLowerCase() === maker.toLowerCase()) ownerCommits++;
+      if (mine.has(c.author?.login?.toLowerCase() ?? '')) ownerCommits++;
     }
     url = r.next;
   }
@@ -24,12 +25,12 @@ export async function commitDates(token: string, fullName: string, maker?: strin
 
 // Un repo, ses dates. Public : toutes les dates de commit, avec le jeton serveur, comme n'importe qui peut les lire.
 // Privé : les statistiques via l'installation (permission « Metadata » seule), fusionnées avec le registre des jours déjà connus.
-export interface RepoRead { full_name: string; private: boolean; installation_id?: number | null; known?: string[] | null; maker?: string }
+export interface RepoRead { full_name: string; private: boolean; installation_id?: number | null; known?: string[] | null; makers?: string[] }
 export interface DatesRead { dates: string[]; commits?: number; authors?: number; ownerCommits?: number; ledger: string[] }
 const day = (d: string) => new Date(d).toISOString().slice(0, 10);
 export async function readDates(r: RepoRead): Promise<DatesRead> {
   if (!r.private) {
-    const { dates, authors, ownerCommits } = await commitDates(await serverToken(), r.full_name, r.maker);
+    const { dates, authors, ownerCommits } = await commitDates(await serverToken(), r.full_name, r.makers ?? []);
     return { dates, authors, ownerCommits, ledger: [...new Set(dates.map(day))].sort() };
   }
   if (!r.installation_id) throw new Error(`repo privé sans installation : ${r.full_name}`);
@@ -47,7 +48,7 @@ export async function readDates(r: RepoRead): Promise<DatesRead> {
   };
   const [contributors, activity] = await Promise.all([stat<StatContributor[]>(`/repos/${r.full_name}/stats/contributors`), stat<StatActivity[]>(`/repos/${r.full_name}/stats/commit_activity`)]);
   if (contributors || activity) {
-    const fromStats = datesFromStats(contributors ?? [], activity ?? [], r.maker);
+    const fromStats = datesFromStats(contributors ?? [], activity ?? [], r.makers ?? []);
     for (const d of fromStats.dates) known.add(d);
     if (contributors) { commits = fromStats.commits; authors = fromStats.authors; ownerCommits = fromStats.ownerCommits; }
   }

@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     const taken = (await sql.query(`select 1 from apps where slug = $1 and repo_id <> $2`, [slug, r.id])) as unknown[];
     if (taken.length) slug = `${slug}-${slugify(user.login)}`;
     const [known] = (await sql.query(`select active_dates, commits from apps where repo_id = $1`, [r.id])) as { active_dates: string[]; commits: number }[];
-    const read = await readDates({ full_name: r.full_name, private: r.private, installation_id: installationId, known: known?.active_dates ?? [], maker: user.login });
+    const read = await readDates({ full_name: r.full_name, private: r.private, installation_id: installationId, known: known?.active_dates ?? [], makers: [user.login] });
     const m = compute(read.dates, Date.now(), read.commits ?? (r.private ? known?.commits : undefined));
     // Étoiles et sujets : un appel de plus, pour la plateforme devinée et le signal « sous les radars ».
     const token = r.private ? (installationId ? await installationToken(installationId).catch(() => null) : null) : await serverToken().catch(() => null);

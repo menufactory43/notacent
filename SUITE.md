@@ -74,6 +74,27 @@ Un champ « alternative à » sur la fiche, des pages `/alternative-a/notion`. C
 
 PeerPush et TrustMRR (oui), Product Hunt, Show HN, Indie Hackers, r/SideProject, les annuaires de LaunchDirectories. Pour le MCP : Smithery, mcp.so, Glama, PulseMCP, et la soumission ChatGPT Apps décrite dans INSTALLATION.md.
 
+### 4 bis. X, le rituel et la règle du tweet
+
+Le compte perso de Gabriel, pas un compte de marque. X Premium (environ 10 € par mois), le seul abonnement à prendre. Un rituel : chaque semaine, le classement en image (générée par le site, comme les cartes OG), les trois tampons, les makers tagués, le lien en première réponse. Entre deux, une pépite et une question. Une fois, quand l'annuaire a l'air plein, le post de lancement : pourquoi le travail vérifié plutôt que le revenu. Blotato est branché pour planifier.
+
+Ce que dit l'algorithme publié en 2026 (dépôt xai-org/x-algorithm, réécriture en Rust et Python de janvier 2026, mises à jour en mai et août ; le code de 2023 est obsolète) :
+
+- Score = Σ poids × probabilité prédite de chaque action. Positives : like, réponse, repost, citation, partage, partage par DM, copie du lien, clics, attention. Négatives : « pas intéressé », masquer, bloquer, signaler, et « pas lu » (not dwelled). Les négatives pèsent beaucoup plus lourd. Les poids chiffrés qui circulent (réponse 13,5, réponse de l'auteur 75, signalement moins 369) viennent du code de 2023 ; en 2026 ce sont des paramètres non publiés, l'ordre de grandeur tient, pas les chiffres.
+- Le temps de lecture est un signal : un post survolé compte contre toi. Écrire dense, lu jusqu'au bout.
+- Le partage par DM et la copie du lien comptent. Faire un format qu'on envoie à quelqu'un.
+- Un nouvel auteur avec peu d'impressions reçoit un coup de pouce de position : les premiers posts ont une chance qu'ils n'auront plus.
+- Un même auteur répété dans le fil est décoté, avec un plancher : un post fort par jour, pas cinq.
+- Le hors-réseau est décoté et ne passe que par un lien au second degré (un abonnement du lecteur a interagi avec toi). Taguer les makers listés est le levier : leurs abonnés sont le public.
+- Grok classe le contenu (catégorie, spam, ton). Un post agressif perd de la portée même s'il fait réagir.
+- La visibilité est filtrée à part du classement. Le README ne dit rien de précis sur les liens ni sur Premium ; la pénalité sur les liens externes est empirique, pas dans le code.
+
+La règle du tweet qui en sort : pas de lien dans le corps, une image, une accroche qui appelle une réponse (une question sur une app, pas une annonce), répondre à chaque réponse dans l'heure, taguer les makers, zéro hashtag, pas de « thread », 15h à 17h heure de Paris, le même jour chaque semaine.
+
+Sources : https://github.com/xai-org/x-algorithm · https://techcrunch.com/2026/08/13/x-open-sources-its-ranking-algorithm-letting-users-see-if-theyve-been-shadowbanned/ · https://opentweet.io/blog/x-algorithm-open-source-github-2026 (avec la réserve sur les chiffres).
+
+Canal payant à considérer après le lancement : un encart dans une newsletter de devs (TLDR, Console.dev, Bytes). Pas SuperX ni un outil de prospection : trop tôt, trop de volume pour ce qu'on fait.
+
 ### 5. Mails aux makers inscrits (via Resend, consenti)
 
 Classement de la semaine, tampon gagné, passage en pause, avec la ligne « sponsoriser 7 jours, 29 € ». C'est le mail qui vend le sponsor. Les événements existent déjà dans la table `activity`.

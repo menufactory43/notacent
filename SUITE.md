@@ -60,6 +60,14 @@ Une règle GitHub à respecter : ses conditions interdisent d'utiliser les donn�
 
 Objectif : 300 fiches listées, 100 réclamées, rituel hebdo ensuite.
 
+### 1 ter. Les permissions GitHub, réduites au minimum (codé, à brancher côté GitHub)
+
+Ce que voit un maker, dans l'ordre : un écran « Public data only » à la connexion (OAuth App sans scope), puis la liste de ses repos publics, lus avec le jeton serveur comme n'importe qui peut les lire. Aucune installation, aucun jeton gardé à son nom. Un repo privé, et seulement lui, passe par l'installation de la GitHub App en « Metadata » seule : GitHub n'y donne que les statistiques, commits par jour sur 52 semaines et par semaine avant, jamais le contenu. Le registre `active_dates` garde les jours exacts déjà connus et le cron l'allonge chaque nuit. Les statistiques par contributeur ne se calculent pas sur certains repos (GitHub répond 202 sans fin) : dans ce cas on garde le nombre de commits déjà connu, et les jours viennent de l'activité de l'année, robots compris, on n'y peut rien.
+
+À faire sur GitHub (INSTALLATION.md, 1a et 1b) : créer l'OAuth App et poser ses deux secrets sur Vercel ; sur la GitHub App, retirer « Contents », décocher « Request user authorization during installation », poser le Setup URL.
+
+Trouvé en route : les jours actifs comptent tous les commits humains de la branche, quel que soit l'auteur. Dictus desktop porte l'historique de Handy (cjpais, 487 commits) sous le nom de Pierre (177). Question ouverte : compter seulement les commits du maker, ou afficher le nombre de contributeurs sur la fiche.
+
 ### 2. Indexation et découverte par les IA (dix minutes, à faire demain aussi)
 
 - Bing Webmaster Tools : https://www.bing.com/webmasters, import depuis Search Console. C'est l'index de ChatGPT.
@@ -105,7 +113,7 @@ Mise en avant payante, « à reprendre » épinglé, palier alertes payant, news
 
 ## Repères
 
-- Secrets sur Vercel : STRIPE_SECRET_KEY (clé restreinte), STRIPE_WEBHOOK_SECRET, SPONSOR_PRICE_CENTS=2900, RESEND_API_KEY, ALERT_FROM, CRON_SECRET, ADMIN_LOGIN, INDEXNOW_KEY, GitHub App.
+- Secrets sur Vercel : STRIPE_SECRET_KEY (clé restreinte), STRIPE_WEBHOOK_SECRET, SPONSOR_PRICE_CENTS=2900, RESEND_API_KEY, ALERT_FROM, CRON_SECRET, ADMIN_LOGIN, INDEXNOW_KEY, GITHUB_OAUTH_ID, GITHUB_OAUTH_SECRET, GitHub App (privés seulement).
 - Installation et branchements : INSTALLATION.md.
 - Mockup de référence (canvas) : https://claude.ai/artifact/WqpFyx2GvMMkkGrkBvXgRA
 - Le cron local passe par les jetons utilisateur (pas de clé privée GitHub App en local), en prod par le jeton d'installation.

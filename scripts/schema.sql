@@ -119,3 +119,6 @@ create table if not exists outreach (
   found_at timestamptz default now()
 );
 create index if not exists outreach_status on outreach (status, score desc);
+-- Le registre des jours actifs : les dates connues avec au moins un commit. Pour un repo privé lu en « Metadata »
+-- seul, GitHub ne donne le détail par jour que sur 52 semaines ; le cron ajoute chaque nuit ce qu'il voit.
+alter table apps add column if not exists active_dates date[] default '{}';

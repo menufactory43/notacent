@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { clientId, githubReady } from '../../../lib/github';
+import { oauthClientId, githubReady } from '../../../lib/github';
 export const prerender = false;
 export const GET: APIRoute = ({ url, cookies, redirect }) => {
   if (!githubReady()) return redirect('/?soon=1', 302);
@@ -13,6 +13,6 @@ export const GET: APIRoute = ({ url, cookies, redirect }) => {
   const lang = url.searchParams.get('lang') === 'en' ? 'en' : 'fr';
   cookies.set('nac_lang', lang, { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' });
   const redirectUri = `${url.origin}/api/auth/callback`;
-  const p = new URLSearchParams({ client_id: clientId(), redirect_uri: redirectUri, state });
+  const p = new URLSearchParams({ client_id: oauthClientId(), redirect_uri: redirectUri, state });
   return redirect(`https://github.com/login/oauth/authorize?${p}`, 302);
 };

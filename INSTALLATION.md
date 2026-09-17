@@ -1,25 +1,44 @@
 # Brancher GitHub
 
-Le site fonctionne avec une **GitHub App** (pas une OAuth App) : le maker l'installe sur les repos qu'il choisit, et elle ne demande que la lecture des métadonnées et du contenu, jamais l'écriture. C'est ce qui rend crédible « on ne lit jamais le code ».
+Deux applications GitHub, un rôle chacune. Le maker ne voit que l'écran le plus doux que GitHub sache afficher.
 
-## 1. Créer l'app
+## 1a. L'OAuth App : savoir qui se connecte
 
-https://github.com/settings/apps/new (GitHub demande une vérification par e-mail avant).
+Sur https://github.com/settings/developers, onglet « OAuth Apps », « New OAuth App » :
 
 | Champ | Valeur |
 |---|---|
-| GitHub App name | `Not a Cent` |
+| Application name | `Not a Cent` |
 | Homepage URL | `https://notacent.app` |
+| Authorization callback URL | `https://notacent.app/api/auth/callback` |
+| Enable Device Flow | décoché |
+
+Aucun scope n'est demandé à la connexion : l'écran GitHub dit « Public data only ». Note le Client ID, génère un Client Secret :
+
+```
+printf "Iv…" | npx vercel env add GITHUB_OAUTH_ID production --yes
+pbpaste | npx vercel env add GITHUB_OAUTH_SECRET production --yes
+```
+
+Tant que ces deux variables manquent, le site se rabat sur l'OAuth de la GitHub App (écran « Act on your behalf »).
+
+## 1b. La GitHub App : les repos privés seulement
+
+Sur https://github.com/settings/apps, l'app existante « Not a Cent » (ou une nouvelle) :
+
+| Champ | Valeur |
+|---|---|
 | Callback URL | `https://notacent.app/api/auth/callback` |
-| Expire user authorization tokens | décoché |
-| Request user authorization (OAuth) during installation | **coché** |
-| Setup URL | vide |
+| Request user authorization (OAuth) during installation | **décoché** |
+| Setup URL | `https://notacent.app/ajouter`, « Redirect on update » coché |
 | Webhook · Active | décoché |
-| Repository permissions · Contents | Read-only |
+| Repository permissions · Contents | **No access** (retirer, si l'app l'avait) |
 | Repository permissions · Metadata | Read-only (imposé) |
 | Where can this GitHub App be installed? | **Any account** |
 
-Le nom public de l'app (« slug ») apparaît dans l'URL après création, par exemple `not-a-cent`.
+Avec « Metadata » seul, GitHub ne donne que les statistiques du repo : commits par semaine et par jour sur un an, jamais le contenu. Retirer une permission ne redemande rien aux installations existantes. Le maker n'installe l'app que s'il veut lister un repo privé, depuis le lien de la page « Classer mon app ».
+
+Un jeton serveur lit les repos publics, comme n'importe qui peut les lire : `GITHUB_TOKEN` (un jeton personnel sans aucun scope suffit), sinon le jeton laissé par l'admin (`ADMIN_LOGIN`) à sa connexion.
 
 ## 2. Les secrets, à poser toi-même
 

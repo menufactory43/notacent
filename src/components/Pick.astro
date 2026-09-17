@@ -2,17 +2,19 @@
 import Base from '../layouts/Base.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
 import { currentUser } from '../lib/session';
-import { installationRepos, appSlug, type GhRepo } from '../lib/github';
+import { appSlug, type GhRepo } from '../lib/github';
+import { makerRepos, syncInstallation } from '../lib/repos';
 import { sql } from '../lib/db';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
 const s = t(locale);
 const user = await currentUser(Astro.cookies).catch(() => null);
-if (!user?.access_token) return Astro.redirect(`/api/auth/github?lang=${locale}`, 302);
-if (!user.installation_id) return Astro.redirect(`https://github.com/apps/${appSlug()}/installations/new`, 302);
+if (!user) return Astro.redirect(`/api/auth/github?lang=${locale}`, 302);
+// Les repos publics se lisent sans rien demander. Les privés n'apparaissent que si le maker a installé la GitHub App (« Metadata » seule).
+const installationId = await syncInstallation(user).catch(() => null);
 let repos: GhRepo[] = [];
 let error = '';
-try { repos = await installationRepos(user.access_token, user.installation_id); } catch (e) { error = s.errGithub; console.error(e); }
+try { repos = await makerRepos(user.login, installationId); } catch (e) { error = s.errGithub; console.error(e); }
 const published = new Set(((await sql.query(`select repo_id from apps where user_id = $1 and published`, [user.id])) as { repo_id: number }[]).map((r) => Number(r.repo_id)));
 const wanted = (Astro.cookies.get('nac_repo')?.value ?? '').toLowerCase();
 const preferred = (r: GhRepo) => wanted && (wanted.includes(r.full_name.toLowerCase()) || wanted.endsWith(`/${r.name.toLowerCase()}`));
@@ -43,9 +45,9 @@ const installUrl = `https://github.com/apps/${appSlug()}/installations/new`;
       </ul>
       <div class="actions">
         <button class="sk sk-btn primary" type="submit" disabled={repos.length === 0}>{s.publish}</button>
-        <a class="sk sk-btn" href={installUrl}>{s.pickMore} ↗</a>
         <a class="back hand" href={localePath(locale, '/')}>← Not a Cent</a>
       </div>
+      <p class="private hand">{installationId ? s.pickPrivateMore : s.pickPrivate} <a href={installUrl}>{s.pickPrivateLink} ↗</a></p>
     </form>
   </section>
 </Base>
@@ -68,5 +70,7 @@ input[type=checkbox]{width:22px;height:22px;margin-top:3px;accent-color:var(--re
 .meta{color:var(--pencil);font-size:12px}
 .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .back{color:var(--pencil);font-size:18px;text-decoration:none}
+.private{margin:18px 0 0;color:var(--pencil);font-size:18px}
+.private a{color:var(--ink)}
 button[disabled]{opacity:.5;cursor:not-allowed}
 </style>

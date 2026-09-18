@@ -137,7 +137,7 @@ function frame(...children: Node[]): Node {
       display: 'flex',
       flexDirection: 'column',
       backgroundColor: PAPER,
-      padding: 56,
+      padding: '44px 56px',
       position: 'relative',
     },
     h('div', {
@@ -190,55 +190,105 @@ export interface AppCard {
   stampLabel: string;
   byLabel: string;
   shot?: string; // data URI
+  /** Le calendrier des jours actifs : les dates AAAA-MM-JJ, la légende surlignée, la ligne de provenance. */
+  calendar?: { dates: string[]; caption: string; provenance: string; locale: string };
+}
+
+// Le calendrier : 53 colonnes de 7 cases, une case par jour, remplie quand il y a eu un commit.
+// satori ne dessine pas de <svg> : ce sont des divs en flex, 371 au plus, ce qu'il avale sans broncher.
+const DAY = 86_400_000;
+function calendar(c: NonNullable<AppCard['calendar']>): Node {
+  const CELL = 16, GAP = 4.5, STEP = CELL + GAP;
+  const set = new Set(c.dates);
+  const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+  const dow = (today.getUTCDay() + 6) % 7;
+  const start = new Date(today.getTime() - (52 * 7 + dow) * DAY);
+  const cols: Node[] = [];
+  const months: Node[] = [];
+  let lastMonth = -1;
+  for (let w = 0; w < 53; w++) {
+    const cells: Node[] = [];
+    for (let r = 0; r < 7; r++) {
+      const d = new Date(start.getTime() + (w * 7 + r) * DAY);
+      if (d > today) break;
+      const on = set.has(d.toISOString().slice(0, 10));
+      cells.push(h('div', { width: CELL, height: CELL, borderRadius: 3.5, backgroundColor: on ? HILITE : '#EEEDF2', border: on ? `1px solid ${INK}` : '1px solid #EEEDF2' }));
+      if (r === 0 && d.getUTCMonth() !== lastMonth) {
+        lastMonth = d.getUTCMonth();
+        if (w > 0 || d.getUTCDate() <= 7) months.push(text(d.toLocaleDateString(c.locale, { month: 'short', timeZone: 'UTC' }).replace('.', ''), { position: 'absolute', left: w * STEP, top: 0, fontFamily: MONO, fontSize: 13, color: PENCIL }));
+      }
+    }
+    cols.push(h('div', { display: 'flex', flexDirection: 'column', gap: GAP }, ...cells));
+  }
+  return h(
+    'div',
+    { display: 'flex', flexDirection: 'column', position: 'relative', paddingTop: 22 },
+    ...months,
+    h('div', { display: 'flex', gap: GAP }, ...cols),
+  );
 }
 
 export function appCard(c: AppCard): Node {
-  const meta = [`${c.byLabel} @${c.owner}`, c.tool, c.language].filter(Boolean).join(' · ');
+  const meta = [`${c.byLabel} @${c.owner}`, c.tool, c.language].filter(Boolean).join(' \u00b7 ');
+  const cal = c.calendar;
+  // Avec le calendrier, tout se serre : le titre à 72, la capture à 300 × 225, les chiffres à 34.
+  const shotW = cal ? 300 : 380, shotH = cal ? 225 : 285;
+  const shot = c.shot
+    ? h(
+        'div',
+        { display: 'flex', width: shotW, height: shotH, border: `3px solid ${INK}`, borderRadius: cal ? 18 : 20, backgroundColor: PAPER2, overflow: 'hidden', flexShrink: 0 },
+        { type: 'img', props: { src: c.shot, width: shotW, height: shotH, style: { objectFit: 'cover' } } },
+      )
+    : null;
   return frame(
     stamp(c.stampLabel),
     logo(34),
     h(
       'div',
-      { display: 'flex', flexGrow: 1, alignItems: 'center', gap: 40, marginTop: 22 },
+      { display: 'flex', flexGrow: cal ? 0 : 1, alignItems: 'center', gap: cal ? 32 : 40, marginTop: cal ? 14 : 22 },
       h(
         'div',
-        { display: 'flex', flexDirection: 'column', flexGrow: 1, maxWidth: c.shot ? 620 : 1000 },
-        text(c.name, { fontFamily: HAND, fontSize: 84, color: INK, lineHeight: 1.05 }),
+        { display: 'flex', flexDirection: 'column', flexGrow: 1, maxWidth: c.shot ? (cal ? 700 : 620) : 1000 },
+        text(c.name, { fontFamily: HAND, fontSize: cal ? 72 : 84, color: INK, lineHeight: 1.05 }),
         c.tagline
-          ? text(c.tagline, { fontFamily: BODY, fontSize: 28, color: INK, marginTop: 10, lineHeight: 1.35 })
+          ? text(c.tagline, { fontFamily: BODY, fontSize: cal ? 23 : 28, color: INK, marginTop: cal ? 8 : 10, lineHeight: 1.3, maxWidth: 640 })
           : null,
-        text(meta, { fontFamily: BODY, fontSize: 22, color: PENCIL, marginTop: 14 }),
-        h(
-          'div',
-          { display: 'flex', marginTop: 26 },
-          ...c.stats.map((s) => statCell(s.value, s.label)),
-        ),
+        text(meta, { fontFamily: BODY, fontSize: cal ? 20 : 22, color: PENCIL, marginTop: cal ? 8 : 14 }),
+        h('div', { display: 'flex', marginTop: cal ? 16 : 26 }, ...c.stats.map((s) => (cal ? statCellSmall(s.value, s.label) : statCell(s.value, s.label)))),
       ),
-      c.shot
-        ? h(
-            'div',
-            {
-              display: 'flex',
-              width: 380,
-              height: 285,
-              border: `3px solid ${INK}`,
-              borderRadius: 20,
-              backgroundColor: PAPER2,
-              overflow: 'hidden',
-            },
-            { type: 'img', props: { src: c.shot, width: 380, height: 285, style: { objectFit: 'cover' } } },
-          )
-        : null,
+      shot,
     ),
+    cal
+      ? h(
+          'div',
+          { display: 'flex', flexDirection: 'column', marginTop: 'auto' },
+          h(
+            'div',
+            { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' },
+            text(cal.caption, { fontFamily: HAND, fontSize: 24, color: INK, backgroundColor: HILITE, padding: '3px 10px', transform: 'rotate(-1.5deg)' }),
+            text(cal.provenance, { fontFamily: MONO, fontSize: 14, color: PENCIL }),
+          ),
+          h('div', { display: 'flex', marginTop: 6 }, calendar(cal)),
+        )
+      : null,
+  );
+}
+
+function statCellSmall(value: string, label: string): Node {
+  return h(
+    'div',
+    { display: 'flex', flexDirection: 'column', marginRight: 34 },
+    text(value, { fontFamily: MONO, fontSize: 34, color: INK }),
+    text(label, { fontFamily: HAND, fontSize: 19, color: PENCIL }),
   );
 }
 
 export const renderCard = toPng;
 
 /** Redimensionne une capture pour l'encastrer dans la carte, en data URI. */
-export async function shotDataUri(bytes: Uint8Array): Promise<string | undefined> {
+export async function shotDataUri(bytes: Uint8Array, w = 380, h = 285): Promise<string | undefined> {
   try {
-    const png = await sharp(bytes).resize(380, 285, { fit: 'cover' }).png().toBuffer();
+    const png = await sharp(bytes).resize(w, h, { fit: 'cover' }).png().toBuffer();
     return `data:image/png;base64,${png.toString('base64')}`;
   } catch {
     return undefined;

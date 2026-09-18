@@ -7,6 +7,22 @@ import { appCard, renderCard, shotDataUri } from '../../../lib/og';
 
 export const prerender = false;
 
+// La légende surlignée et la ligne de provenance, dans la langue de la carte.
+function calendarFor(dates: string[], total: number, refreshedAt: string | undefined, locale: Locale) {
+  const start = new Date(); start.setUTCHours(0, 0, 0, 0);
+  start.setTime(start.getTime() - (52 * 7 + (start.getUTCDay() + 6) % 7) * 86_400_000);
+  const from = start.toISOString().slice(0, 10);
+  const inYear = dates.filter((d) => d >= from).length;
+  const before = Math.max(0, total - inYear);
+  const fr = locale === 'fr';
+  const caption = fr
+    ? `${inYear} jour${inYear > 1 ? 's' : ''} de travail sur 12 mois${before ? `, ${before} avant` : ''}`
+    : `${inYear} day${inYear > 1 ? 's' : ''} of work over 12 months${before ? `, ${before} before that` : ''}`;
+  const read = refreshedAt ? new Date(refreshedAt).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+  const provenance = [read ? (fr ? `lu le ${read}` : `read on ${read}`) : null, fr ? 'un jour = un commit humain' : 'one day = one human commit', 'notacent.app'].filter(Boolean).join(' \u00b7 ');
+  return { dates, caption, provenance, locale };
+}
+
 async function shot(slug: string): Promise<string | undefined> {
   if (!hasDb) return undefined;
   try {
@@ -15,7 +31,7 @@ async function shot(slug: string): Promise<string | undefined> {
     }[];
     if (!r) return undefined;
     const bytes = typeof r.image === 'string' ? Buffer.from(r.image.replace(/^\\x/, ''), 'hex') : Buffer.from(r.image);
-    return shotDataUri(bytes);
+    return shotDataUri(bytes, 300, 225);
   } catch {
     return undefined;
   }
@@ -44,6 +60,7 @@ export const GET: APIRoute = async ({ params, url }) => {
         { value: `${app.bestStreakWeeks} ${s.weeks}`, label: s.streak },
       ],
       shot: row ? await shot(slug) : undefined,
+      calendar: app.activeDates?.length ? calendarFor(app.activeDates, app.activeDays, app.refreshedAt, locale) : undefined,
     }),
   );
 

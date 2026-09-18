@@ -7,6 +7,8 @@ interface Props { app: App; rank?: number; locale: Locale; seed: number; stamp?:
 const { app, rank, locale, seed, stamp } = Astro.props;
 const s = t(locale);
 const last = app.lastCommitDaysAgo === 0 ? s.today : s.ago(app.lastCommitDaysAgo, 'j');
+// La parole du maker dans la ligne : sa phrase quand il l'a écrite ; sur une fiche non réclamée, le vide visible et l'appel à réclamer.
+const claimHref = `/api/auth/github?lang=${locale}&back=${encodeURIComponent(localePath(locale, `/app/${app.slug}/modifier`))}`;
 const stampLabel = stamp === 'week' ? s.stampWeekShort : stamp === 'streak' ? s.stampStreak : stamp === 'radar' ? s.stampRadar : '';
 ---
 <article class:list={['sk', 'row', { sponsor: app.sponsored, unclaimed: app.unclaimed }]}>
@@ -24,6 +26,9 @@ const stampLabel = stamp === 'week' ? s.stampWeekShort : stamp === 'streak' ? s.
       </p>
       {app.tagline && <p class="tagline">{app.tagline}</p>}
       <p class="by">@{app.owner} <span class="tool">{app.tool}</span> · {app.language}{app.platform && <> · {app.platform}</>} · {s.last} <b>{last}</b></p>
+      {app.hasLongest
+        ? <p class="said">« {app.longest[locale]} »<span class="hand lbl">{s.rowLongest}</span></p>
+        : app.unclaimed && <p class="said void">« <span class="blank"></span> »<span class="hand lbl">{s.rowVoid(app.owner)} · <a href={claimHref}>{s.claimShort}</a></span></p>}
     </div>
   </div>
   <Spark data={app.weekly} seed={seed} />
@@ -48,6 +53,11 @@ const stampLabel = stamp === 'week' ? s.stampWeekShort : stamp === 'streak' ? s.
 .tagline{margin:1px 0 0;font-size:14px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .by{color:var(--pencil);font-size:14px;margin:2px 0 0}
 .by b{color:var(--ink);font-weight:500}
+.said{margin:4px 0 0;font-size:14px;line-height:1.35;color:var(--ink);font-style:italic;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.said .lbl{font-style:normal;font-weight:700;font-size:14px;color:var(--pencil);margin-left:8px}
+.said.void{color:var(--pencil)}
+.said .blank{display:inline-block;width:160px;height:12px;border-bottom:1.5px dashed var(--pencil);vertical-align:baseline}
+.said a{color:var(--redpen);text-decoration:none;border-bottom:1.5px solid var(--redpen)}
 .tool{font:500 15px/1 var(--hand);color:var(--ink);border:1.5px solid var(--faint);border-radius:8px 30px 10px 34px/30px 8px 34px 10px;padding:1px 7px;margin-left:6px}
 .metric{text-align:right}
 .metric b{display:block;font-size:28px;line-height:1;font-weight:500}

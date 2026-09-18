@@ -14,7 +14,7 @@ export function toView(a: DbApp): App {
     url: a.url ?? a.homepage ?? undefined, repo: a.private ? undefined : `https://github.com/${a.full_name}`,
     weekly: a.weekly?.length ? a.weekly : Array(26).fill(0), imageUrl: a.has_image ? `/api/img/${a.slug}` : a.image_url ?? undefined, sponsored: a.sponsored ?? false, tagline: a.tagline ?? a.description ?? undefined,
     stars: a.stars ?? 0, platform: a.platform ?? undefined, takeover: a.takeover ?? false, unclaimed: a.unclaimed ?? false,
-    comakers: a.comakers ?? [], authors: a.authors ?? 1, ownerCommits: a.owner_commits ?? undefined, refreshedAt: a.refreshed_at ? new Date(a.refreshed_at).toISOString() : undefined,
+    hasLongest: Boolean(a.longest), comakers: a.comakers ?? [], authors: a.authors ?? 1, ownerCommits: a.owner_commits ?? undefined, refreshedAt: a.refreshed_at ? new Date(a.refreshed_at).toISOString() : undefined,
     // La base rend des dates (objets ou chaînes) : on les ramène à AAAA-MM-JJ, en UTC, comme le registre les a écrites.
     activeDates: a.active_dates?.map((d) => (d instanceof Date ? new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString() : String(d)).slice(0, 10)),
   };

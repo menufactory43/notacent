@@ -23,6 +23,8 @@ const stampLabel = stamp === 'week' ? s.stampWeekShort : stamp === 'streak' ? s.
         {stampLabel && <span class="stamp red">{stampLabel}</span>}
         {app.takeover && <span class="stamp ink">{s.stampTakeover}</span>}
         {app.unclaimed && <span class="unclaimed-tag hand">{s.unclaimedStamp}</span>}
+        {app.store && <span class="sig hand">✓ {s.tagStore}</span>}
+        {!app.store && app.notarized?.level === 'notarized' && <span class="sig hand">✓ {s.tagNotarized}</span>}
       </p>
       {app.tagline && <p class="tagline">{app.tagline}</p>}
       <p class="by">@{app.owner} <span class="tool">{app.tool}</span> · {app.language}{app.platform && <> · {app.platform}</>} · {s.last} <b>{last}</b></p>
@@ -68,6 +70,7 @@ const stampLabel = stamp === 'week' ? s.stampWeekShort : stamp === 'streak' ? s.
 .sponsor{border-style:dashed;border-color:var(--pencil);background:var(--paper-2)}
 .unclaimed{border-style:dashed;border-color:var(--faint)}
 .unclaimed-tag{font:500 15px/1 var(--hand);color:var(--pencil);border-bottom:1.5px dashed var(--pencil)}
+.sig{font:500 15px/1 var(--hand);color:var(--pencil);border:1.5px solid var(--faint);border-radius:8px 30px 10px 34px/30px 8px 34px 10px;padding:1px 7px}
 .label{font:700 15px/1 var(--hand);color:var(--pencil);position:absolute;top:-11px;left:24px;background:var(--paper-2);padding:0 6px}
 @media (max-width:760px){
   .row{grid-template-columns:1fr 1fr;gap:10px}

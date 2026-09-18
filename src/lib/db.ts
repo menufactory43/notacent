@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import type { Store, Notarized } from './signing';
 export const sql = neon(import.meta.env.DATABASE_URL ?? process.env.DATABASE_URL ?? '');
 export const hasDb = Boolean(import.meta.env.DATABASE_URL ?? process.env.DATABASE_URL);
 
@@ -11,10 +12,11 @@ export interface DbApp {
   active_days_30: number; best_streak_weeks: number; weekly: number[]; bravos: number; clicks: number;
   published: boolean; refreshed_at: string | null; created_at: string; login?: string; has_image?: boolean; sponsored?: boolean;
   stars: number; platform: string | null; takeover: boolean; unclaimed?: boolean; authors: number; active_dates: (string | Date)[] | null; owner_commits: number | null; comakers: string[];
+  store_url: string | null; store: Store | null; notarized: Notarized | null;
 }
 
 // Les colonnes d'une fiche, une fois pour toutes : chaque requête les lit telles quelles.
-const COLS = `a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image, coalesce(a.stars, 0) as stars, a.platform, coalesce(a.takeover, false) as takeover, (not coalesce(u.claimed, true)) as unclaimed, coalesce(a.authors, 1) as authors, a.active_dates, a.owner_commits, (select coalesce(array_agg(m.login order by m.added_at), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers`;
+const COLS = `a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image, coalesce(a.stars, 0) as stars, a.platform, coalesce(a.takeover, false) as takeover, (not coalesce(u.claimed, true)) as unclaimed, coalesce(a.authors, 1) as authors, a.active_dates, a.owner_commits, (select coalesce(array_agg(m.login order by m.added_at), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers, a.store_url, a.store, a.notarized`;
 const FROM = `from apps a join users u on u.id = a.user_id`;
 // Le classement : publiée, pas payante, encore en cours.
 const ON_BOARD = `a.published and a.pricing <> 'paid' and a.status = 'polishing'`;
@@ -103,8 +105,10 @@ export const canEdit = (app: DbApp, user: { id: number; login: string }) => app.
 // ---- Parcourir : chaque filtre est une page.
 
 export type BrowseKind = 'tool' | 'platform' | 'language' | 'intent';
-export type Intent = 'radar' | 'takeover' | 'veteran' | 'new' | 'done';
-export const INTENTS: Intent[] = ['radar', 'takeover', 'veteran', 'new', 'done'];
+export type Intent = 'radar' | 'takeover' | 'veteran' | 'new' | 'done' | 'signed';
+export const INTENTS: Intent[] = ['radar', 'takeover', 'veteran', 'new', 'done', 'signed'];
+// « Signées » : la fiche a un lien App Store vérifié chez Apple, ou une notarisation lue dans son workflow de publication.
+export const SIGNED_SQL = `(a.store is not null or a.notarized->>'level' = 'notarized')`;
 export interface Browse { kind: BrowseKind; value: string }
 
 // La clause et l'ordre d'un filtre. « radar » = beaucoup de jours pour peu d'étoiles, avec un plancher pour qu'un repo invisible ne prenne pas la tête.
@@ -117,6 +121,7 @@ function browseWhere(b: Browse, params: unknown[]): { where: string; order: stri
       case 'veteran': return { where: `${ON_BOARD} and a.first_commit < now() - interval '365 days'`, order };
       case 'new': return { where: `${ON_BOARD} and a.created_at > now() - interval '14 days'`, order: `a.created_at desc` };
       case 'done': return { where: `a.published and a.status <> 'polishing'`, order };
+      case 'signed': return { where: `${ON_BOARD} and ${SIGNED_SQL}`, order };
       default: return { where: 'false', order };
     }
   }
@@ -146,7 +151,8 @@ export async function browseCounts(): Promise<{ tool: Record<string, number>; pl
             (select count(*)::int from apps a where a.published and a.pricing <> 'paid' and coalesce(a.takeover,false)) as takeover,
             (select count(*)::int from apps a where ${ON_BOARD} and a.first_commit < now() - interval '365 days') as veteran,
             (select count(*)::int from apps a where ${ON_BOARD} and a.created_at > now() - interval '14 days') as new,
-            (select count(*)::int from apps a where a.published and a.status <> 'polishing') as done`,
+            (select count(*)::int from apps a where a.published and a.status <> 'polishing') as done,
+            (select count(*)::int from apps a where ${ON_BOARD} and ${SIGNED_SQL}) as signed`,
   )) as Record<Intent, number>[];
   out.intent = i;
   return out;

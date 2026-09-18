@@ -49,6 +49,7 @@ export function browseLabel(b: Browse | Record<string, never>, locale: Locale): 
         veteran: ['Toujours vivantes après 1 an', 'Still alive after a year'],
         new: ['Nouvelles cette semaine', 'New this week'],
         done: ['Terminées, mais finies', 'Done, and finished'],
+        signed: ['Signées : App Store ou notarisées', 'Signed: App Store or notarized'],
       };
       return fr ? m[i][0] : m[i][1];
     }
@@ -68,6 +69,7 @@ export function browseLede(b: Browse, locale: Locale): string {
         veteran: ['Premier commit il y a plus d\'un an, et toujours en cours. La durée, c\'est la preuve.', 'First commit more than a year ago, still going. Duration is the proof.'],
         new: ['Arrivées dans les quatorze derniers jours, avec leur historique de commits déjà lu.', 'Listed in the last fourteen days, commit history already read.'],
         done: ['Le maker a dit « terminée » ou « en pause ». Elles marchent, elles ne bougent plus.', 'The maker said "done" or "paused". They work, they no longer move.'],
+        signed: ['Ce qu\'on regarde avant de télécharger un binaire : une fiche App Store vérifiée chez Apple, ou une notarisation lue dans le workflow de publication du repo.', 'What you check before downloading a binary: an App Store page verified with Apple, or a notarization step read in the repo\'s release workflow.'],
       };
       return fr ? m[b.value as Intent][0] : m[b.value as Intent][1];
     }

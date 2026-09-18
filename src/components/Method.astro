@@ -40,6 +40,25 @@ const code = 'https://github.com/menufactory43/notacent/blob/main/src/lib';
       ? 'Un repo privé est lu par ses statistiques, avec la seule permission « métadonnées » de la GitHub App : les commits par semaine et par auteur depuis le début, le détail par jour sur les 52 dernières semaines, et les pushes récents. Les jours plus vieux qu\'un an ne sont connus qu\'à la semaine ; on les note au dimanche de la semaine. Un registre garde chaque jour vu, et grandit nuit après nuit. Le premier passage sur un repo dont GitHub n\'a pas encore calculé les statistiques remonte la branche commit par commit, jusqu\'à 400.'
       : 'A private repo is read through its statistics, with the GitHub App\'s single “metadata” permission: commits per week and per author since the beginning, the per-day detail over the last 52 weeks, and recent pushes. Days older than a year are only known by the week; we record them on that week\'s Sunday. A ledger keeps every day seen and grows night after night. The first pass on a repo whose statistics GitHub has not computed yet walks the branch commit by commit, up to 400.'}</p>
 
+    <h2>{fr ? 'App Store et notarisation' : 'App Store and notarization'}</h2>
+    <p>{fr
+      ? "Avant de télécharger une app Mac d'un inconnu, on regarde une chose : est-elle passée par l'App Store, ou signée et notarisée par Apple ? La fiche répond quand elle peut, et dit d'où vient la réponse."
+      : 'Before downloading a Mac app from a stranger, you check one thing: did it go through the App Store, or is it signed and notarized by Apple? The card answers when it can, and says where the answer comes from.'}</p>
+    <ul>
+      <li>{fr
+        ? 'App Store : le maker colle le lien de sa fiche App Store, et on le vérifie chez Apple à chaque lecture, par l\'API publique de recherche. Un lien qui ne mène à aucune app n\'est pas gardé. On affiche le nom et l\'éditeur tels qu\'Apple les renvoie. C\'est une vérification, pas une déclaration.'
+        : 'App Store: the maker pastes their App Store link, and we verify it with Apple at every read, through the public lookup API. A link that leads to no app is not kept. We show the name and the seller exactly as Apple returns them. It is a verification, not a declaration.'}</li>
+      <li>{fr
+        ? 'Notarisation : sur un repo public d\'app Mac, on lit les fichiers de `.github/workflows`, douze au plus, et on y cherche l\'outil qui envoie le binaire à la notarisation d\'Apple (`notarytool`, `stapler staple`, `altool --notarize-app`, une action de notarisation, des identifiants de notarisation). Trouvé, la fiche le dit et donne le lien vers le fichier : chacun peut aller voir.'
+        : 'Notarization: on a public Mac app repo, we read the files in `.github/workflows`, twelve at most, and look for the tool that submits the binary to Apple notarization (`notarytool`, `stapler staple`, `altool --notarize-app`, a notarization action, notarization credentials). Found, the card says so and links to the file: anyone can go and look.'}</li>
+      <li>{fr
+        ? 'Signée seulement : un certificat Developer ID sans notarisation trouvée (`codesign --sign`, `CSC_LINK`, un certificat dans les secrets). Depuis macOS 10.15, ça ne suffit plus à passer Gatekeeper : la fiche le distingue.'
+        : 'Signed only: a Developer ID certificate with no notarization found (`codesign --sign`, `CSC_LINK`, a certificate in the secrets). Since macOS 10.15 that is no longer enough to pass Gatekeeper: the card tells them apart.'}</li>
+    </ul>
+    <p>{fr
+      ? "Ce que ça ne prouve pas : qu'un workflow notarise ne dit pas que le fichier que tu télécharges, aujourd'hui, est notarisé. Le seul contrôle qui tranche, c'est ton Mac au moment de l'ouvrir — ou `spctl -a -vv` sur le binaire. On ne télécharge aucun binaire et on n'en vérifie aucun ticket : il faudrait un Mac, notre serveur n'en est pas un, et Apple n'expose rien de public là-dessus. Rien de lu ne veut pas dire non signée : beaucoup de makers signent depuis leur machine, sans que ça passe par un workflow. C'est une absence de preuve, pas une preuve d'absence, et la fiche l'écrit comme ça. Les repos privés ne sont pas lus du tout : la permission « métadonnées » ne donne pas accès aux fichiers."
+      : "What it does not prove: a workflow that notarizes does not mean the file you download today is notarized. The only check that settles it is your own Mac when you open it — or `spctl -a -vv` on the binary. We download no binary and validate no ticket: that would take a Mac, our server is not one, and Apple exposes nothing public for it. Nothing read does not mean unsigned: plenty of makers sign from their own machine, outside any workflow. It is an absence of proof, not a proof of absence, and the card words it that way. Private repos are not read at all: the “metadata” permission gives no access to files."}</p>
+
     <h2>{fr ? 'Ce que le chiffre ne dit pas' : 'What the number does not say'}</h2>
     <ul>
       <li>{fr ? 'Un jour actif ne dit pas combien d\'heures. Un commit d\'une ligne et une journée entière pèsent pareil.' : 'An active day does not say how many hours. A one-line commit and a full day weigh the same.'}</li>
@@ -49,8 +68,8 @@ const code = 'https://github.com/menufactory43/notacent/blob/main/src/lib';
     </ul>
 
     <h2>{fr ? 'Le code' : 'The code'}</h2>
-    <p>{fr ? 'Tout ce qui est écrit ici est dans le code du site, ouvert : ' : 'Everything written here is in the site\'s code, open: '}<a href={`${code}/work.ts`}>work.ts</a>{fr ? ' pour les calculs et la liste des robots, ' : ' for the maths and the bot list, '}<a href={`${code}/metrics.ts`}>metrics.ts</a>{fr ? ' pour la lecture GitHub. Si tu trouves une erreur, ouvre une issue.' : ' for the GitHub read. If you find a mistake, open an issue.'}</p>
-    <p class="mono small">{fr ? 'Dernière mise à jour : 17 septembre 2026.' : 'Last updated: September 17, 2026.'}</p>
+    <p>{fr ? 'Tout ce qui est écrit ici est dans le code du site, ouvert : ' : 'Everything written here is in the site\'s code, open: '}<a href={`${code}/work.ts`}>work.ts</a>{fr ? ' pour les calculs et la liste des robots, ' : ' for the maths and the bot list, '}<a href={`${code}/metrics.ts`}>metrics.ts</a>{fr ? ' pour la lecture GitHub, ' : ' for the GitHub read, '}<a href={`${code}/signing.ts`}>signing.ts</a>{fr ? ' pour l\'App Store et la notarisation. Si tu trouves une erreur, ouvre une issue.' : ' for the App Store and notarization. If you find a mistake, open an issue.'}</p>
+    <p class="mono small">{fr ? 'Dernière mise à jour : 18 septembre 2026.' : 'Last updated: September 18, 2026.'}</p>
   </article>
 </Base>
 <style>

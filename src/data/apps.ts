@@ -1,4 +1,5 @@
 // Données d'exemple. Seront remplacées par la base + la lecture GitHub (étapes 2 et 3).
+import type { Store, Notarized } from '../lib/signing';
 export type Pricing = 'free' | 'donations' | 'paid';
 export type Status = 'polishing' | 'done' | 'paused';
 export type Tool = 'Claude Code' | 'Cursor' | 'Lovable' | 'Bolt' | 'Copilot' | 'Autre';
@@ -38,6 +39,8 @@ export interface App {
   authors?: number; // auteurs humains du repo : 1 = une personne, plus = une équipe ou un historique hérité
   refreshedAt?: string; // ISO, dernière lecture du repo
   activeDates?: string[]; // les jours actifs exacts (AAAA-MM-JJ), pour le calendrier
+  store?: Store; // la fiche App Store, telle qu'Apple la renvoie
+  notarized?: Notarized; // la signature et la notarisation, lues dans le workflow de publication
 }
 
 function weekly(shape: 'up' | 'steady' | 'burst' | 'new', seed: number) {

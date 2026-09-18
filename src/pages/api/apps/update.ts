@@ -3,6 +3,7 @@ import { sql, appBySlug, canEdit, setMakers, GH_LOGIN } from '../../../lib/db';
 import { currentUser } from '../../../lib/session';
 import { PLATFORMS } from '../../../lib/platform';
 import { pingIndexNow, appPaths } from '../../../lib/indexnow';
+import { storeIdFrom, lookupStore } from '../../../lib/signing';
 export const prerender = false;
 const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre'];
 const clean = (v: FormDataEntryValue | null, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '') || null;
@@ -27,6 +28,15 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   }
   const before = slug ? await appBySlug(slug) : null;
   if (!before || !canEdit(before, user)) return redirect(`${lang}/?erreur=fiche`, 302);
+  // Le lien App Store : déclaré ici, vérifié chez Apple tout de suite, jamais gardé s'il ne mène à aucune app.
+  // Champ vide mais lien de l'app déjà sur l'App Store : on le retrouve là, comme le fait le cron chaque nuit.
+  const url = httpOnly(clean(f.get('url'), 500));
+  const storeUrl = clean(f.get('store_url'), 500);
+  const declared = storeIdFrom(storeUrl);
+  if (storeUrl && !declared) return redirect(`${lang}/app/${slug}/modifier?erreur=store`, 302);
+  const storeId = declared ?? storeIdFrom(url);
+  const store = !storeId ? null : storeId === before.store?.id ? before.store : await lookupStore(storeId).catch(() => null);
+  if (declared && !store) return redirect(`${lang}/app/${slug}/modifier?erreur=store`, 302);
   // La liste des co-makers : seul le propriétaire y touche. Deux logins au plus, jamais le sien.
   if (before.user_id === user.id && f.has('makers')) {
     const logins = [...new Set(String(f.get('makers') ?? '').split(/[,\s]+/).map((l) => l.replace(/^@/, '').trim()).filter((l) => l && GH_LOGIN.test(l) && l.toLowerCase() !== user.login.toLowerCase()))].slice(0, 2);
@@ -34,9 +44,9 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   }
   const rows = (await sql.query(
     `update apps set url = $1, image_url = coalesce($2, image_url), longest = $3, tool = $4, pricing = $5, status = $6, name = coalesce($7, name),
-       image = coalesce($10, image), image_type = coalesce($11, image_type), tagline = $12, platform = coalesce($13, platform), takeover = $14
+       image = coalesce($10, image), image_type = coalesce($11, image_type), tagline = $12, platform = coalesce($13, platform), takeover = $14, store_url = $15, store = $16
      where id = $9 and slug = $8 returning id, slug`,
-    [httpOnly(clean(f.get('url'), 500)), httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, before.id, image, imageType, clean(f.get('tagline'), 140), platform, takeover],
+    [url, httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, before.id, image, imageType, clean(f.get('tagline'), 140), platform, takeover, declared ? storeUrl : null, store && JSON.stringify(store)],
   )) as { id: number; slug: string }[];
   if (!rows.length) return redirect(`${lang}/?erreur=fiche`, 302);
   await pingIndexNow(appPaths(rows[0].slug));

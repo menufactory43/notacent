@@ -135,3 +135,9 @@ create table if not exists makers (
   added_at timestamptz default now(),
   primary key (app_id, login)
 );
+
+-- Ce qui rassure avant de télécharger une app Mac : le lien App Store (vérifié chez Apple) et la notarisation
+-- lue dans le workflow de publication du repo public. store_url est ce que le maker déclare, store ce qu'Apple répond.
+alter table apps add column if not exists store_url text;
+alter table apps add column if not exists store jsonb;
+alter table apps add column if not exists notarized jsonb;

@@ -1,6 +1,6 @@
 # Où on en est, et la suite
 
-Mis à jour le 17 septembre 2026, à la fin de la session qui a codé les fiches non réclamées et les coulisses.
+Mis à jour le 18 septembre 2026, à la fin de la session qui a codé l'App Store et la notarisation sur les fiches Mac.
 
 ## Le positionnement
 
@@ -74,6 +74,20 @@ Trouvé en route : les jours actifs comptent tous les commits humains de la bran
 - Bing Webmaster Tools : fait le 17 septembre 2026, importé depuis Search Console. C'est l'index de ChatGPT.
 - IndexNow : fait. Clé `INDEXNOW_KEY`, servie sur `/indexnow.txt`, ping à chaque fiche listée, publiée ou modifiée, et toutes les pages après le cron. Vérifier sur Bing Webmaster (onglet IndexNow) que les envois arrivent.
 - Vérifier que le domaine Resend est « Verified » sur https://resend.com/domains.
+
+### 2 bis. Avant de télécharger : App Store et notarisation (codé, à migrer puis à déployer)
+
+Venu d'un commentaire sur X : « notarized or App Store, c'est la première chose que je vérifie avant de télécharger une app Mac d'un indépendant ». C'est la même promesse que le reste du site — une donnée vérifiée, pas déclarée — appliquée au moment où quelqu'un s'apprête à ouvrir un binaire inconnu.
+
+Deux signaux, deux niveaux de preuve, et la fiche dit lequel :
+- **App Store** : le maker colle le lien de sa fiche dans la page de modification, on le vérifie chez Apple à chaque lecture (`itunes.apple.com/lookup`, API publique, sans clé). Un lien qui ne mène à rien est refusé à la saisie. Nom et éditeur affichés tels qu'Apple les renvoie. Vérification pleine.
+- **Notarisation** : sur un repo public d'app Mac, on lit l'arborescence puis jusqu'à quatorze fichiers de publication (workflows, `scripts/`, `Makefile`, `tauri.conf.json`…) et on y cherche `notarytool`, `stapler staple`, `altool --notarize-app`, une action de notarisation ou les identifiants qui vont avec. Trouvé : la fiche l'écrit et lie le fichier. Certificat Developer ID sans notarisation : « signée seulement », distingué, parce que depuis macOS 10.15 ça ne passe plus Gatekeeper. Preuve indirecte, dite comme telle.
+
+Mesuré sur quatorze vrais repos Mac : Loop, exelban/stats (Makefile), ollama (`scripts/create-dmg.sh`), Zed et Pake détectés, aucun faux positif. Maccy, QuickRecorder, Gifski, BetterDisplay n'ont aucun script de publication dans le repo (ils signent depuis leur machine) : la fiche dit « repo lu le X, rien trouvé », jamais « pas signée ». Se limiter aux `.github/workflows` ratait Zed, stats et ollama : d'où l'élargissement aux scripts appelés par les workflows.
+
+Ce que ça donne : une ligne « avant de télécharger » sur la fiche Mac, un tampon dans le classement, une page `/intention/signed` (« Signées : App Store ou notarisées ») avec son alerte et son RSS comme les autres, `appStore` et `macSigning` dans le MCP, une section sur `/methode` qui dit ce que ça ne prouve pas (on ne télécharge aucun binaire, on n'en vérifie aucun ticket : il faudrait un Mac, le serveur n'en est pas un). Relu une fois par semaine par fiche, pas chaque nuit : l'arborescence plus quatorze fichiers, c'est une à quatre secondes.
+
+À faire : `npm run migrate` (trois colonnes : `store_url`, `store`, `notarized`), déployer, puis remplir le champ « Lien App Store » sur les fiches qui en ont une. Angle de post X : le seul annuaire qui te dit si le DMG est signé avant que tu cliques.
 
 ### 3. Pages « alternative à » (une demi-journée)
 

@@ -100,6 +100,11 @@ const strings = {
     // La provenance : d'où vient le chiffre, lu quand, par combien de mains. Une fiche honnête sur ses limites est plus crédible qu'une fiche parfaite.
     readOn: (d: string) => `lu le ${d}`, authors: (n: number) => n === 1 ? '1 auteur' : `${n} auteurs`, provenanceHint: 'branche par défaut, robots exclus', method: 'Méthode', methodLink: 'comment on compte',
     ownerShare: (o: string, mine: number, total: number, n: number) => `${mine.toLocaleString('fr')} commits sur ${total.toLocaleString('fr')} sont de @${o}. Le reste est signé par ${Math.max(1, n - 1)} autre${n > 2 ? 's' : ''} auteur${n > 2 ? 's' : ''} : une équipe, un historique hérité d'un autre projet, ou des commits non reliés à son compte.`,
+    // Avant de télécharger : ce qu'un Mac vérifie à la première ouverture. L'App Store est vérifié chez Apple, la notarisation est lue dans le workflow.
+    distTitle: 'Avant de télécharger', distStore: (k: 'mac' | 'ios') => k === 'mac' ? 'sur le Mac App Store' : "sur l'App Store", distSeller: (v: string) => `éditeur ${v}`,
+    distNotarized: 'signée et notarisée', distSigned: 'signée Developer ID, pas de notarisation lue', distNone: "ni App Store, ni notarisation lue dans le repo",
+    distSeen: (p: string) => `vu dans ${p}`, distNoneRead: (d: string) => `repo lu le ${d} : ni App Store, ni notarisation trouvée`, distHint: 'ce que ça vaut', tagStore: 'App Store', tagNotarized: 'notarisée',
+    fStore: 'Lien App Store', fStoreHint: "Si l'app est sur l'App Store ou le Mac App Store, colle son lien : on le vérifie chez Apple et la fiche l'affiche. Laisse vide sinon.", errStore: "Ce lien ne mène à aucune app sur l'App Store.",
     calTitle: 'Le travail, jour par jour', calEmpty: 'Le calendrier se remplit à la prochaine lecture, cette nuit.',
     metaDesc: (name: string, days: number, since: string, tagline?: string) => `${tagline ? `${tagline} ` : ''}${name} : gratuit, ${days} jours de travail vérifiés dans le repo GitHub depuis ${since}. Classée par travail, pas par revenu.`,
     rowLongest: 'ce qui m\'a pris le plus de temps', rowVoid: (o: string) => `ce qui t'a pris le plus de temps, @${o} : c'est à toi de le dire`, claimShort: 'réclamer la fiche',
@@ -205,6 +210,10 @@ const strings = {
     dofollow: (host: string) => `"Open the app" is a dofollow link to ${host}`, verifiedAt: 'verified last night',
     readOn: (d: string) => `read on ${d}`, authors: (n: number) => n === 1 ? '1 author' : `${n} authors`, provenanceHint: 'default branch, bots excluded', method: 'Method', methodLink: 'how we count',
     ownerShare: (o: string, mine: number, total: number, n: number) => `${mine.toLocaleString('en')} of ${total.toLocaleString('en')} commits are by @${o}. The rest is signed by ${Math.max(1, n - 1)} other author${n > 2 ? 's' : ''}: a team, a history inherited from another project, or commits not linked to their account.`,
+    distTitle: 'Before you download', distStore: (k: 'mac' | 'ios') => k === 'mac' ? 'on the Mac App Store' : 'on the App Store', distSeller: (v: string) => `published by ${v}`,
+    distNotarized: 'signed and notarized', distSigned: 'signed with a Developer ID, no notarization read', distNone: 'neither App Store nor notarization read in the repo',
+    distSeen: (p: string) => `seen in ${p}`, distNoneRead: (d: string) => `repo read on ${d}: neither App Store nor notarization found`, distHint: 'what that is worth', tagStore: 'App Store', tagNotarized: 'notarized',
+    fStore: 'App Store link', fStoreHint: 'If the app is on the App Store or the Mac App Store, paste its link: we check it with Apple and the card shows it. Leave empty otherwise.', errStore: 'That link does not lead to any app on the App Store.',
     calTitle: 'The work, day by day', calEmpty: 'The calendar fills in at the next read, tonight.',
     metaDesc: (name: string, days: number, since: string, tagline?: string) => `${tagline ? `${tagline} ` : ''}${name}: free, ${days} days of work verified in the GitHub repo since ${since}. Ranked by work, not revenue.`,
     rowLongest: 'what took me the longest', rowVoid: (o: string) => `what took you the longest, @${o}: that's yours to say`, claimShort: 'claim the card',

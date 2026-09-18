@@ -50,6 +50,10 @@ const readOn = app.refreshedAt ? new Date(app.refreshedAt).toLocaleDateString(lo
 const authors = app.authors ?? 1;
 const sinceLong = new Date(app.firstCommit).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
 const metaDesc = s.metaDesc(app.name, app.activeDays, sinceLong, app.tagline ?? undefined);
+// Avant de télécharger : le premier réflexe devant un binaire Mac. On ne le montre que là où la question se pose.
+const nota = app.notarized && app.notarized.level !== 'none' ? app.notarized : null;
+const showDist = Boolean(app.store || nota || app.platform === 'Mac');
+const workflowUrl = nota && app.repo ? `${app.repo}/blob/HEAD/${nota.path}` : null;
 ---
 <Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={metaDesc} image={`/api/og/${app.slug}.png${locale === 'fr' ? '' : '?lang=en'}`} jsonLd={ld}>
   {sample && <p class="examples hand">{s.examples}</p>}
@@ -78,6 +82,18 @@ const metaDesc = s.metaDesc(app.name, app.activeDays, sinceLong, app.tagline ?? 
       </div>
       <p class="prov mono">{readOn ? s.readOn(readOn) : s.verifiedAt} · {app.commits.toLocaleString(locale)} {s.commits} · {s.authors(authors)} · {s.provenanceHint} · <a href={localePath(locale, '/methode')}>{s.methodLink}</a></p>
       {authors > 1 && app.ownerCommits != null && app.ownerCommits < app.commits * 0.8 && <p class="warn hand">{s.ownerShare(makers.join(', @'), app.ownerCommits, app.commits, authors)}</p>}
+      {showDist && (
+        <p class="dist mono">
+          <b class="hand">{s.distTitle}</b>
+          {app.store && <> <a href={app.store.url} rel="noopener">✓ {s.distStore(app.store.kind)}</a> · {s.distSeller(app.store.seller)}</>}
+          {app.store && nota && <> ·</>}
+          {nota && (workflowUrl
+            ? <> <a href={workflowUrl} rel="noopener">{nota.level === 'notarized' ? `✓ ${s.distNotarized}` : s.distSigned}</a> · {s.distSeen(nota.path)}</>
+            : <> {nota.level === 'notarized' ? `✓ ${s.distNotarized}` : s.distSigned}</>)}
+          {!app.store && !nota && <> {app.notarized ? s.distNoneRead(new Date(app.notarized.at).toLocaleDateString(locale, { day: 'numeric', month: 'long' })) : s.distNone}</>}
+          {' · '}<a href={localePath(locale, '/methode')}>{s.distHint}</a>
+        </p>
+      )}
       <div class="actions">
         <button class="sk sk-btn primary bravo" type="button" data-slug={app.slug} data-already={s.already}>✋ {s.bravo} · <span class="count mono">{app.bravos}</span></button>
         {app.url && <a class="sk sk-btn" href={sample ? app.url : `/api/apps/go?slug=${app.slug}`} rel={unclaimed ? 'nofollow noopener' : 'noopener'}>{s.open} ↗</a>}
@@ -157,6 +173,9 @@ const metaDesc = s.metaDesc(app.name, app.activeDays, sinceLong, app.tagline ?? 
 .meta a{color:inherit}
 .dofollow{margin:10px 0 0;font:500 15px/1.3 var(--hand);color:var(--pencil)}
 .prov{font-size:12px;color:var(--pencil);margin:-8px 0 14px}
+.dist{font-size:12px;color:var(--pencil);margin:-8px 0 14px;line-height:1.6}
+.dist b{font-size:16px;color:var(--ink);margin-right:5px}
+.dist a{color:inherit}
 .prov a{color:inherit}
 .warn{margin:-6px 0 14px;font-size:16px;color:var(--redpen)}
 .work{margin-top:26px;padding:18px 20px}

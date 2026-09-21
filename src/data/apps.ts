@@ -38,6 +38,8 @@ export interface App {
   ownerCommits?: number; // commits signés par le maker lui-même
   authors?: number; // auteurs humains du repo : 1 = une personne, plus = une équipe ou un historique hérité
   refreshedAt?: string; // ISO, dernière lecture du repo
+  alternativeTo?: { name: string; slug: string }[]; // ce que l'app remplace, chaque nom a sa page /alternative-a/<slug>
+  badgeAt?: string; // ISO, première fois que le badge a été vu dans le README
   activeDates?: string[]; // les jours actifs exacts (AAAA-MM-JJ), pour le calendrier
   store?: Store; // la fiche App Store, telle qu'Apple la renvoie
   notarized?: Notarized; // la signature et la notarisation, lues dans le workflow de publication

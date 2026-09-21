@@ -1,6 +1,6 @@
 # Où on en est, et la suite
 
-Mis à jour le 18 septembre 2026, à la fin de la session qui a codé l'App Store et la notarisation sur les fiches Mac.
+Mis à jour le 21 septembre 2026, à la fin de la session qui a codé les pages « alternative à », la page Chiffres et le badge Markdown.
 
 ## Le positionnement
 
@@ -89,9 +89,31 @@ Ce que ça donne : une ligne « avant de télécharger » sur la fiche Mac, un t
 
 À faire : `npm run migrate` (trois colonnes : `store_url`, `store`, `notarized`), déployer, puis remplir le champ « Lien App Store » sur les fiches qui en ont une. Angle de post X : le seul annuaire qui te dit si le DMG est signé avant que tu cliques.
 
-### 3. Pages « alternative à » (une demi-journée)
+### 3. Pages « alternative à » (codé le 21 septembre 2026, à remplir)
 
-Un champ « alternative à » sur la fiche, des pages `/alternative-a/notion`. C'est la requête la plus fréquente qu'un assistant reçoit. Même moule que les pages Parcourir.
+C'est la requête la plus fréquente qu'un assistant reçoit. Un champ « Alternative gratuite à » sur la page de modification, trois noms au plus. Chaque nom devient une page `/alternative-a/notion` (et `/en/…`) sur le moule des pages Parcourir : classement, ItemList, RSS, alerte. La page n'existe que si une app s'en réclame, sinon 404 : pas de page vide à indexer. Deux orthographes du même produit donnent une seule page (la base garde le nom et son segment côte à côte, `alternative_to` et `alt_slugs`, et reprend l'orthographe déjà écrite). Une app terminée reste une alternative : ces pages ne filtrent pas sur « en cours ».
+
+Branché partout : ligne sur la fiche, colonne dans Parcourir, sitemap, llms.txt, IndexNow, `freeAlternativeTo` dans le MCP et dans les données structurées, et `search_apps` trouve « notion ».
+
+L'admin peut modifier une fiche non réclamée (bouton « ✎ remplir » dans les coulisses) : sans ça, quatorze fiches sur vingt-six n'auraient personne pour remplir le champ. Pour cette raison les pages disent « listées comme alternative à », jamais « leur maker dit ».
+
+À faire : remplir le champ sur les vingt-six fiches, en commençant par les siennes. Une page à une app vaut déjà mieux que pas de page. `/coulisses` affiche le compte.
+
+### 3 bis. Le badge, en Markdown (codé le 21 septembre 2026)
+
+Un README s'écrit en Markdown et la fiche ne donnait que du HTML. Le bloc montre maintenant le vrai SVG, la ligne Markdown d'abord, la ligne HTML ensuite, un bouton copier sur chacune. Le même bloc s'affiche en haut de la page de modification juste après une réclamation : c'est le moment où le maker a son README ouvert à côté.
+
+Le cron lit chaque nuit le README des repos publics réclamés et note la première fois qu'il y voit le badge ou le lien de la fiche (`badge_at`, remis à zéro s'il disparaît). La fiche le dit (« vu dans le README le… »), `/coulisses` affiche le total. C'est la mesure de la prospection qui compte après `claimed` : un lien entrant depuis github.com.
+
+### 3 ter. La page Chiffres (codée le 21 septembre 2026)
+
+`/chiffres`, `/en/chiffres`, `/chiffres.json`. Ce qu'on cite, ce n'est pas un annuaire, c'est un chiffre : jours de commits en médiane derrière une app gratuite, quartiles, durée de vie, part sous vingt étoiles, part à un seul auteur, répartition par jour de la semaine, tableaux par plateforme et langage. Médianes, pas moyennes ; l'effectif à côté de chaque chiffre ; aucun groupe de moins de trois apps ; les repos privés sortis du calcul par jour de semaine (leurs vieux jours sont notés au dimanche). Données structurées `Dataset`, licence CC BY 4.0, une phrase prête à coller, et une section « ce que ces chiffres ne disent pas ». Un bandeau prévient tant qu'il y a moins de cent apps.
+
+Premier relevé, 25 apps : 103 jours en médiane, 6 mois, 92 % sous vingt étoiles, 27 % du travail le week-end (29 % si c'était au hasard : ils ne travaillent pas plus le week-end, contrairement à ce qu'on croit). C'est un angle de post.
+
+### 3 quater. Le courrier (réglé le 21 septembre 2026)
+
+La prospection part de `gabriel@getnotacent.com`, Google Workspace, MX, SPF et DKIM en place. `getnotacent.com` redirige vers notacent.app (il répondait 404 : un maker qui tapait le domaine de l'expéditeur tombait sur rien). Le bouton « ouvrir dans Gmail » force ce compte (`authuser`). `notacent.app` n'a pas de MX, exprès : seul Resend y envoie, depuis `send.notacent.app`. À poser un jour : un DMARC sur getnotacent.com.
 
 ### 4. Se lister partout
 

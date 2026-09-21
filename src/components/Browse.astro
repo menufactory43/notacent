@@ -1,6 +1,6 @@
 ---
 import { t, type Locale } from '../i18n/strings';
-import { browseCounts, INTENTS, type Browse } from '../lib/db';
+import { browseCounts, altCounts, INTENTS, type Browse } from '../lib/db';
 import { browsePath, browseLabel, TOOLS, PLATFORMS } from '../lib/browse';
 import { apps as samples } from '../data/apps';
 // « Parcourir » : chaque lien est une page indexable avec son titre et son classement.
@@ -18,14 +18,16 @@ const tools = TOOLS.filter((x) => x !== 'Autre').map((v) => link({ kind: 'tool',
 const platforms = PLATFORMS.filter((x) => x !== 'Autre').map((v) => link({ kind: 'platform', value: v }, counts.platform[v] ?? 0));
 const languages = Object.entries(counts.language).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([v, n]) => link({ kind: 'language', value: v }, n));
 const intents = INTENTS.map((v) => link({ kind: 'intent', value: v }, counts.intent[v] ?? 0));
-const cols = [[s.byTool, tools], [s.byPlatform, platforms], [s.byLanguage, languages], [s.byIntent, intents]] as const;
+// « Alternative à » : les huit produits les plus cités. La colonne n'existe que s'il y en a.
+const alts = sample ? [] : (await altCounts().catch(() => [])).slice(0, 8).map((x) => ({ href: browsePath({ kind: 'alt', value: x.slug }, locale), label: x.name, n: x.n }));
+const cols = [[s.byTool, tools], [s.byPlatform, platforms], [s.byLanguage, languages], [s.byIntent, intents], ...(alts.length ? [[s.byAlt, alts] as const] : [])] as const;
 ---
 <section class="browse">
   <div class="sh">
     <h2>{s.browseTitle}</h2>
     <span class="hand sub">{s.browseSub}</span>
   </div>
-  <div class="grid">
+  <div class="grid" style={`--n:${cols.length}`}>
     {cols.map(([title, items]) => (
       <div class="col">
         <b class="hand">{title}</b>
@@ -39,7 +41,7 @@ const cols = [[s.byTool, tools], [s.byPlatform, platforms], [s.byLanguage, langu
 .sh{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0 0 14px}
 .sh h2{font:700 30px/1 var(--hand);margin:0}
 .sub{font:500 18px/1 var(--hand);color:var(--pencil)}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;border-top:2px dashed var(--faint);padding-top:16px}
+.grid{display:grid;grid-template-columns:repeat(var(--n,4),1fr);gap:22px;border-top:2px dashed var(--faint);padding-top:16px}
 .col{display:flex;flex-direction:column;gap:4px;font-size:15px}
 .col>b{font:700 20px/1.2 var(--hand);margin-bottom:4px}
 .col a{text-decoration:none}

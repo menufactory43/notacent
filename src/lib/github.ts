@@ -105,6 +105,14 @@ export async function installationRepos(installationId: number): Promise<GhRepo[
   return out.filter((r) => !r.fork);
 }
 
+// Le README d'un repo public, en texte. null s'il n'y en a pas. On n'y cherche qu'une chose : le badge.
+export async function readme(token: string, fullName: string): Promise<string | null> {
+  try {
+    const { data } = await gh<{ content?: string; encoding?: string }>(`/repos/${fullName}/readme`, token);
+    return data?.content ? Buffer.from(data.content, data.encoding === 'base64' ? 'base64' : 'utf8').toString('utf8') : null;
+  } catch (e) { if (String(e).includes('404')) return null; throw e; }
+}
+
 // Ce que GitHub dit d'un repo en un appel : étoiles, sujets, page d'accueil. On n'y lit pas le code.
 export interface GhRepoInfo { stargazers_count: number; topics: string[]; language: string | null; homepage: string | null; description: string | null; name: string }
 export async function repoInfo(token: string, fullName: string): Promise<GhRepoInfo> {

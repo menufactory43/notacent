@@ -13,10 +13,11 @@ export interface DbApp {
   published: boolean; refreshed_at: string | null; created_at: string; login?: string; has_image?: boolean; sponsored?: boolean;
   stars: number; platform: string | null; takeover: boolean; unclaimed?: boolean; authors: number; active_dates: (string | Date)[] | null; owner_commits: number | null; comakers: string[];
   store_url: string | null; store: Store | null; notarized: Notarized | null;
+  alternative_to: string[]; alt_slugs: string[]; badge_at: string | null;
 }
 
 // Les colonnes d'une fiche, une fois pour toutes : chaque requête les lit telles quelles.
-const COLS = `a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image, coalesce(a.stars, 0) as stars, a.platform, coalesce(a.takeover, false) as takeover, (not coalesce(u.claimed, true)) as unclaimed, coalesce(a.authors, 1) as authors, a.active_dates, a.owner_commits, (select coalesce(array_agg(m.login order by m.added_at), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers, a.store_url, a.store, a.notarized`;
+const COLS = `a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image, coalesce(a.stars, 0) as stars, a.platform, coalesce(a.takeover, false) as takeover, (not coalesce(u.claimed, true)) as unclaimed, coalesce(a.authors, 1) as authors, a.active_dates, a.owner_commits, (select coalesce(array_agg(m.login order by m.added_at), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers, a.store_url, a.store, a.notarized, coalesce(a.alternative_to, '{}') as alternative_to, coalesce(a.alt_slugs, '{}') as alt_slugs, a.badge_at`;
 const FROM = `from apps a join users u on u.id = a.user_id`;
 // Le classement : publiée, pas payante, encore en cours.
 const ON_BOARD = `a.published and a.pricing <> 'paid' and a.status = 'polishing'`;
@@ -44,7 +45,7 @@ export async function recentActivity(limit = 8) {
   if (!hasDb) return [];
   return (await sql.query(
     `select act.kind, act.payload, act.created_at, a.name, a.slug from activity act join apps a on a.id = act.app_id
-     where a.published order by act.created_at desc limit $1`, [limit],
+     where a.published and act.kind not in ('alt', 'badge') order by act.created_at desc limit $1`, [limit],
   )) as { kind: string; payload: Record<string, unknown>; created_at: string; name: string; slug: string }[];
 }
 
@@ -68,7 +69,7 @@ export async function searchApps(query: string, opts: { tool?: string; platform?
   const limit = Math.min(Math.max(opts.limit ?? 10, 1), 50);
   const words = query.split(/\s+/).map((w) => w.trim()).filter((w) => w.length > 1).slice(0, 8);
   const params: unknown[] = [limit];
-  const clauses = words.map((w) => { params.push(`%${w}%`); const i = params.length; return `(a.name ilike $${i} or a.tagline ilike $${i} or a.description ilike $${i} or a.longest ilike $${i} or a.language ilike $${i} or u.login ilike $${i})`; });
+  const clauses = words.map((w) => { params.push(`%${w}%`); const i = params.length; return `(a.name ilike $${i} or a.tagline ilike $${i} or a.description ilike $${i} or a.longest ilike $${i} or a.language ilike $${i} or u.login ilike $${i} or exists (select 1 from unnest(a.alternative_to) x where x ilike $${i}))`; });
   if (opts.tool) { params.push(opts.tool); clauses.push(`a.tool = $${params.length}`); }
   if (opts.platform) { params.push(opts.platform); clauses.push(`a.platform = $${params.length}`); }
   if (!opts.includeDone) clauses.push(`a.status = 'polishing'`);
@@ -104,12 +105,15 @@ export const canEdit = (app: DbApp, user: { id: number; login: string }) => app.
 
 // ---- Parcourir : chaque filtre est une page.
 
-export type BrowseKind = 'tool' | 'platform' | 'language' | 'intent';
+export type BrowseKind = 'tool' | 'platform' | 'language' | 'intent' | 'alt';
 export type Intent = 'radar' | 'takeover' | 'veteran' | 'new' | 'done' | 'signed';
 export const INTENTS: Intent[] = ['radar', 'takeover', 'veteran', 'new', 'done', 'signed'];
 // « Signées » : la fiche a un lien App Store vérifié chez Apple, ou une notarisation lue dans son workflow de publication.
 export const SIGNED_SQL = `(a.store is not null or a.notarized->>'level' = 'notarized')`;
-export interface Browse { kind: BrowseKind; value: string }
+// Pour « alt », value est le segment d'URL (notion) et label le nom tel qu'on l'écrit (Notion), lu en base.
+export interface Browse { kind: BrowseKind; value: string; label?: string }
+// Une alternative reste une alternative une fois terminée : publiée et gratuite suffit.
+const ALT_BOARD = `a.published and a.pricing <> 'paid'`;
 
 // La clause et l'ordre d'un filtre. « radar » = beaucoup de jours pour peu d'étoiles, avec un plancher pour qu'un repo invisible ne prenne pas la tête.
 function browseWhere(b: Browse, params: unknown[]): { where: string; order: string } {
@@ -126,6 +130,7 @@ function browseWhere(b: Browse, params: unknown[]): { where: string; order: stri
     }
   }
   params.push(b.value);
+  if (b.kind === 'alt') return { where: `${ALT_BOARD} and $${params.length} = any(a.alt_slugs)`, order };
   const col = b.kind === 'tool' ? 'a.tool' : b.kind === 'platform' ? 'a.platform' : 'a.language';
   return { where: `${ON_BOARD} and lower(${col}) = lower($${params.length})`, order };
 }
@@ -144,7 +149,7 @@ export async function browseCounts(): Promise<{ tool: Record<string, number>; pl
     `select 'tool' as kind, tool as value, count(*)::int as n from apps a where ${ON_BOARD} and tool is not null group by tool
      union all select 'platform', platform, count(*)::int from apps a where ${ON_BOARD} and platform is not null group by platform
      union all select 'language', language, count(*)::int from apps a where ${ON_BOARD} and language is not null group by language`,
-  )) as { kind: BrowseKind; value: string; n: number }[];
+  )) as { kind: 'tool' | 'platform' | 'language'; value: string; n: number }[];
   for (const r of rows) out[r.kind][r.value] = r.n;
   const [i] = (await sql.query(
     `select (select count(*)::int from apps a where ${ON_BOARD} and a.active_days >= 30) as radar,
@@ -156,6 +161,23 @@ export async function browseCounts(): Promise<{ tool: Record<string, number>; pl
   )) as Record<Intent, number>[];
   out.intent = i;
   return out;
+}
+// Les « alternative à » qui existent : le segment, le nom le plus écrit, le nombre d'apps.
+export interface AltCount { slug: string; name: string; n: number }
+export async function altCounts(): Promise<AltCount[]> {
+  if (!hasDb) return [];
+  return (await sql.query(
+    `select s as slug, mode() within group (order by a.alternative_to[array_position(a.alt_slugs, s)]) as name, count(*)::int as n
+     from apps a, unnest(a.alt_slugs) s where ${ALT_BOARD} group by s order by n desc, s`,
+  )) as AltCount[];
+}
+// Le nom affiché d'un segment, ou null si aucune app ne s'en réclame : la page n'existe alors pas.
+export async function altName(slug: string): Promise<string | null> {
+  if (!hasDb) return null;
+  const [r] = (await sql.query(
+    `select mode() within group (order by a.alternative_to[array_position(a.alt_slugs, $1)]) as name from apps a where ${ALT_BOARD} and $1 = any(a.alt_slugs)`, [slug],
+  )) as { name: string | null }[];
+  return r?.name ?? null;
 }
 // Le rang d'une app dans un classement donné (« 1re des apps faites avec Claude Code »).
 export async function rankIn(app: DbApp, kind: 'tool' | 'platform' | 'all'): Promise<number | null> {
@@ -228,6 +250,9 @@ export async function alertMatches(a: Alert): Promise<DbApp[]> {
       else if (f.value === 'done') where = `a.published and a.status <> 'polishing' and exists (select 1 from activity x where x.app_id = a.id and x.kind = 'status' and x.created_at > $1)`;
       else if (f.value === 'radar') where = `${ON_BOARD} and a.active_days >= 30 and coalesce(a.stars,0) < 20 and (a.created_at > $1 or exists (select 1 from activity x where x.app_id = a.id and x.kind = 'day' and x.created_at > $1 and (x.payload->>'n')::int in (30, 50, 100, 200, 365)))`;
       else if (f.value === 'veteran') where = `${ON_BOARD} and a.first_commit < now() - interval '365 days' and a.created_at > $1`;
+    } else if (f.kind === 'alt') {
+      params.push(f.value);
+      where = `a.published and a.pricing <> 'paid' and $2 = any(a.alt_slugs) and (a.created_at > $1 or exists (select 1 from activity x where x.app_id = a.id and x.kind = 'alt' and x.created_at > $1))`;
     } else {
       params.push(f.value);
       const col = f.kind === 'tool' ? 'a.tool' : f.kind === 'platform' ? 'a.platform' : 'a.language';

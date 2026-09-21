@@ -1,12 +1,12 @@
 import type { Browse, BrowseKind, Intent } from './db';
-import { INTENTS } from './db';
+import { INTENTS, altName } from './db';
 import { PLATFORMS, platformFromSlug, platformSlug } from './platform';
 import type { Locale } from '../i18n/strings';
 
 export const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre'] as const;
 
 // Les segments d'URL des pages « Parcourir », dans les deux langues : /outil/claude-code, /en/outil/claude-code.
-export const KIND_PATH: Record<BrowseKind, string> = { tool: 'outil', platform: 'plateforme', language: 'langage', intent: 'intention' };
+export const KIND_PATH: Record<BrowseKind, string> = { tool: 'outil', platform: 'plateforme', language: 'langage', intent: 'intention', alt: 'alternative-a' };
 export const kindFromPath = (p: string): BrowseKind | null => (Object.entries(KIND_PATH).find(([, v]) => v === p)?.[0] as BrowseKind | undefined) ?? null;
 
 export const slugOf = (v: string) => v.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9+#]+/g, '-').replace(/^-|-$/g, '');
@@ -19,13 +19,15 @@ export function browseFromParams(kindPath: string, valueSlug: string): Browse | 
   if (kind === 'tool') { const t = toolFromSlug(valueSlug); return t ? { kind, value: t } : null; }
   if (kind === 'platform') { const p = platformFromSlug(valueSlug); return p ? { kind, value: p } : null; }
   if (kind === 'intent') return (INTENTS as string[]).includes(valueSlug) ? { kind, value: valueSlug } : null;
+  // « alternative à » : le segment passe tel quel, s'il a la forme d'un segment. Le nom affiché se lit en base (withAltName).
+  if (kind === 'alt') return valueSlug && valueSlug.length <= 60 && slugOf(valueSlug) === valueSlug ? { kind, value: valueSlug } : null;
   return { kind, value: languageFromSlug(valueSlug) };
 }
 const LANG_NAMES = ['Swift', 'TypeScript', 'JavaScript', 'Rust', 'Python', 'Go', 'Kotlin', 'Dart', 'Ruby', 'PHP', 'C#', 'C++', 'C', 'Elixir', 'Astro', 'Svelte', 'Vue', 'HTML', 'CSS', 'Shell', 'Zig', 'Objective-C', 'Java', 'Lua', 'Haskell', 'Scala', 'Clojure', 'Nim', 'OCaml', 'Crystal'];
 export const languageFromSlug = (s: string) => LANG_NAMES.find((l) => slugOf(l) === s) ?? s.replace(/-/g, ' ');
 
 export function browsePath(b: Browse, locale: Locale) {
-  const v = b.kind === 'tool' ? slugOf(b.value) : b.kind === 'platform' ? platformSlug(b.value) : b.kind === 'language' ? slugOf(b.value) : b.value;
+  const v = b.kind === 'alt' ? b.value : b.kind === 'tool' ? slugOf(b.value) : b.kind === 'platform' ? platformSlug(b.value) : b.kind === 'language' ? slugOf(b.value) : b.value;
   return `${locale === 'fr' ? '' : '/en'}/${KIND_PATH[b.kind]}/${v}`;
 }
 
@@ -41,6 +43,7 @@ export function browseLabel(b: Browse | Record<string, never>, locale: Locale): 
       return p === 'Mac' ? 'Indie Mac apps' : p === 'CLI' ? 'Command-line tools' : p === 'MCP' ? 'MCP servers' : p === 'Web' ? 'Web apps' : p === 'Autre' ? 'Other platforms' : `${p} apps`;
     }
     case 'language': return fr ? `Apps écrites en ${b.value}` : `Apps written in ${b.value}`;
+    case 'alt': return fr ? `Alternatives gratuites à ${altLabel(b as Browse)}` : `Free alternatives to ${altLabel(b as Browse)}`;
     case 'intent': {
       const i = b.value as Intent;
       const m: Record<Intent, [string, string]> = {
@@ -55,6 +58,8 @@ export function browseLabel(b: Browse | Record<string, never>, locale: Locale): 
     }
   }
 }
+// Le nom d'une « alternative à » : celui lu en base, sinon le segment remis en mots (google-analytics → Google Analytics).
+const altLabel = (b: Browse) => b.label ?? b.value.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 // Une phrase sous le titre, pour le moteur et pour le lecteur.
 export function browseLede(b: Browse, locale: Locale): string {
   const fr = locale === 'fr';
@@ -62,6 +67,7 @@ export function browseLede(b: Browse, locale: Locale): string {
     case 'tool': return fr ? `Des apps gratuites dont ${b.value} est l'outil principal, classées par jours de travail lus dans le repo GitHub. Pas de revenu, pas de vote : des commits.` : `Free apps built mainly with ${b.value}, ranked by days of work read from the GitHub repo. No revenue, no votes: commits.`;
     case 'platform': return fr ? `Des apps gratuites pour ${b.value}, faites par une personne, classées par jours actifs vérifiés sur GitHub.` : `Free ${b.value} apps made by one person, ranked by active days verified on GitHub.`;
     case 'language': return fr ? `Des apps gratuites écrites en ${b.value}, classées par jours actifs lus dans le repo.` : `Free apps written in ${b.value}, ranked by active days read from the repo.`;
+    case 'alt': return fr ? `Des apps gratuites, sans abonnement, listées comme alternative à ${altLabel(b)}. Classées par jours de travail lus dans le repo GitHub : on voit lesquelles sont encore entretenues.` : `Free apps, no subscription, listed as an alternative to ${altLabel(b)}. Ranked by days of work read from the GitHub repo, so you can see which ones are still maintained.`;
     case 'intent': {
       const m: Record<Intent, [string, string]> = {
         radar: ['Beaucoup de jours de travail, peu d\'étoiles : les apps que personne n\'a encore vues. Classées par jours actifs rapportés aux étoiles GitHub.', 'Many days of work, few stars: the apps nobody has noticed yet. Ranked by active days relative to GitHub stars.'],
@@ -74,5 +80,12 @@ export function browseLede(b: Browse, locale: Locale): string {
       return fr ? m[b.value as Intent][0] : m[b.value as Intent][1];
     }
   }
+}
+// Une page « alternative à » n'existe que si une app s'en réclame : on lit son nom en base, null veut dire 404.
+// Les autres filtres passent tels quels.
+export async function withAltName(b: Browse): Promise<Browse | null> {
+  if (b.kind !== 'alt') return b;
+  const name = await altName(b.value).catch(() => null);
+  return name ? { ...b, label: name } : null;
 }
 export { PLATFORMS };

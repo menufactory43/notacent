@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { sql, hasDb, browseCounts, INTENTS } from '../../../lib/db';
-import { repoInfo, serverToken, installationToken } from '../../../lib/github';
+import { sql, hasDb, browseCounts, altCounts, INTENTS } from '../../../lib/db';
+import { repoInfo, readme, serverToken, installationToken } from '../../../lib/github';
 import { guessPlatform } from '../../../lib/platform';
 import { sendAlerts } from '../../../lib/alerts';
 import { readDates, compute, statusFor } from '../../../lib/metrics';
@@ -14,10 +14,10 @@ export const GET: APIRoute = async ({ request }) => {
   const secret = import.meta.env.CRON_SECRET ?? process.env.CRON_SECRET;
   if (!hasDb || !secret || request.headers.get('authorization') !== `Bearer ${secret}`) return new Response('non', { status: 401 });
   const apps = (await sql.query(
-    `select a.id, a.full_name, a.active_days, a.commits, a.status, a.private, a.platform, a.language, a.name, a.description, a.homepage, a.url, a.store_url, a.store, a.notarized, a.active_dates, u.installation_id, u.login,
+    `select a.id, a.full_name, a.active_days, a.commits, a.status, a.private, a.platform, a.language, a.name, a.description, a.homepage, a.url, a.store_url, a.store, a.notarized, a.active_dates, a.badge_at, a.slug, coalesce(u.claimed, true) as claimed, u.installation_id, u.login,
        (select coalesce(array_agg(m.login), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers
      from apps a join users u on u.id = a.user_id where a.published`,
-  )) as (SigningIn & { id: number; active_days: number; commits: number; status: string; language: string | null; name: string; description: string | null; active_dates: string[] | null; installation_id: number | null; login: string; comakers: string[] })[];
+  )) as (SigningIn & { id: number; active_days: number; commits: number; status: string; language: string | null; name: string; description: string | null; active_dates: string[] | null; badge_at: string | null; slug: string; claimed: boolean; installation_id: number | null; login: string; comakers: string[] })[];
   let ok = 0, failed = 0;
   const errors: { app: string; why: string }[] = [];
   for (const a of apps) {
@@ -35,6 +35,17 @@ export const GET: APIRoute = async ({ request }) => {
         `update apps set first_commit=$2, last_commit=$3, commits=$4, active_days=$5, active_days_30=$6, best_streak_weeks=$7, weekly=$8, status=$9, refreshed_at=now(), stars=coalesce($10, stars), platform=$11, active_dates=$12, authors=coalesce($13, authors), owner_commits=coalesce($14, owner_commits), store=$15, notarized=$16 where id=$1`,
         [a.id, m.first_commit, m.last_commit, m.commits, m.active_days, m.active_days_30, m.best_streak_weeks, m.weekly, status, stars, platform, read.ledger, read.authors ?? null, read.ownerCommits ?? null, sign.store && JSON.stringify(sign.store), sign.notarized && JSON.stringify(sign.notarized)],
       );
+      // Le badge dans le README : le lien entrant qui compte. On ne regarde que les repos publics réclamés, les seuls à qui on le propose.
+      // Un README illisible ce soir ne défait rien : on ne touche à la date que si on a pu lire.
+      if (!a.private && a.claimed && token) {
+        const text = await readme(token, a.full_name).catch(() => undefined);
+        if (text !== undefined) {
+          const low = (text ?? '').toLowerCase();
+          const has = [`notacent.app/api/badge/${a.slug}.svg`, `notacent.app/app/${a.slug}`, `notacent.app/en/app/${a.slug}`].some((u) => low.includes(u));
+          if (has && !a.badge_at) { await sql.query(`update apps set badge_at = now() where id = $1`, [a.id]); await sql.query(`insert into activity (app_id, kind) values ($1, 'badge')`, [a.id]); }
+          else if (!has && a.badge_at) await sql.query(`update apps set badge_at = null where id = $1`, [a.id]);
+        }
+      }
       if (m.active_days > a.active_days) await sql.query(`insert into activity (app_id, kind, payload) values ($1, 'day', $2)`, [a.id, JSON.stringify({ n: m.active_days })]);
       if (status !== a.status) await sql.query(`insert into activity (app_id, kind, payload) values ($1, 'status', $2)`, [a.id, JSON.stringify({ status })]);
       ok++;
@@ -48,7 +59,8 @@ export const GET: APIRoute = async ({ request }) => {
   const browse = [
     ...Object.keys(counts.tool).map((v) => ({ kind: 'tool' as const, value: v })), ...Object.keys(counts.platform).map((v) => ({ kind: 'platform' as const, value: v })),
     ...Object.keys(counts.language).map((v) => ({ kind: 'language' as const, value: v })), ...INTENTS.map((v) => ({ kind: 'intent' as const, value: v })),
+    ...(await altCounts().catch(() => [])).map((x) => ({ kind: 'alt' as const, value: x.slug })),
   ];
-  const indexnow = await pingIndexNow(['/', '/en', ...slugs.flatMap((r) => appPaths(r.slug)), ...browse.flatMap((b) => [browsePath(b, 'fr'), browsePath(b, 'en')])]);
+  const indexnow = await pingIndexNow(['/', '/en', '/chiffres', '/en/chiffres', ...slugs.flatMap((r) => appPaths(r.slug)), ...browse.flatMap((b) => [browsePath(b, 'fr'), browsePath(b, 'en')])]);
   return Response.json({ ok, failed, errors, alerts, indexnow });
 };

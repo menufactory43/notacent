@@ -1,0 +1,45 @@
+---
+import { t, localePath, type Locale } from '../i18n/strings';
+import { SITE } from '../lib/seo';
+// Le badge, prêt à coller : le vrai SVG tel qu'il s'affichera, une ligne Markdown pour un README, une ligne HTML pour une landing.
+// Un README s'écrit en Markdown : c'est cette ligne-là qu'on montre en premier.
+interface Props { locale: Locale; slug: string; days: number; title: string; seenAt?: string }
+const { locale, slug, days, title, seenAt } = Astro.props;
+const s = t(locale);
+const badgeUrl = `${SITE}/api/badge/${slug}.svg${locale === 'en' ? '?lang=en' : ''}`;
+const pageUrl = `${SITE}${localePath(locale, `/app/${slug}`)}`;
+const alt = s.badgeAlt(days);
+const md = `[![${alt}](${badgeUrl})](${pageUrl})`;
+const html = `<a href="${pageUrl}"><img src="${badgeUrl}" alt="${alt}"></a>`;
+const seen = seenAt ? new Date(seenAt).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+---
+<section class="sk badge-block">
+  <h2 class="hand">{title}</h2>
+  <img class="real" src={`/api/badge/${slug}.svg${locale === 'en' ? '?lang=en' : ''}`} alt={alt} height="28" />
+  {[[s.badgeMd, md], [s.badgeHtml, html]].map(([label, code]) => (
+    <div class="snip">
+      <div class="top"><span class="hand">{label}</span><button type="button" class="chip copy" data-code={code} data-done={s.copied}>{s.copy}</button></div>
+      <pre><code>{code}</code></pre>
+    </div>
+  ))}
+  <small>{s.badgeHint}{seen && <> <b class="hand seen">✓ {s.badgeSeen(seen)}</b></>}</small>
+</section>
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.badge-block .copy').forEach((b) => b.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(b.dataset.code ?? '');
+    const was = b.textContent; b.textContent = b.dataset.done ?? was;
+    setTimeout(() => { b.textContent = was; }, 1600);
+  }));
+</script>
+<style>
+.badge-block{padding:18px 20px;display:flex;flex-direction:column;gap:10px;background:var(--paper-2)}
+.badge-block h2{font:700 24px/1 var(--hand);margin:0}
+.real{align-self:flex-start;height:28px;width:auto}
+.snip{display:flex;flex-direction:column;gap:4px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.top span{font:700 17px/1 var(--hand);color:var(--pencil)}
+.copy{cursor:pointer;font:inherit;font-size:12px}
+pre{margin:0;padding:10px 12px;border:1.5px dashed var(--pencil);border-radius:6px;white-space:pre-wrap;word-break:break-all;background:var(--paper);font-size:12px}
+small{color:var(--pencil);font-size:13px}
+.seen{color:var(--ink);font-size:16px}
+</style>

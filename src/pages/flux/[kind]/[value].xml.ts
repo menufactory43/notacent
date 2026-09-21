@@ -1,13 +1,14 @@
 import type { APIRoute } from 'astro';
 import { browseApps } from '../../../lib/db';
 import { toView } from '../../../lib/view';
-import { browseFromParams, browseLabel, browseLede, browsePath } from '../../../lib/browse';
+import { browseFromParams, withAltName, browseLabel, browseLede, browsePath } from '../../../lib/browse';
 import { SITE } from '../../../lib/seo';
 export const prerender = false;
 // Un flux RSS par page « Parcourir » : les mêmes apps, dans le même ordre, pour un lecteur ou un automate.
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 export const GET: APIRoute = async ({ params, url }) => {
-  const b = browseFromParams(params.kind ?? '', params.value ?? '');
+  const found = browseFromParams(params.kind ?? '', params.value ?? '');
+  const b = found && (await withAltName(found));
   if (!b) return new Response(null, { status: 404 });
   const locale = url.searchParams.get('lang') === 'en' ? 'en' : 'fr';
   const apps = (await browseApps(b, 50).catch(() => [])).map(toView);

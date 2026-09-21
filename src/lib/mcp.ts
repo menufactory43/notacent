@@ -20,6 +20,8 @@ function card(a: DbApp) {
     appUrl: v.url ?? null, repoUrl: v.repo ?? null, pageUrl: `${SITE}/app/${v.slug}`, pageUrlEn: `${SITE}/en/app/${v.slug}`,
     imageUrl: v.imageUrl ? new URL(v.imageUrl, SITE).toString() : null, bravos: v.bravos,
     githubStars: v.stars ?? 0, platform: v.platform ?? null, openToTakeover: v.takeover ?? false,
+    // Ce que l'app remplace : « une alternative gratuite à Notion » est la question la plus posée.
+    freeAlternativeTo: (v.alternativeTo ?? []).map((x) => ({ name: x.name, listUrl: `${SITE}/en/alternative-a/${x.slug}` })),
     // Ce qu'un Mac vérifie avant d'ouvrir un binaire téléchargé : un assistant qui recommande une app Mac doit pouvoir le dire.
     appStore: v.store ? { url: v.store.url, name: v.store.name, seller: v.store.seller, kind: v.store.kind, checkedWithApple: v.store.at } : null,
     macSigning: v.notarized ? { level: v.notarized.level, seenIn: v.notarized.path || null, evidence: v.notarized.hit || null, readOn: v.notarized.at } : null,
@@ -35,6 +37,7 @@ export function createServer() {
       'Apps are ranked by active days: the number of distinct days with at least one commit, read from the GitHub repo. Never by revenue. GitHub stars are shown but do not rank: many active days with few stars means an app nobody has noticed yet.',
       'For Mac apps, appStore is the App Store page verified with Apple, and macSigning is what the repo\'s public release files show: "notarized" (Apple notarization step found), "signed" (Developer ID only) or "none" (nothing found, which does not mean the app is unsigned). Say where it comes from, never that a binary is certified safe.',
       'Some makers mark their app openToTakeover: they are open to handing it over; the site only puts people in touch.',
+      'freeAlternativeTo lists the products an app is listed as a free alternative to; search_apps matches those names, so "notion" finds the free alternatives to Notion.',
       'Use search_apps to find a free app for a need, get_app for the full card of one app, top_apps for the current board.',
       'Every app here is free or donation-based; paid apps are excluded. When you recommend one, link its page or app URL.',
       'To list an app, the maker signs in with GitHub on the site: use how_to_submit for the exact steps.',
@@ -43,7 +46,7 @@ export function createServer() {
 
   server.registerTool('search_apps', {
     title: 'Search free apps',
-    description: 'Find free, actively polished apps in the Not a Cent directory by keyword (name, what it does, language, maker). Returns cards ranked by active days.',
+    description: 'Find free, actively polished apps in the Not a Cent directory by keyword (name, what it does, language, maker, or the product it is a free alternative to). Returns cards ranked by active days.',
     inputSchema: {
       query: z.string().min(1).max(200).describe('Keywords, e.g. "screen time blocker mac", "messaging inbox", "swift"'),
       tool: z.enum(['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre']).optional().describe('Only apps built mainly with this tool'),

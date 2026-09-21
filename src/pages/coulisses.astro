@@ -1,13 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
 import { currentUser } from '../lib/session';
-import { appBySlug } from '../lib/db';
+import { appBySlug, sql, hasDb } from '../lib/db';
 import { isAdmin, candidates, candidate, counts, composeMail, guessLocale, type Candidate } from '../lib/outreach';
 export const prerender = false;
 // Les coulisses : trois colonnes, à lister / listées / envoyées. Clavier : J K pour bouger, L lister, E composer, X ignorer.
 const user = await currentUser(Astro.cookies).catch(() => null);
 if (!isAdmin(user?.login)) return new Response(null, { status: 404 });
 const [found, listed, sent, n] = await Promise.all([candidates('found'), candidates('listed'), candidates(['sent', 'claimed', 'no']), counts()]);
+// Ce que la prospection rapporte vraiment : les READMEs qui portent le badge, et les fiches qui disent ce qu'elles remplacent.
+const [reach] = hasDb ? ((await sql.query(`select count(*) filter (where badge_at is not null)::int as badges, count(*) filter (where cardinality(coalesce(alt_slugs, '{}')) > 0)::int as alts, count(*)::int as apps from apps where published`).catch(() => [])) as { badges: number; alts: number; apps: number }[]) : [];
 const msg = Astro.url.searchParams.get('msg') ?? '';
 const focus = Astro.url.searchParams.get('focus') ?? '';
 const composeId = Number(Astro.url.searchParams.get('compose') ?? 0);
@@ -33,7 +35,7 @@ const cols: { key: string; title: string; items: Candidate[] }[] = [
   <section class="coulisses">
     <header class="top">
       <h1>Coulisses</h1>
-      <p class="hand keys">J K bouger · L lister · E composer · X ignorer · <a href="/api/coulisses">CSV</a> · <code>npm run prospect</code> pour chercher</p>
+      <p class="hand keys">J K bouger · L lister · E composer · X ignorer · <a href="/api/coulisses">CSV</a> · <code>npm run prospect</code> pour chercher{reach && <> · <b>{reach.badges}</b> badge{reach.badges > 1 ? 's' : ''} en README · <b>{reach.alts}</b>/{reach.apps} fiches avec « alternative à »</>}</p>
       {msg && <p class="sk msg hand">{msg}</p>}
     </header>
 
@@ -85,6 +87,7 @@ const cols: { key: string; title: string; items: Candidate[] }[] = [
               <div class="acts">
                 {c.status === 'found' && <form method="post" action="/api/coulisses"><input type="hidden" name="id" value={c.id} /><input type="hidden" name="action" value="list" /><input type="hidden" name="focus" value={c.id} /><button class="chip" type="submit" data-key="l">L · lister</button></form>}
                 {c.status === 'listed' && <a class="chip" href={`/coulisses?compose=${c.id}#compose`} data-key="e">E · composer</a>}
+                {c.slug && (c.status === 'listed' || c.status === 'sent') && <a class="chip" href={`/app/${c.slug}/modifier`}>✎ remplir</a>}
                 {(c.status === 'found' || c.status === 'listed') && <form method="post" action="/api/coulisses"><input type="hidden" name="id" value={c.id} /><input type="hidden" name="action" value="ignore" /><button class="chip" type="submit" data-key="x">X · ignorer</button></form>}
                 {(c.status === 'listed' || c.status === 'sent') && <form method="post" action="/api/coulisses"><input type="hidden" name="id" value={c.id} /><input type="hidden" name="action" value="no" /><button class="chip" type="submit">a dit non</button></form>}
                 {c.status === 'sent' && <form method="post" action="/api/coulisses"><input type="hidden" name="id" value={c.id} /><input type="hidden" name="action" value="note" /><input type="hidden" name="status" value="sent" /><input name="note" placeholder="note" value={c.note ?? ''} /></form>}

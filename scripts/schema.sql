@@ -141,3 +141,12 @@ create table if not exists makers (
 alter table apps add column if not exists store_url text;
 alter table apps add column if not exists store jsonb;
 alter table apps add column if not exists notarized jsonb;
+
+-- « Alternative à » : ce que l'app remplace, trois noms au plus. alternative_to garde le nom tel qu'on l'affiche,
+-- alt_slugs le même nom en segment d'URL, à la même position : /alternative-a/notion lit alt_slugs, le titre lit alternative_to.
+alter table apps add column if not exists alternative_to text[] default '{}';
+alter table apps add column if not exists alt_slugs text[] default '{}';
+create index if not exists apps_alt_slugs on apps using gin (alt_slugs);
+
+-- Le badge dans le README : vu par le cron sur les repos publics réclamés. La date de la première fois, null s'il n'y est pas (ou plus).
+alter table apps add column if not exists badge_at timestamptz;

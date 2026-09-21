@@ -1,0 +1,141 @@
+---
+// La page Chiffres : ce que l'annuaire entier dit du travail derrière une app gratuite. Des médianes, l'échantillon à côté, la date de lecture.
+// C'est la page qu'on cite : un chiffre, une source, une méthode. Recalculée à chaque visite depuis la base.
+import Base from '../layouts/Base.astro';
+import { localePath, type Locale } from '../i18n/strings';
+import { figures, MIN_GROUP } from '../lib/figures';
+import { breadcrumbLd, SITE } from '../lib/seo';
+import { browsePath } from '../lib/browse';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const fr = locale === 'fr';
+const f = await figures().catch(() => null);
+const nf = (n: number) => n.toLocaleString(locale);
+const pct = (n: number, of: number) => (of ? Math.round((n / of) * 100) : 0);
+const readOn = f ? new Date(f.readOn).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+const title = fr ? 'Chiffres' : 'Figures';
+const desc = f
+  ? fr ? `Combien de travail derrière une app gratuite faite par un indépendant : ${f.days.median} jours de commits en médiane, sur ${f.apps} apps lues dans leur repo GitHub. Médianes, répartitions, méthode.` : `How much work goes into a free app made by an indie: ${f.days.median} days with commits at the median, across ${f.apps} apps read from their GitHub repo. Medians, distributions, method.`
+  : fr ? 'Les chiffres de l\'annuaire : jours de travail, durée de vie, étoiles.' : 'The directory\'s figures: days of work, lifetime, stars.';
+const page = `${SITE}${localePath(locale, '/chiffres')}`;
+const DAYS = fr ? ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const wdMax = f ? Math.max(1, ...f.weekdays.map((d) => d.n)) : 1;
+const wdAll = f ? f.weekdays.reduce((s, d) => s + d.n, 0) : 0;
+const small = Boolean(f && f.apps < 100);
+const cite = f ? (fr
+  ? `Sur Not a Cent, une app gratuite faite par un indépendant représente en médiane ${f.days.median} jours de commits étalés sur ${f.medianMonths} mois (${f.apps} apps, lu le ${readOn}). Source : ${page}`
+  : `On Not a Cent, a free app made by an indie represents a median of ${f.days.median} days with commits spread over ${f.medianMonths} months (${f.apps} apps, read on ${readOn}). Source: ${page}`) : '';
+const groups = f ? [
+  { title: fr ? 'Par plateforme' : 'By platform', kind: 'platform' as const, rows: f.byPlatform },
+  { title: fr ? 'Par langage' : 'By language', kind: 'language' as const, rows: f.byLanguage },
+  { title: fr ? 'Par outil principal' : 'By main tool', kind: 'tool' as const, rows: f.byTool },
+].filter((g) => g.rows.length >= 2) : [];
+const ld = f ? [
+  breadcrumbLd(locale, [[fr ? 'Accueil' : 'Home', '/'], [title, '/chiffres']]),
+  {
+    '@context': 'https://schema.org', '@type': 'Dataset', '@id': page, url: page, inLanguage: locale,
+    name: fr ? 'Not a Cent : le travail derrière les apps gratuites indépendantes' : 'Not a Cent: the work behind free indie apps',
+    description: desc, dateModified: f.readOn, isAccessibleForFree: true, license: 'https://creativecommons.org/licenses/by/4.0/',
+    creator: { '@type': 'Organization', name: 'Not a Cent', url: SITE },
+    measurementTechnique: fr ? 'Jours calendaires (UTC) avec au moins un commit humain sur la branche par défaut, lus depuis le repo GitHub' : 'Calendar days (UTC) with at least one human commit on the default branch, read from the GitHub repo',
+    variableMeasured: ['active days', 'commits', 'lifetime in months', 'best streak in weeks', 'GitHub stars'],
+    distribution: [{ '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: `${SITE}/chiffres.json` }],
+  },
+] : undefined;
+---
+<Base locale={locale} path="/chiffres" title={title} description={desc} jsonLd={ld}>
+  <article class="sk page">
+    <h1>{title}</h1>
+    <p class="hand lede">{fr ? 'Combien de travail derrière une app gratuite ? On a compté.' : 'How much work goes into a free app? We counted.'}</p>
+    {!f && <p>{fr ? 'Les chiffres arrivent : la base n\'est pas branchée ici.' : 'Figures are coming: no database here.'}</p>}
+    {f && (
+      <>
+        <p class="prov mono">{fr ? `${nf(f.apps)} apps gratuites · lu le ${readOn} · repos relus chaque nuit` : `${nf(f.apps)} free apps · read on ${readOn} · repos re-read every night`} · <a href={localePath(locale, '/methode')}>{fr ? 'la méthode' : 'the method'}</a> · <a href="/chiffres.json">JSON</a></p>
+        {small && <p class="warn hand">{fr ? `Échantillon encore petit : ${f.apps} apps. Les médianes bougeront. On donne le nombre à côté de chaque chiffre pour ça.` : `The sample is still small: ${f.apps} apps. Medians will move. That is why every figure comes with its count.`}</p>}
+
+        <div class="tiles">
+          <div class="tile"><b class="mono">{nf(f.days.median)}</b><span>{fr ? 'jours de commits, en médiane, derrière une app' : 'days with commits behind an app, at the median'}</span><small class="mono">{fr ? `quartiles ${f.days.q1} – ${f.days.q3} · max ${nf(f.days.max)}` : `quartiles ${f.days.q1} – ${f.days.q3} · max ${nf(f.days.max)}`}</small></div>
+          <div class="tile"><b class="mono">{f.medianMonths} <i>{fr ? 'mois' : 'mo'}</i></b><span>{fr ? 'entre le premier et le dernier commit, en médiane' : 'between first and last commit, at the median'}</span><small class="mono">{fr ? `${f.medianStreakWeeks} semaines d'affilée au mieux` : `${f.medianStreakWeeks} weeks in a row at best`}</small></div>
+          <div class="tile"><b class="mono">{pct(f.under20Stars, f.apps)} %</b><span>{fr ? 'ont moins de 20 étoiles GitHub' : 'have fewer than 20 GitHub stars'}</span><small class="mono">{fr ? `${f.under20Stars} sur ${f.apps} · médiane ★ ${f.medianStars}` : `${f.under20Stars} of ${f.apps} · median ★ ${f.medianStars}`}</small></div>
+          <div class="tile"><b class="mono">{nf(f.totalDays)}</b><span>{fr ? 'jours de travail vérifiés, toutes apps confondues' : 'verified days of work, all apps together'}</span><small class="mono">{nf(f.totalCommits)} commits</small></div>
+        </div>
+
+        <h2>{fr ? 'Ce que ça dit' : 'What it says'}</h2>
+        <ul>
+          <li>{fr ? `${pct(f.over100Days, f.apps)} % des apps ont passé les 100 jours de commits (${f.over100Days} sur ${f.apps}).` : `${pct(f.over100Days, f.apps)}% of apps have passed 100 days with commits (${f.over100Days} of ${f.apps}).`}</li>
+          <li>{fr ? `${pct(f.solo, f.apps)} % n'ont qu'un seul auteur humain dans leur historique (${f.solo} sur ${f.apps}).` : `${pct(f.solo, f.apps)}% have a single human author in their history (${f.solo} of ${f.apps}).`}</li>
+          <li>{fr ? `${f.veterans} apps ont plus d'un an et reçoivent encore des commits.` : `${f.veterans} apps are over a year old and still getting commits.`} <a href={browsePath({ kind: 'intent', value: 'veteran' }, locale)}>{fr ? 'Les voir' : 'See them'}</a></li>
+          <li>{fr ? `Un jour de travail, c'est ${String(f.medianCommitsPerDay).replace('.', ',')} commits en médiane.` : `A day of work is ${f.medianCommitsPerDay} commits at the median.`}</li>
+          {f.macApps >= MIN_GROUP && <li>{fr ? `${f.signed} apps Mac sur ${f.macApps} sont sur l'App Store ou notarisées, d'après leur repo.` : `${f.signed} of ${f.macApps} Mac apps are on the App Store or notarized, according to their repo.`} <a href={browsePath({ kind: 'intent', value: 'signed' }, locale)}>{fr ? 'Les voir' : 'See them'}</a></li>}
+        </ul>
+
+        {wdAll > 0 && f.weekendShare !== null && (
+          <>
+            <h2>{fr ? 'Quel jour ils travaillent' : 'Which day they work'}</h2>
+            <p>{fr ? `${Math.round(f.weekendShare * 100)} % des jours de travail tombent un samedi ou un dimanche. Si le travail était réparti au hasard, ce serait 29 %.` : `${Math.round(f.weekendShare * 100)}% of work days fall on a Saturday or a Sunday. If work were spread at random, it would be 29%.`}</p>
+            <div class="bars" role="img" aria-label={f.weekdays.map((d, i) => `${DAYS[i]} ${pct(d.n, wdAll)} %`).join(', ')}>
+              {f.weekdays.map((d, i) => (
+                <div class:list={['bar', { we: i >= 5 }]}><span class="mono v">{pct(d.n, wdAll)} %</span><i style={`height:${Math.max(4, Math.round((d.n / wdMax) * 96))}px`}></i><span class="hand d">{DAYS[i]}</span></div>
+              ))}
+            </div>
+            <p class="small">{fr ? `${nf(wdAll)} jours actifs sur les 365 derniers jours, ${f.weekdayApps} repos publics, dates en UTC. Les repos privés sont laissés de côté : leurs jours anciens ne sont connus qu'à la semaine.` : `${nf(wdAll)} active days over the last 365 days, ${f.weekdayApps} public repos, dates in UTC. Private repos are left out: their older days are only known to the week.`}</p>
+          </>
+        )}
+
+        {groups.map((g) => (
+          <>
+            <h2>{g.title}</h2>
+            <table>
+              <thead><tr><th></th><th class="r">apps</th><th class="r">{fr ? 'jours, médiane' : 'days, median'}</th><th class="r">{fr ? 'mois, médiane' : 'months, median'}</th></tr></thead>
+              <tbody>
+                {g.rows.map((r) => <tr><td><a href={browsePath({ kind: g.kind, value: r.value }, locale)}>{r.value}</a></td><td class="r mono">{r.n}</td><td class="r mono">{r.medianDays}</td><td class="r mono">{r.medianMonths}</td></tr>)}
+              </tbody>
+            </table>
+          </>
+        ))}
+        {groups.length > 0 && <p class="small">{fr ? `Un groupe de moins de ${MIN_GROUP} apps n'est pas affiché : ce ne serait pas une statistique, ce serait une fiche.` : `A group with fewer than ${MIN_GROUP} apps is not shown: it would not be a statistic, it would be a card.`}</p>}
+
+        <h2>{fr ? 'Pour citer' : 'To quote'}</h2>
+        <p>{fr ? 'Ces chiffres sont libres de reprise (CC BY 4.0) : un lien vers cette page suffit. Une phrase prête à coller :' : 'These figures are free to reuse (CC BY 4.0): a link to this page is enough. A sentence ready to paste:'}</p>
+        <blockquote class="cite">{cite}</blockquote>
+
+        <h2>{fr ? 'Ce que ces chiffres ne disent pas' : 'What these figures do not say'}</h2>
+        <ul>
+          <li>{fr ? 'Ce n\'est pas un échantillon de toutes les apps indépendantes : ce sont celles listées ici, gratuites, avec un repo GitHub, trouvées par nous ou inscrites par leur maker. Des apps qui durent, par construction.' : 'This is not a sample of all indie apps: these are the ones listed here, free, with a GitHub repo, found by us or listed by their maker. Apps that last, by construction.'}</li>
+          <li>{fr ? 'Un jour de commits n\'est pas une journée de huit heures. C\'est un jour où quelqu\'un a ouvert le projet et y a laissé quelque chose.' : 'A day with commits is not an eight-hour day. It is a day when someone opened the project and left something in it.'}</li>
+          <li>{fr ? 'Les médianes sont recalculées chaque nuit : le chiffre que tu cites aujourd\'hui aura bougé dans un mois. Donne la date.' : 'Medians are recomputed every night: the figure you quote today will have moved in a month. Give the date.'}</li>
+        </ul>
+      </>
+    )}
+  </article>
+</Base>
+<style>
+.page{padding:32px 36px;max-width:760px;margin:0 auto}
+.page h1{font:700 44px/1 var(--hand);margin:0 0 6px}
+.page .lede{font-size:22px;color:var(--pencil);margin:0 0 14px}
+.page h2{font:700 26px/1.1 var(--hand);margin:32px 0 8px}
+.page p,.page li{font-size:17px;line-height:1.5}
+.page ul{padding-left:22px}
+.page .small{font-size:13px;color:var(--pencil)}
+.prov{font-size:12.5px;color:var(--pencil);margin:0 0 10px}
+.prov a{color:inherit}
+.warn{color:var(--redpen);font-size:19px;margin:0 0 6px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0 4px}
+.tile{border:2px solid var(--ink);border-radius:var(--sk2);padding:14px 16px;display:flex;flex-direction:column;gap:4px;background:var(--paper-2)}
+.tile b{font-size:34px;font-weight:500;line-height:1}
+.tile b i{font:700 20px/1 var(--hand);color:var(--pencil)}
+.tile span{font-size:15px;line-height:1.35}
+.tile small{font-size:12px;color:var(--pencil)}
+.bars{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;align-items:end;margin:16px 0 8px;max-width:520px}
+.bar{display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar i{display:block;width:100%;background:var(--ink);border-radius:4px 6px 0 0}
+.bar.we i{background:var(--redpen)}
+.bar .v{font-size:12px;color:var(--pencil)}
+.bar .d{font-size:18px;line-height:1}
+table{width:100%;border-collapse:collapse;font-size:16px}
+th{font:700 17px/1.2 var(--hand);color:var(--pencil);text-align:left;padding:4px 8px;border-bottom:2px solid var(--ink)}
+td{padding:6px 8px;border-bottom:1.5px dashed var(--faint)}
+.r{text-align:right}
+.cite{margin:8px 0;padding:12px 16px;border-left:4px solid var(--redpen);background:var(--paper-2);font-size:16px;line-height:1.5}
+@media (max-width:760px){.page{padding:24px 20px}.tiles{grid-template-columns:1fr}}
+</style>

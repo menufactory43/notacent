@@ -4,13 +4,16 @@ import { t, localePath, type Locale } from '../i18n/strings';
 import { currentUser } from '../lib/session';
 import { appBySlug, appsByUser, makersOf, canEdit } from '../lib/db';
 import { PLATFORMS } from '../lib/platform';
+import { isAdmin } from '../lib/outreach';
+import Badge from './Badge.astro';
 interface Props { locale: Locale; slug: string }
 const { locale, slug } = Astro.props;
 const s = t(locale);
 const user = await currentUser(Astro.cookies).catch(() => null);
 if (!user) return Astro.redirect(`/api/auth/github?lang=${locale}&back=${encodeURIComponent(localePath(locale, `/app/${slug}/modifier`))}`, 302);
 const app = await appBySlug(slug).catch(() => null);
-if (!app || !canEdit(app, user)) return new Response(null, { status: 404 });
+// Une fiche non réclamée n'a personne pour la remplir : l'admin peut le faire en attendant son maker.
+if (!app || !(canEdit(app, user) || (app.unclaimed && isAdmin(user.login)))) return new Response(null, { status: 404 });
 const owner = app.user_id === user.id;
 const makers = await makersOf(app.id).catch(() => []);
 const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre'];
@@ -29,6 +32,8 @@ const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.ima
   <section class="edit">
     <h1>{s.editTitle} <span class="hand sub">· {app.name}</span></h1>
     <p class="lede">{s.editLede}{inBatch && <span class="hand batch"> · {s.batchOf(pos + 1, batch.length)}</span>}</p>
+    {/* La fiche vient d'être réclamée : c'est le moment où le maker a le README ouvert dans l'onglet d'à côté. */}
+    {Astro.url.searchParams.get('reclamee') === '1' && !app.private && <div class="claimed-badge"><Badge locale={locale} slug={app.slug} days={app.active_days} title={s.badgeClaimed} /></div>}
     <form method="post" action="/api/apps/update" class="sk" enctype="multipart/form-data">
       {Astro.url.searchParams.get('erreur') === 'image' && <p class="err hand">{s.errImage}</p>}
       {Astro.url.searchParams.get('erreur') === 'store' && <p class="err hand">{s.errStore}</p>}
@@ -44,6 +49,7 @@ const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.ima
           <div><input name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /><small>{current ? s.fImageKeep : s.fImageHint}</small></div>
         </div>
       </label>
+      <label><span>{s.fAlt}</span><input name="alternative_to" value={(app.alternative_to ?? []).join(', ')} maxlength="130" placeholder="Notion, Obsidian" /><small>{s.fAltHint}</small></label>
       <label><span>{s.fLongest}</span><textarea name="longest" rows="4" maxlength="600">{app.longest ?? ''}</textarea></label>
       <div class="grid">
         <label><span>{s.fTool}</span>
@@ -105,6 +111,7 @@ const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.ima
 </script>
 <style>
 .edit{max-width:640px}
+.claimed-badge{margin:0 0 18px}
 h1{font:700 44px/1 var(--hand);margin:0 0 6px}
 .sub{color:var(--pencil);font-size:30px}
 .lede{margin:0 0 20px;color:var(--pencil)}

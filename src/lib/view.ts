@@ -15,6 +15,7 @@ export function toView(a: DbApp): App {
     weekly: a.weekly?.length ? a.weekly : Array(26).fill(0), imageUrl: a.has_image ? `/api/img/${a.slug}` : a.image_url ?? undefined, sponsored: a.sponsored ?? false, tagline: a.tagline ?? a.description ?? undefined,
     stars: a.stars ?? 0, platform: a.platform ?? undefined, takeover: a.takeover ?? false, unclaimed: a.unclaimed ?? false,
     store: a.store ?? undefined, notarized: a.notarized ?? undefined,
+    alternativeTo: (a.alternative_to ?? []).map((name, i) => ({ name, slug: a.alt_slugs?.[i] ?? '' })).filter((x) => x.slug), badgeAt: a.badge_at ? new Date(a.badge_at).toISOString() : undefined,
     hasLongest: Boolean(a.longest), comakers: a.comakers ?? [], authors: a.authors ?? 1, ownerCommits: a.owner_commits ?? undefined, refreshedAt: a.refreshed_at ? new Date(a.refreshed_at).toISOString() : undefined,
     // La base rend des dates (objets ou chaînes) : on les ramène à AAAA-MM-JJ, en UTC, comme le registre les a écrites.
     activeDates: a.active_dates?.map((d) => (d instanceof Date ? new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString() : String(d)).slice(0, 10)),

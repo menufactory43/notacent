@@ -2,6 +2,8 @@
   "crons": [{ "path": "/api/cron/refresh", "schedule": "17 3 * * *" }],
   "redirects": [
     { "source": "/:path*", "has": [{ "type": "host", "value": "notacent.vercel.app" }], "destination": "https://notacent.app/:path*", "permanent": true },
-    { "source": "/:path*", "has": [{ "type": "host", "value": "www.notacent.app" }], "destination": "https://notacent.app/:path*", "permanent": true }
+    { "source": "/:path*", "has": [{ "type": "host", "value": "www.notacent.app" }], "destination": "https://notacent.app/:path*", "permanent": true },
+    { "source": "/:path*", "has": [{ "type": "host", "value": "getnotacent.com" }], "destination": "https://notacent.app/:path*", "permanent": true },
+    { "source": "/:path*", "has": [{ "type": "host", "value": "www.getnotacent.com" }], "destination": "https://notacent.app/:path*", "permanent": true }
   ]
 }

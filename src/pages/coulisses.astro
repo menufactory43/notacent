@@ -18,7 +18,7 @@ const row = target?.slug ? await appBySlug(target.slug) : null;
 const mail = target ? await composeMail(target, lang, row) : null;
 const to = target ? (target.owner_email ?? (useCommit ? target.commit_email : null)) : null;
 // authuser : sans lui, Gmail ouvre le brouillon dans le compte par défaut du navigateur, pas celui de Not a Cent.
-const SENDER = 'gabriel@notacent.app';
+const SENDER = 'gabriel@getnotacent.com';
 const gmail = mail ? `https://mail.google.com/mail/?authuser=${encodeURIComponent(SENDER)}&view=cm&fs=1&to=${encodeURIComponent(to ?? '')}&su=${encodeURIComponent(mail.subject)}&body=${encodeURIComponent(mail.body)}` : '';
 const d = (s: string | null | undefined) => (s ? new Date(s).toLocaleDateString('fr', { day: 'numeric', month: 'short', year: '2-digit' }) : '');
 const days = (c: Candidate) => c.active_days ?? c.metrics.active_days;

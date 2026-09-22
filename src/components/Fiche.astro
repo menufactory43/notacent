@@ -167,7 +167,7 @@ const workflowUrl = nota && app.repo ? `${app.repo}/blob/HEAD/${nota.path}` : nu
         <small class="hand">{s.unclaimedNote}</small>
       </section>
     ) : (
-      <Badge locale={locale} slug={app.slug} days={app.activeDays} title={s.badgeTitle} seenAt={app.badgeAt} />
+      <Badge locale={locale} slug={app.slug} days={app.activeDays} title={s.badgeTitle} seenAt={app.badgeAt} firstEuro={rev === 'first'} />
     )}
   </div>
 

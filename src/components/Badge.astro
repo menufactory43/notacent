@@ -4,14 +4,14 @@ import { SITE } from '../lib/seo';
 // Le badge, prêt à coller : la carte façon annuaire de lancement d'abord (le vrai SVG tel qu'il
 // s'affichera, en clair et en sombre), puis le badge compact pour qui aligne déjà une rangée de badges.
 // Un README s'écrit en Markdown : c'est cette ligne-là qu'on montre en premier.
-interface Props { locale: Locale; slug: string; days: number; title: string; seenAt?: string }
-const { locale, slug, days, title, seenAt } = Astro.props;
+interface Props { locale: Locale; slug: string; days: number; title: string; seenAt?: string; firstEuro?: boolean }
+const { locale, slug, days, title, seenAt, firstEuro } = Astro.props;
 const s = t(locale);
 const lang = locale === 'en' ? '&lang=en' : '';
 const cardPath = `/api/badge/${slug}.svg?style=card${lang}`;
 const compactPath = `/api/badge/${slug}.svg${locale === 'en' ? '?lang=en' : ''}`;
 const pageUrl = `${SITE}${localePath(locale, `/app/${slug}`)}`;
-const alt = s.badgeAlt(days);
+const alt = s.badgeAlt(days, firstEuro);
 const snippets = (path: string) => [
   [s.badgeMd, `[![${alt}](${SITE}${path})](${pageUrl})`],
   [s.badgeHtml, `<a href="${pageUrl}"><img src="${SITE}${path}" alt="${alt}"></a>`],

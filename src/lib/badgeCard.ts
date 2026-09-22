@@ -35,6 +35,16 @@ const DIGITS: Record<string, { w: number; d: string }> = {
   '9': { w: 88, d: 'M62 8q-1 0-2-1-2-1-4-2-2-1-2-1 1-1 0-1 0 0 0-2-1-1-1-2 0-1 0-4 0-2 0-3 1-4 2-10 1-6 3-14 2-7 4-13 3-7 3-8 0-1-5-1-6 1-12-2-6-3-9-8-3-5-2-10 0-3 1-6 1-2 4-7 4-6 10-12 6-6 12-10 6-4 12-5 3-1 8 0 4 1 6 2 3 1 6 5 4 4 6 8 3 4 3 6-2 7-4 10-2 3-5 6-3 3-8 10-5 8-9 18-4 9-8 18-2 8-3 15-1 7 1 7 0 0 2 0 2 1 3 1 1 1 1 2 0 1-1 3-1 2-3 4-2 3-4 5-2 2-4 4-3 2-4 2zm-5-82q3 3 7 2 4 0 8-4 5-3 9-10 3-3 4-4 1-2 2-3 3-2 4-4 1-2-1-3-1-2-2-2-1-1-6 1-3 1-5 2-2 1-6 3-1 1-2 1-1 0-2 0 0 0 0 0-1 0-1 1 1 2-2 5-6 5-7 8-1 4 1 6z' },
 };
 
+// Les lettres du tampon « 1er € » / « 1st € », même fonte, même unité (le « 1 » est dans DIGITS).
+const STAMP: Record<string, { w: number; d: string }> = {
+  'e': { w: 67, d: 'M59 -4Q53 -1 46 0Q39 0 33 -2Q28 -4 24 -9Q22 -11 20 -17Q18 -23 20 -33Q21 -42 25 -51Q30 -61 36 -68Q43 -75 51 -78Q54 -79 56 -79Q59 -80 64 -79Q69 -79 72 -77Q76 -75 78 -73Q81 -70 82 -67Q83 -64 83 -61Q82 -55 77 -47Q72 -40 64 -36Q60 -35 56 -35Q51 -34 43 -36Q38 -37 37 -35Q35 -33 36 -27Q36 -23 37 -21Q39 -18 42 -17Q47 -16 49 -17Q51 -18 54 -19Q56 -20 58 -22Q61 -24 62 -25Q64 -27 66 -27Q69 -26 71 -24Q73 -22 73 -20Q73 -17 69 -12Q65 -7 59 -4ZM56 -49Q57 -49 60 -51Q63 -54 65 -56Q67 -59 67 -60Q67 -62 64 -64Q61 -65 57 -64Q55 -64 52 -61Q49 -58 46 -55Q43 -52 43 -50Q44 -49 48 -48Q53 -48 56 -49Z' },
+  'r': { w: 72, d: 'M24 -5Q22 -7 20 -9Q18 -11 18 -15Q19 -21 20 -25Q21 -29 22 -35Q23 -37 24 -43Q26 -49 29 -56Q31 -63 34 -69Q36 -75 38 -78Q40 -80 45 -80Q49 -80 51 -78Q53 -76 52 -72Q51 -67 46 -58Q45 -56 44 -53Q42 -50 42 -48Q41 -47 42 -47Q43 -49 47 -52Q50 -55 53 -58Q57 -61 60 -63Q63 -65 65 -66Q66 -67 68 -67Q70 -68 71 -68Q76 -71 81 -70Q87 -70 88 -67Q88 -65 89 -64Q90 -63 90 -63Q91 -63 91 -63Q91 -62 91 -62Q91 -61 89 -58Q86 -56 83 -55Q80 -55 78 -54Q76 -54 73 -52Q66 -48 60 -45Q54 -41 47 -34Q46 -33 44 -31Q43 -30 41 -27Q40 -26 39 -23Q38 -19 37 -16Q37 -13 37 -13Q37 -13 36 -11Q35 -9 34 -7Q32 -4 29 -3Q27 -2 24 -5Z' },
+  's': { w: 70, d: 'M31 1Q24 -2 21 -5Q18 -8 18 -10Q19 -11 20 -12Q21 -13 24 -13Q28 -13 35 -11Q38 -11 42 -12Q45 -12 47 -13Q48 -14 47 -14Q47 -15 46 -16Q44 -17 42 -17Q42 -18 40 -19Q39 -20 37 -22Q33 -25 29 -28Q26 -31 27 -32V-33Q25 -33 24 -37Q23 -41 23 -44Q23 -50 26 -56Q30 -62 34 -66Q40 -72 47 -77Q54 -82 63 -84Q66 -85 70 -85Q73 -85 75 -84Q76 -85 79 -83Q81 -82 84 -79Q86 -76 87 -74Q87 -71 87 -68Q87 -64 87 -62Q86 -59 85 -59Q85 -59 84 -59Q84 -59 84 -58Q84 -56 81 -53Q77 -51 74 -49Q70 -48 68 -49Q67 -50 66 -51Q65 -51 64 -53Q64 -53 64 -54Q63 -54 63 -55Q63 -56 64 -57Q65 -57 65 -57Q69 -61 70 -64Q72 -67 72 -69Q72 -71 69 -71Q68 -71 65 -69Q61 -67 58 -65Q54 -63 52 -61Q51 -60 51 -59Q51 -59 50 -59Q50 -60 48 -58Q47 -56 45 -53Q43 -50 42 -49Q41 -47 41 -46Q40 -44 40 -42Q40 -40 42 -39Q44 -37 47 -34Q54 -29 58 -26Q61 -23 63 -21Q64 -19 65 -17Q68 -11 65 -7Q63 -2 57 0Q55 1 50 2Q45 3 40 3Q34 3 31 1Z' },
+  't': { w: 66, d: 'M34 0Q32 0 29 -3Q27 -5 25 -8Q23 -11 22 -13Q22 -13 22 -14Q21 -14 21 -14Q20 -15 20 -20Q20 -24 21 -30Q21 -36 22 -39Q23 -42 25 -48Q27 -53 28 -58L34 -69L26 -72Q24 -72 24 -73Q23 -74 23 -75Q23 -77 24 -80Q26 -83 27 -83Q28 -83 31 -83Q33 -83 36 -83Q39 -83 39 -83Q40 -84 41 -84Q42 -85 42 -86Q43 -89 44 -90Q45 -91 46 -93Q47 -96 48 -98Q49 -100 51 -103Q52 -104 53 -106Q55 -108 56 -110Q58 -111 62 -112Q66 -113 69 -110Q71 -108 71 -106Q71 -104 70 -102Q68 -98 66 -96Q64 -93 62 -89Q59 -85 61 -84Q63 -84 72 -85Q78 -86 80 -84Q83 -82 83 -78Q84 -74 82 -73Q81 -72 73 -72Q68 -71 65 -71Q62 -71 60 -71Q57 -70 57 -70Q56 -70 54 -70Q53 -70 52 -69Q51 -68 50 -66Q50 -65 48 -62Q46 -59 44 -55Q41 -46 39 -38Q37 -31 36 -23Q35 -19 36 -18Q37 -16 41 -16Q44 -15 48 -16Q52 -16 55 -17Q57 -18 59 -19Q62 -20 64 -21Q66 -22 67 -23Q69 -24 69 -24Q70 -26 72 -24Q74 -22 75 -19Q75 -17 74 -14Q73 -10 66 -7Q57 -1 48 0Q39 1 34 0Z' },
+  '€': { w: 90, d: 'M53 7Q49 8 44 7Q39 6 33 3Q28 0 24 -3Q23 -4 22 -7Q20 -9 19 -13Q17 -16 17 -18Q16 -21 16 -21Q17 -22 17 -24Q17 -25 17 -25Q16 -28 18 -36Q17 -36 16 -36Q14 -36 13 -37Q10 -37 8 -38Q6 -40 6 -41Q1 -47 16 -48Q18 -48 22 -49Q25 -56 29 -65Q28 -65 26 -65Q24 -65 22 -66Q19 -66 18 -67Q16 -69 15 -70Q11 -76 26 -77Q29 -77 35 -78Q39 -85 45 -93Q51 -101 58 -108Q65 -116 71 -121Q77 -126 81 -128Q85 -129 88 -130Q92 -130 95 -130Q100 -129 105 -126Q110 -123 113 -120Q115 -116 116 -111Q117 -105 118 -99Q118 -94 117 -90Q115 -87 115 -86Q114 -85 111 -85Q111 -85 107 -86Q104 -87 102 -89Q101 -90 100 -90Q99 -91 99 -91Q99 -91 99 -93Q99 -95 100 -97Q103 -104 102 -109Q102 -114 97 -115Q93 -115 86 -112Q80 -109 73 -101Q68 -96 64 -90Q59 -84 55 -78Q61 -78 66 -78Q71 -78 74 -78Q85 -77 89 -73Q92 -70 90 -67Q89 -64 84 -64Q83 -64 80 -64Q78 -64 74 -64Q71 -64 69 -64Q67 -64 61 -64Q54 -64 47 -64Q46 -62 45 -59Q43 -54 41 -49Q48 -49 54 -49Q60 -49 64 -49Q75 -49 80 -44Q82 -41 81 -38Q79 -35 75 -36Q74 -36 70 -36Q65 -36 61 -36Q56 -36 54 -36Q53 -36 48 -36Q43 -35 37 -35Q36 -31 36 -28Q35 -25 35 -23Q35 -20 35 -19Q35 -17 34 -17Q35 -15 36 -13Q37 -10 39 -9Q40 -7 45 -7Q47 -7 52 -8Q56 -9 60 -10Q64 -11 66 -12Q66 -12 68 -12Q70 -13 71 -13Q73 -14 76 -15Q80 -17 82 -18Q88 -21 92 -22Q97 -23 98 -22Q98 -22 99 -22Q100 -21 101 -20Q101 -18 98 -14Q97 -13 94 -10Q91 -8 88 -6Q85 -4 85 -4Q84 -4 81 -3Q79 -2 77 -1Q71 3 65 5Q59 7 53 7Z' },
+  ' ': { w: 48, d: '' },
+};
+
 const f = (n: number) => String(+n.toFixed(2));
 // Un glyphe vectorisé posé à (x, y = ligne de base), corps `size` en px.
 const glyph = (d: string, x: number, y: number, size: number, fill: string) =>
@@ -52,12 +62,26 @@ const LOGO = `<g transform="translate(11 11)"><rect width="32" height="32" rx="7
 <path d="M16.2 6q.7 8-.6 20" stroke="#1F1D2B" stroke-width="2.3" stroke-linecap="round" fill="none"/>
 <path d="M6 22.5C13 18.5 19 15 26.5 10" stroke="#D9432F" stroke-width="2.8" stroke-linecap="round" fill="none"/></g>`;
 
-export function badgeCard(days: number, opts: { en: boolean; theme: BadgeTheme }): string {
+// Le cachet « 1er € » : un tampon rouge à double trait, penché, posé au-dessus de « Cent », comme le tampon de la fiche.
+// Il ne remplace rien : le badge continue de compter les jours actifs.
+function firstEuroStamp(en: boolean, red: string, bg: string): string {
+  const txt = en ? '1st €' : '1er €';
+  const size = 14;
+  const glyphs = txt.split('').map((ch) => (ch === '1' ? DIGITS['1'] : STAMP[ch]));
+  const tw = (glyphs.reduce((a, g) => a + g.w, 0) * size) / UPM;
+  const w = tw + 9, h = 17, cx = 154, cy = 13;
+  let x = -tw / 2, paths = '';
+  for (const g of glyphs) { if (g.d) paths += glyph(g.d, x, 5, size, red); x += (g.w * size) / UPM; }
+  return `<g transform="translate(${cx} ${cy}) rotate(-8)"><rect x="${f(-w / 2)}" y="${f(-h / 2)}" width="${f(w)}" height="${h}" rx="5" fill="${bg}" stroke="${red}" stroke-width="1.4"/>
+<rect x="${f(-w / 2 + 2)}" y="${f(-h / 2 + 2)}" width="${f(w - 4)}" height="${h - 4}" rx="3.5" fill="none" stroke="${red}" stroke-width=".8"/>${paths}</g>`;
+}
+
+export function badgeCard(days: number, opts: { en: boolean; theme: BadgeTheme; firstEuro?: boolean }): string {
   const c = THEMES[opts.theme] ?? THEMES.light;
   const kicker = opts.en ? 'VERIFIED ON' : 'VÉRIFIÉ SUR';
   const unit = opts.en ? (days === 1 ? 'active day' : 'active days') : (days <= 1 ? 'jour actif' : 'jours actifs');
   const n = String(Math.max(0, Math.floor(days)));
-  const label = `${n} ${unit}, ${opts.en ? 'verified on' : 'vérifié sur'} Not a Cent`;
+  const label = `${n} ${unit}, ${opts.en ? 'verified on' : 'vérifié sur'} Not a Cent${opts.firstEuro ? (opts.en ? ', first euro made' : ', premier euro gagné') : ''}`;
 
   // Wordmark : Caveat 22 px, « Cent » raturé d'un trait rouge qui monte, comme sur le site.
   const wm = 22, x0 = 54;
@@ -88,5 +112,6 @@ ${wordmark}
 ${marker}
 ${digits}
 <text x="${cx}" y="45.5" text-anchor="middle" font-family="${SANS}" font-size="8.5" font-weight="600" letter-spacing=".2" fill="${c.soft}">${esc(unit)}</text>
+${opts.firstEuro ? firstEuroStamp(opts.en, c.red, c.bg) : ''}
 </svg>`;
 }

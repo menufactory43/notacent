@@ -1,5 +1,6 @@
 import type { App } from '../data/apps';
 import type { Locale } from '../i18n/strings';
+import { declaredFree } from './view';
 export const SITE = 'https://notacent.app';
 
 // Données structurées : ce qu'un moteur, et l'assistant qui s'en sert, lisent d'une app sans deviner.
@@ -10,7 +11,8 @@ export function softwareLd(app: App, locale: Locale) {
     '@context': 'https://schema.org', '@type': 'SoftwareApplication', '@id': url, name: app.name, url,
     description: app.tagline ?? app.longest[locale] ?? undefined,
     applicationCategory: 'UtilitiesApplication', operatingSystem: os, inLanguage: locale,
-    isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR', availability: 'https://schema.org/InStock' },
+    // Un prix seulement quand on le connaît : 0 pour une app gratuite ou à dons déclarée par son maker, rien sinon.
+    ...(declaredFree(app) ? { isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR', availability: 'https://schema.org/InStock' } } : {}),
     author: [app.owner, ...(app.comakers ?? [])].map((l) => ({ '@type': 'Person', name: l, url: `https://github.com/${l}` })),
     ...(app.url ? { installUrl: app.url, downloadUrl: app.url } : {}),
     ...(app.repo ? { codeRepository: app.repo } : {}),

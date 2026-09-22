@@ -21,3 +21,11 @@ export function toView(a: DbApp): App {
     activeDates: a.active_dates?.map((d) => (d instanceof Date ? new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString() : String(d)).slice(0, 10)),
   };
 }
+
+// Le prix qu'on peut affirmer : celui que le maker a choisi. Une fiche non réclamée garde le « free » posé par défaut
+// en base, que personne n'a déclaré : on n'en dit rien, ni sur la page ni aux moteurs.
+export function declaredPricing(app: Pick<App, 'pricing' | 'unclaimed'>): App['pricing'] | null {
+  return app.unclaimed ? null : app.pricing;
+}
+// Gratuite à l'usage : gratuite, ou à dons. Une app payante ou au prix non déclaré ne l'est pas, faute de le savoir.
+export const declaredFree = (app: Pick<App, 'pricing' | 'unclaimed'>) => { const p = declaredPricing(app); return p === 'free' || p === 'donations'; };

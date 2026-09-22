@@ -96,7 +96,7 @@ function logo(size = 44): Node {
   );
 }
 
-/** Le tampon « 0 € » en haut à droite, comme sur la fiche. */
+/** Le tampon « 0 € gagné » (ou « 1er € ») en haut à droite, comme sur la fiche. */
 function stamp(label: string): Node {
   return h(
     'div',
@@ -165,11 +165,12 @@ function statCell(value: string, label: string): Node {
 export interface SiteCard {
   tagline: string;
   note: string;
+  stamp: string;
 }
 
 export function siteCard(c: SiteCard): Node {
   return frame(
-    stamp('0 \u20ac'),
+    stamp(c.stamp),
     logo(64),
     h('div', { display: 'flex', flexGrow: 1 }),
     text(c.tagline, { fontFamily: HAND, fontSize: 86, color: INK, lineHeight: 1.05, maxWidth: 940 }),

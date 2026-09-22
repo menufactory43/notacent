@@ -29,7 +29,7 @@ export function softwareLd(app: App, locale: Locale) {
       { '@type': 'PropertyValue', name: 'githubStars', value: app.stars ?? 0 },
       ...(app.platform ? [{ '@type': 'PropertyValue', name: 'platform', value: app.platform }] : []),
       // Pas pour une app payante : elle n'est pas une alternative « gratuite », et ses pages « alternative à » n'existent pas.
-      ...((app.alternativeTo ?? []).length && app.pricing !== 'paid' ? [{ '@type': 'PropertyValue', name: 'freeAlternativeTo', value: app.alternativeTo!.map((x) => x.name).join(', '), description: 'Products this app is listed as a free alternative to' }] : []),
+      ...((app.alternativeTo ?? []).length && declaredFree(app) ? [{ '@type': 'PropertyValue', name: 'freeAlternativeTo', value: app.alternativeTo!.map((x) => x.name).join(', '), description: 'Products this app is listed as a free alternative to' }] : []),
       ...(app.takeover ? [{ '@type': 'PropertyValue', name: 'openToTakeover', value: true, description: 'The maker is open to handing the app over' }] : []),
     ],
   };

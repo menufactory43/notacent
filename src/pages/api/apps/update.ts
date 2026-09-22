@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { sql, appBySlug, canEdit, setMakers, GH_LOGIN } from '../../../lib/db';
+import { sql, appBySlug, canEdit, setMakers, GH_LOGIN, PRICINGS, type Pricing } from '../../../lib/db';
 import { currentUser } from '../../../lib/session';
 import { PLATFORMS } from '../../../lib/platform';
 import { pingIndexNow, appPaths } from '../../../lib/indexnow';
@@ -18,7 +18,6 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const f = await request.formData();
   const slug = clean(f.get('slug'), 120);
   const tool = TOOLS.includes(String(f.get('tool'))) ? String(f.get('tool')) : null;
-  const pricing = ['free', 'donations', 'paid'].includes(String(f.get('pricing'))) ? String(f.get('pricing')) : 'free';
   const status = ['polishing', 'done', 'paused'].includes(String(f.get('status'))) ? String(f.get('status')) : 'polishing';
   const platform = (PLATFORMS as readonly string[]).includes(String(f.get('platform'))) ? String(f.get('platform')) : null;
   const takeover = f.get('takeover') === 'on';
@@ -31,6 +30,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const before = slug ? await appBySlug(slug) : null;
   // Une fiche non réclamée n'a personne pour la remplir : l'admin peut le faire en attendant son maker.
   if (!before || !(canEdit(before, user) || (before.unclaimed && isAdmin(user.login)))) return redirect(`${lang}/?erreur=fiche`, 302);
+  // Le modèle économique : une info, sans effet sur le classement. Valeur inconnue : on garde celle d'avant.
+  const pricing: Pricing = (PRICINGS as string[]).includes(String(f.get('pricing'))) ? (String(f.get('pricing')) as Pricing) : before.pricing;
   // Le lien App Store : déclaré ici, vérifié chez Apple tout de suite, jamais gardé s'il ne mène à aucune app.
   // Champ vide mais lien de l'app déjà sur l'App Store : on le retrouve là, comme le fait le cron chaque nuit.
   const url = httpOnly(clean(f.get('url'), 500));

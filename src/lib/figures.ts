@@ -1,8 +1,9 @@
-import { sql, hasDb } from './db';
+import { sql, hasDb, ELIGIBLE } from './db';
 
 // Les chiffres de l'annuaire entier : ce qu'on peut citer. Des médianes, pas des moyennes (une app à 900 jours tire tout vers le haut),
-// et la taille de l'échantillon à côté de chaque chiffre. Population : les fiches publiées et gratuites, en cours ou terminées.
-const POP = `a.published and a.pricing <> 'paid'`;
+// et la taille de l'échantillon à côté de chaque chiffre. Population : toutes les fiches listées, en cours ou terminées,
+// quel que soit leur modèle économique (la même règle que le classement, depuis le 22 septembre 2026).
+const POP = ELIGIBLE;
 // Un groupe à une ou deux apps n'est pas une statistique, c'est une fiche : on ne le montre pas.
 export const MIN_GROUP = 3;
 

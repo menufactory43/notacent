@@ -53,6 +53,7 @@ export function browseLabel(b: Browse | Record<string, never>, locale: Locale): 
         new: ['Nouvelles cette semaine', 'New this week'],
         done: ['Terminées, mais finies', 'Done, and finished'],
         signed: ['Signées : App Store ou notarisées', 'Signed: App Store or notarized'],
+        'premier-euro': ['Premier euro', 'First euro'],
       };
       return fr ? m[i][0] : m[i][1];
     }
@@ -76,6 +77,7 @@ export function browseLede(b: Browse, locale: Locale): string {
         new: ['Arrivées dans les quatorze derniers jours, avec leur historique de commits déjà lu.', 'Listed in the last fourteen days, commit history already read.'],
         done: ['Le maker a dit « terminée » ou « en pause ». Elles marchent, elles ne bougent plus.', 'The maker said "done" or "paused". They work, they no longer move.'],
         signed: ['Ce qu\'on regarde avant de télécharger un binaire : une fiche App Store vérifiée chez Apple, ou une notarisation lue dans le workflow de publication du repo.', 'What you check before downloading a binary: an App Store page verified with Apple, or a notarization step read in the repo\'s release workflow.'],
+        'premier-euro': ['Elles ont gagné leur premier euro, d\'après leur maker. Elles restent listées et se classent pareil : par jours de travail lus dans le repo.', 'They made their first euro, according to their maker. They stay listed and rank the same way: by days of work read from the repo.'],
       };
       return fr ? m[b.value as Intent][0] : m[b.value as Intent][1];
     }

@@ -5,7 +5,7 @@ import type { App } from '../data/apps';
 import { currentUser } from '../lib/session';
 import { stripeReady, sponsorDays, sponsorCents, sponsorCurrency } from '../lib/stripe';
 import { sponsorUntil, activeSponsor, rankIn, relatedApps, altName, type DbApp } from '../lib/db';
-import { toView, declaredFree, declaredPricing } from '../lib/view';
+import { toView, declaredFree, declaredPaid } from '../lib/view';
 import { softwareLd, breadcrumbLd } from '../lib/seo';
 import { browsePath, browseLabel } from '../lib/browse';
 import { apps as samples } from '../data/apps';
@@ -20,8 +20,7 @@ const mine = Boolean(user && ((ownerId && user.id === ownerId) || comakers.some(
 const makers = [app.owner, ...comakers];
 const since = new Date(app.firstCommit).toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 // Le tampon dit le prix déclaré par le maker. Fiche non réclamée : personne ne l'a déclaré, pas de tampon.
-const pricing = declaredPricing(app);
-const stamp = pricing === 'donations' ? s.donations : pricing === 'paid' ? s.paid : pricing === 'free' ? s.free : null;
+const stamp = declaredPaid(app) ? s.paid : app.pricing === 'donations' && declaredFree(app) ? s.donations : declaredFree(app) ? s.free : null;
 const stateNote = app.status === 'done' ? s.doneStatus : app.status === 'paused' ? s.paused : '';
 const until = appId ? await sponsorUntil(appId).catch(() => null) : null;
 const someoneElse = appId && !until ? await activeSponsor().catch(() => null) : null;
@@ -39,11 +38,10 @@ const rankParts = [
   rankPlat && platLink && s.rankIn(s.rankOf(rankPlat), platLink.label),
 ].filter(Boolean) as string[];
 const related = row ? (await relatedApps(row).catch(() => [])).map(toView) : sample ? samples.filter((a) => a.slug !== app.slug && !a.sponsored).slice(0, 3) : [];
-// « Alternative gratuite à » : chaque nom mène à sa page, qui classe toutes les apps qui s'en réclament.
-// On ne lie que les pages qui existent : une app payante ou pas publiée n'entre pas dans les pages « alternative à »,
-// son nom n'en crée donc aucune. Et « Alternative gratuite à » serait faux sur une app payante : la ligne ne s'affiche pas.
-const altOwn = !row || (row.published && row.pricing !== 'paid');
-const altList = app.pricing === 'paid' ? [] : (app.alternativeTo ?? []);
+// « Alternative à » : chaque nom mène à sa page, qui classe toutes les apps qui s'en réclament, gratuites ou payantes.
+// On ne lie que les pages qui existent : une fiche pas encore publiée n'en crée aucune, seuls restent les noms qu'une autre app porte.
+const altOwn = !row || row.published;
+const altList = app.alternativeTo ?? [];
 const altLive = altOwn ? altList : (await Promise.all(altList.map(async (x) => ((await altName(x.slug).catch(() => null)) ? x : null)))).filter((x) => x !== null);
 const alts = altLive.map((x) => ({ name: x.name, href: browsePath({ kind: 'alt', value: x.slug }, locale) }));
 const host = (() => { try { return app.url ? new URL(app.url).host : ''; } catch { return ''; } })();

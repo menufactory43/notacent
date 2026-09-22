@@ -1,16 +1,16 @@
 import type { APIRoute } from 'astro';
 import { rankedApps, doneApps, browseCounts, altCounts, INTENTS } from '../lib/db';
 import { browsePath, browseLabel } from '../lib/browse';
-import { toView, declaredPricing } from '../lib/view';
+import { toView, declaredPricing, declaredFree } from '../lib/view';
 import { SITE } from '../lib/seo';
 export const prerender = false;
 export const GET: APIRoute = async () => {
   const polishing = (await rankedApps('all', 1000).catch(() => [])).map(toView);
   const done = (await doneApps(1000).catch(() => [])).map(toView);
   // Le prix tel que le maker l'a déclaré. Fiche non réclamée : le « free » en base est une valeur par défaut, on n'en dit rien.
-  const PRICE: Record<string, string> = { free: 'Free, no paywall. ', donations: 'Free, donations welcome. ', paid: 'Paid. ' };
+  const PRICE: Record<string, string> = { free: 'Free, no paywall. ', donations: 'Free, donations welcome. ', one_time: 'Paid. ', subscription: 'Paid. ', freemium: 'Paid. ' };
   const price = (a: ReturnType<typeof toView>) => PRICE[declaredPricing(a) ?? ''] ?? '';
-  const line = (a: ReturnType<typeof toView>) => `- [${a.name}](${SITE}/en/app/${a.slug}): ${a.tagline ?? a.longest.en ?? ''} ${price(a)}${a.platform ? `${a.platform}, ` : ''}${a.language || ''} by ${[a.owner, ...(a.comakers ?? [])].map((l) => `@${l}`).join(', ')}, built with ${a.tool}${a.alternativeTo?.length && a.pricing !== 'paid' ? `, free alternative to ${a.alternativeTo.map((x) => x.name).join(', ')}` : ''}, ${a.activeDays} active days, ${a.commits} commits since ${a.firstCommit.slice(0, 10)}, ${a.stars ?? 0} GitHub stars${a.takeover ? ', open to a takeover' : ''}.${a.url ? ` App: ${a.url}` : ''}${a.repo ? ` Repo: ${a.repo}` : ''}`;
+  const line = (a: ReturnType<typeof toView>) => `- [${a.name}](${SITE}/en/app/${a.slug}): ${a.tagline ?? a.longest.en ?? ''} ${price(a)}${a.platform ? `${a.platform}, ` : ''}${a.language || ''} by ${[a.owner, ...(a.comakers ?? [])].map((l) => `@${l}`).join(', ')}, built with ${a.tool}${a.alternativeTo?.length && declaredFree(a) ? `, free alternative to ${a.alternativeTo.map((x) => x.name).join(', ')}` : ''}, ${a.activeDays} active days, ${a.commits} commits since ${a.firstCommit.slice(0, 10)}, ${a.stars ?? 0} GitHub stars${a.takeover ? ', open to a takeover' : ''}.${a.url ? ` App: ${a.url}` : ''}${a.repo ? ` Repo: ${a.repo}` : ''}`;
   const counts = await browseCounts().catch(() => ({ tool: {}, platform: {}, language: {}, intent: {} as Record<string, number> }));
   const browse = [
     ...Object.entries(counts.tool).map(([v, n]) => ({ b: { kind: 'tool' as const, value: v }, n })),

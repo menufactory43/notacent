@@ -1,6 +1,7 @@
 // Données d'exemple. Seront remplacées par la base + la lecture GitHub (étapes 2 et 3).
 import type { Store, Notarized } from '../lib/signing';
-export type Pricing = 'free' | 'donations' | 'paid';
+export type { Pricing } from '../lib/db';
+import type { Pricing } from '../lib/db';
 export type Status = 'polishing' | 'done' | 'paused';
 export type Tool = 'Claude Code' | 'Cursor' | 'Lovable' | 'Bolt' | 'Copilot' | 'Autre';
 
@@ -41,6 +42,10 @@ export interface App {
   alternativeTo?: { name: string; slug: string }[]; // ce que l'app remplace, chaque nom a sa page /alternative-a/<slug>
   badgeAt?: string; // ISO, première fois que le badge a été vu dans le README
   activeDates?: string[]; // les jours actifs exacts (AAAA-MM-JJ), pour le calendrier
+  listedAt?: string; // ISO, date d'arrivée de la fiche sur Not a Cent
+  revenue?: 'declared'; // absent : le maker n'a rien déclaré (fiche non réclamée, ou pas encore cochée)
+  firstEuroAt?: string; // AAAA-MM-JJ, le premier euro déclaré par le maker
+  firstEuroDays?: number; // jours actifs comptés jusqu'au premier euro
   store?: Store; // la fiche App Store, telle qu'Apple la renvoie
   notarized?: Notarized; // la signature et la notarisation, lues dans le workflow de publication
 }
@@ -62,7 +67,7 @@ export const apps: App[] = [
   {
     slug: 'correspondance', name: 'Correspondance', owner: 'meffysto', tool: 'Claude Code', language: 'Swift', tagline: 'Toutes vos messageries, une inbox.',
     stars: 41, platform: 'Mac', activeDays: 214, activeDays30: 22, commits: 1187, clicks: 2340, lastCommitDaysAgo: 2, firstCommit: '2026-02-03',
-    lifetimeMonths: 7, bestStreakWeeks: 19, bravos: 48, pricing: 'free', status: 'polishing',
+    lifetimeMonths: 7, bestStreakWeeks: 19, bravos: 48, pricing: 'free', status: 'polishing', revenue: 'declared',
     longest: {
       fr: "Le mode Focus. Une file de messages en attente, un seul à la fois, et un raccourci pour répondre sans ouvrir l'app. Huit versions avant que ça paraisse évident.",
       en: 'Focus mode. A queue of waiting messages, one at a time, and a shortcut to reply without opening the app. Eight versions before it looked obvious.',
@@ -72,27 +77,27 @@ export const apps: App[] = [
   {
     slug: 'semaphore', name: 'Sémaphore', owner: 'lea.dev', tool: 'Cursor', language: 'TypeScript',
     stars: 18, platform: 'Mac', activeDays: 167, activeDays30: 25, commits: 642, clicks: 1102, lastCommitDaysAgo: 1, firstCommit: '2026-01-12',
-    lifetimeMonths: 8, bestStreakWeeks: 14, bravos: 31, pricing: 'donations', status: 'polishing',
+    lifetimeMonths: 8, bestStreakWeeks: 14, bravos: 31, pricing: 'donations', status: 'polishing', revenue: 'declared',
     longest: { fr: 'Le rendu des signaux en temps réel sans faire chauffer le Mac.', en: 'Rendering signals in real time without heating up the Mac.' },
     weekly: weekly('steady', 2),
   },
   {
     slug: 'tidy-tabs', name: 'Tidy Tabs', owner: 'marco', tool: 'Lovable', language: 'React',
     stars: 3, platform: 'Web', activeDays: 38, activeDays30: 19, commits: 210, clicks: 87, lastCommitDaysAgo: 5, firstCommit: '2026-06-20',
-    lifetimeMonths: 2, bestStreakWeeks: 5, bravos: 4, pricing: 'free', status: 'polishing',
+    lifetimeMonths: 2, bestStreakWeeks: 5, bravos: 4, pricing: 'free', status: 'polishing', revenue: 'declared',
     longest: { fr: "L'icône.", en: 'The icon.' }, weekly: weekly('burst', 7), sponsored: true,
   },
   {
     slug: 'daybard', name: 'Daybard', owner: 'meffysto', tool: 'Claude Code', language: 'Swift',
     stars: 27, platform: 'iOS', takeover: true, activeDays: 142, activeDays30: 12, commits: 903, clicks: 615, lastCommitDaysAgo: 4, firstCommit: '2026-03-01',
-    lifetimeMonths: 6, bestStreakWeeks: 11, bravos: 22, pricing: 'free', status: 'polishing',
+    lifetimeMonths: 6, bestStreakWeeks: 11, bravos: 22, pricing: 'free', status: 'polishing', revenue: 'declared',
     longest: { fr: 'Le système de quêtes qui ne culpabilise pas.', en: 'A quest system that never guilt-trips you.' },
     weekly: weekly('up', 3),
   },
   {
     slug: 'notacent', name: 'Not a Cent', owner: 'meffysto', tool: 'Claude Code', language: 'Astro',
     stars: 0, platform: 'Web', activeDays: 1, activeDays30: 1, commits: 1, clicks: 0, lastCommitDaysAgo: 0, firstCommit: '2026-09-03',
-    lifetimeMonths: 0, bestStreakWeeks: 1, bravos: 0, pricing: 'free', status: 'polishing',
+    lifetimeMonths: 0, bestStreakWeeks: 1, bravos: 0, pricing: 'free', status: 'polishing', revenue: 'declared',
     longest: { fr: 'La maquette, avant la première ligne de code.', en: 'The mockup, before the first line of code.' },
     weekly: weekly('new', 4), margin: { fr: 'ce site, oui oui', en: 'this very site' },
     repo: 'https://github.com/menufactory43/notacent',
@@ -101,7 +106,7 @@ export const apps: App[] = [
 
 export function ranked(period: 'all' | 'month' = 'all') {
   return apps
-    .filter((a) => a.pricing !== 'paid' && a.status === 'polishing')
+    .filter((a) => !a.firstEuroAt && a.status === 'polishing')
     .sort((a, b) => (period === 'all' ? b.activeDays - a.activeDays : b.activeDays30 - a.activeDays30));
 }
 export function totals() {

@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
 import { currentUser } from '../lib/session';
-import { appBySlug, appsByUser, makersOf, canEdit } from '../lib/db';
+import { appBySlug, appsByUser, makersOf, canEdit, PRICINGS } from '../lib/db';
 import { PLATFORMS } from '../lib/platform';
 import { isAdmin } from '../lib/outreach';
 import Badge from './Badge.astro';
@@ -56,11 +56,7 @@ const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.ima
           <select name="tool">{TOOLS.map((x) => <option value={x} selected={app.tool === x}>{x}</option>)}</select>
         </label>
         <label><span>{s.fPricing}</span>
-          <select name="pricing">
-            <option value="free" selected={app.pricing === 'free'}>{s.pFree}</option>
-            <option value="donations" selected={app.pricing === 'donations'}>{s.pDonations}</option>
-            <option value="paid" selected={app.pricing === 'paid'}>{s.pPaid}</option>
-          </select>
+          <select name="pricing">{PRICINGS.map((p) => <option value={p} selected={app.pricing === p}>{s.pricing[p]}</option>)}</select>
         </label>
         <label><span>{s.fStatus}</span>
           <select name="status">

@@ -23,7 +23,7 @@ create table if not exists apps (
   image_url text,
   longest text,
   tool text,
-  pricing text default 'free',
+  pricing text default 'unknown',
   status text default 'polishing',
   first_commit timestamptz,
   last_commit timestamptz,
@@ -38,7 +38,7 @@ create table if not exists apps (
   refreshed_at timestamptz,
   created_at timestamptz default now()
 );
-create index if not exists apps_rank on apps (published, pricing, status, active_days desc);
+create index if not exists apps_board on apps (published, status, active_days desc);
 create table if not exists activity (
   id serial primary key,
   app_id int references apps(id) on delete cascade,
@@ -150,3 +150,12 @@ create index if not exists apps_alt_slugs on apps using gin (alt_slugs);
 
 -- Le badge dans le README : vu par le cron sur les repos publics réclamés. La date de la première fois, null s'il n'y est pas (ou plus).
 alter table apps add column if not exists badge_at timestamptz;
+
+-- Le revenu, déclaré par le maker (la preuve viendra peut-être un jour dans la même colonne), et le premier euro.
+-- Détail et reprise des données existantes : scripts/migrations/2026-09-22-premier-euro.sql.
+alter table apps add column if not exists revenue_source text;
+alter table apps add column if not exists revenue_declared_at timestamptz;
+alter table apps add column if not exists first_euro_at date;
+alter table apps add column if not exists first_euro_days int;
+alter table apps alter column pricing set default 'unknown';
+create index if not exists apps_first_euro on apps (first_euro_at) where first_euro_at is not null;

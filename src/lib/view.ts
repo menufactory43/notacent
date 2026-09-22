@@ -15,17 +15,28 @@ export function toView(a: DbApp): App {
     weekly: a.weekly?.length ? a.weekly : Array(26).fill(0), imageUrl: a.has_image ? `/api/img/${a.slug}` : a.image_url ?? undefined, sponsored: a.sponsored ?? false, tagline: a.tagline ?? a.description ?? undefined,
     stars: a.stars ?? 0, platform: a.platform ?? undefined, takeover: a.takeover ?? false, unclaimed: a.unclaimed ?? false,
     store: a.store ?? undefined, notarized: a.notarized ?? undefined,
+    listedAt: new Date(a.created_at).toISOString(), revenue: a.revenue_source ?? undefined,
+    firstEuroAt: a.first_euro_at ? ymd(a.first_euro_at) : undefined, firstEuroDays: a.first_euro_days ?? undefined,
     alternativeTo: (a.alternative_to ?? []).map((name, i) => ({ name, slug: a.alt_slugs?.[i] ?? '' })).filter((x) => x.slug), badgeAt: a.badge_at ? new Date(a.badge_at).toISOString() : undefined,
     hasLongest: Boolean(a.longest), comakers: a.comakers ?? [], authors: a.authors ?? 1, ownerCommits: a.owner_commits ?? undefined, refreshedAt: a.refreshed_at ? new Date(a.refreshed_at).toISOString() : undefined,
-    // La base rend des dates (objets ou chaînes) : on les ramène à AAAA-MM-JJ, en UTC, comme le registre les a écrites.
-    activeDates: a.active_dates?.map((d) => (d instanceof Date ? new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString() : String(d)).slice(0, 10)),
+    activeDates: a.active_dates?.map(ymd),
   };
 }
+// La base rend des dates (objets ou chaînes) : on les ramène à AAAA-MM-JJ, en UTC, comme le registre les a écrites.
+const ymd = (d: string | Date) => (d instanceof Date ? new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString() : String(d)).slice(0, 10);
 
-// Le prix qu'on peut affirmer : celui que le maker a choisi. Une fiche non réclamée garde le « free » posé par défaut
-// en base, que personne n'a déclaré : on n'en dit rien, ni sur la page ni aux moteurs.
-export function declaredPricing(app: Pick<App, 'pricing' | 'unclaimed'>): App['pricing'] | null {
-  return app.unclaimed ? null : app.pricing;
+// Le modèle économique qu'on peut affirmer : celui que le maker a choisi. Une fiche non réclamée n'a rien déclaré
+// (avant le 22 septembre 2026, son « free » n'était qu'une valeur par défaut) : on n'en dit rien, ni sur la page ni aux moteurs.
+export function declaredPricing(app: Pick<App, 'pricing' | 'unclaimed'>): Exclude<App['pricing'], 'unknown'> | null {
+  return app.unclaimed || app.pricing === 'unknown' ? null : app.pricing;
 }
-// Gratuite à l'usage : gratuite, ou à dons. Une app payante ou au prix non déclaré ne l'est pas, faute de le savoir.
+// Gratuite à l'usage : gratuite, ou à dons. Une app payante ou au modèle non déclaré ne l'est pas, faute de le savoir.
 export const declaredFree = (app: Pick<App, 'pricing' | 'unclaimed'>) => { const p = declaredPricing(app); return p === 'free' || p === 'donations'; };
+// Un modèle payant déclaré : achat unique, abonnement ou freemium.
+export const declaredPaid = (app: Pick<App, 'pricing' | 'unclaimed'>) => { const p = declaredPricing(app); return p === 'one_time' || p === 'subscription' || p === 'freemium'; };
+// Ce qu'on sait du revenu. « first » : le maker a déclaré son premier euro. « zero » : il a déclaré n'avoir rien gagné.
+// « undeclared » : personne n'a rien dit (fiche non réclamée, ou maker qui n'a pas encore coché la case).
+// Jamais « vérifié » : le mot est réservé au travail lu dans le repo.
+export type RevenueState = 'first' | 'zero' | 'undeclared';
+export const revenueState = (app: Pick<App, 'firstEuroAt' | 'revenue' | 'unclaimed'>): RevenueState =>
+  app.firstEuroAt ? 'first' : app.revenue && !app.unclaimed ? 'zero' : 'undeclared';

@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { appBySlug, sql, hasDb } from '../../../lib/db';
 import { apps } from '../../../data/apps';
-import { toView, declaredPricing } from '../../../lib/view';
+import { toView, declaredFree, declaredPaid } from '../../../lib/view';
 import { t, type Locale } from '../../../i18n/strings';
 import { appCard, renderCard, shotDataUri } from '../../../lib/og';
 
@@ -46,7 +46,6 @@ export const GET: APIRoute = async ({ params, url }) => {
   const locale: Locale = url.searchParams.get('lang') === 'en' ? 'en' : 'fr';
   const s = t(locale);
   // Même tampon que la fiche : le prix déclaré par le maker, rien pour une fiche non réclamée.
-  const pricing = declaredPricing(app);
   const png = await renderCard(
     appCard({
       name: app.name,
@@ -55,7 +54,7 @@ export const GET: APIRoute = async ({ params, url }) => {
       tool: app.tool,
       language: app.language,
       byLabel: s.by,
-      stampLabel: pricing === 'donations' ? s.donations : pricing === 'paid' ? s.paid : pricing === 'free' ? '0 €' : undefined,
+      stampLabel: declaredPaid(app) ? s.paid : app.pricing === 'donations' && declaredFree(app) ? s.donations : declaredFree(app) ? '0 €' : undefined,
       stats: [
         { value: app.activeDays.toLocaleString(locale), label: s.days },
         { value: app.commits.toLocaleString(locale), label: s.commits },
@@ -66,7 +65,7 @@ export const GET: APIRoute = async ({ params, url }) => {
     }),
   );
 
-  return new Response(png, {
+  return new Response(png as Uint8Array<ArrayBuffer>, {
     headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=300' },
   });
 };

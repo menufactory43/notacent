@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { rankedApps, doneApps, appBySlug, searchApps, totals, type DbApp } from './db';
-import { toView } from './view';
+import { toView, declaredPricing } from './view';
 
 // Le serveur MCP de Not a Cent : trois outils en lecture, un pour soumettre.
 // Aucune authentification : tout ce qu'il sert est déjà public sur le site.
@@ -13,7 +13,8 @@ function card(a: DbApp) {
   const v = toView(a);
   return {
     slug: v.slug, name: v.name, tagline: v.tagline ?? null, by: [v.owner, ...(v.comakers ?? [])].join(', '), tool: v.tool, language: v.language || null,
-    pricing: v.pricing, status: v.status,
+    // null : fiche non réclamée, le prix n'a pas été déclaré par son maker (la base n'a qu'une valeur par défaut).
+    pricing: declaredPricing(v), status: v.status,
     activeDays: v.activeDays, activeDaysLast30: v.activeDays30, commits: v.commits, bestStreakWeeks: v.bestStreakWeeks,
     firstCommit: v.firstCommit.slice(0, 10), lastCommitDaysAgo: v.lastCommitDaysAgo, lifetimeMonths: v.lifetimeMonths,
     whatTookLongest: a.longest ?? null,

@@ -31,6 +31,11 @@ export async function doneApps(limit = 100): Promise<DbApp[]> {
   if (!hasDb) return [];
   return (await sql.query(`select ${COLS} ${FROM} where a.published and a.status <> 'polishing' order by active_days desc limit $1`, [limit])) as DbApp[];
 }
+// Toutes les fiches publiées, classées ou non (une app payante a sa fiche hors classement) : ce sont des pages publiques, le sitemap les liste.
+export async function publishedFiches(limit = 5000): Promise<Pick<DbApp, 'slug' | 'last_commit' | 'created_at'>[]> {
+  if (!hasDb) return [];
+  return (await sql.query(`select a.slug, a.last_commit, a.created_at from apps a where a.published order by a.active_days desc limit $1`, [limit])) as Pick<DbApp, 'slug' | 'last_commit' | 'created_at'>[];
+}
 export async function appBySlug(slug: string): Promise<DbApp | null> {
   if (!hasDb) return null;
   const rows = (await sql.query(`select ${COLS} ${FROM} where a.slug = $1`, [slug])) as DbApp[];

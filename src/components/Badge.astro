@@ -1,27 +1,46 @@
 ---
 import { t, localePath, type Locale } from '../i18n/strings';
 import { SITE } from '../lib/seo';
-// Le badge, prêt à coller : le vrai SVG tel qu'il s'affichera, une ligne Markdown pour un README, une ligne HTML pour une landing.
+// Le badge, prêt à coller : la carte façon annuaire de lancement d'abord (le vrai SVG tel qu'il
+// s'affichera, en clair et en sombre), puis le badge compact pour qui aligne déjà une rangée de badges.
 // Un README s'écrit en Markdown : c'est cette ligne-là qu'on montre en premier.
 interface Props { locale: Locale; slug: string; days: number; title: string; seenAt?: string }
 const { locale, slug, days, title, seenAt } = Astro.props;
 const s = t(locale);
-const badgeUrl = `${SITE}/api/badge/${slug}.svg${locale === 'en' ? '?lang=en' : ''}`;
+const lang = locale === 'en' ? '&lang=en' : '';
+const cardPath = `/api/badge/${slug}.svg?style=card${lang}`;
+const compactPath = `/api/badge/${slug}.svg${locale === 'en' ? '?lang=en' : ''}`;
 const pageUrl = `${SITE}${localePath(locale, `/app/${slug}`)}`;
 const alt = s.badgeAlt(days);
-const md = `[![${alt}](${badgeUrl})](${pageUrl})`;
-const html = `<a href="${pageUrl}"><img src="${badgeUrl}" alt="${alt}"></a>`;
+const snippets = (path: string) => [
+  [s.badgeMd, `[![${alt}](${SITE}${path})](${pageUrl})`],
+  [s.badgeHtml, `<a href="${pageUrl}"><img src="${SITE}${path}" alt="${alt}"></a>`],
+];
 const seen = seenAt ? new Date(seenAt).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : null;
 ---
 <section class="sk badge-block">
   <h2 class="hand">{title}</h2>
-  <img class="real" src={`/api/badge/${slug}.svg${locale === 'en' ? '?lang=en' : ''}`} alt={alt} height="28" />
-  {[[s.badgeMd, md], [s.badgeHtml, html]].map(([label, code]) => (
+  <div class="cards">
+    <img class="card" src={cardPath} alt={alt} width="256" height="54" />
+    <img class="card dark" src={`${cardPath}&theme=dark`} alt={alt} width="256" height="54" />
+  </div>
+  {snippets(cardPath).map(([label, code]) => (
     <div class="snip">
       <div class="top"><span class="hand">{label}</span><button type="button" class="chip copy" data-code={code} data-done={s.copied}>{s.copy}</button></div>
       <pre><code>{code}</code></pre>
     </div>
   ))}
+  <small>{s.badgeDark}</small>
+  <details>
+    <summary class="hand">{s.badgeCompact}</summary>
+    <img class="real" src={compactPath} alt={alt} height="28" />
+    {snippets(compactPath).map(([label, code]) => (
+      <div class="snip">
+        <div class="top"><span class="hand">{label}</span><button type="button" class="chip copy" data-code={code} data-done={s.copied}>{s.copy}</button></div>
+        <pre><code>{code}</code></pre>
+      </div>
+    ))}
+  </details>
   <small>{s.badgeHint}{seen && <> <b class="hand seen">✓ {s.badgeSeen(seen)}</b></>}</small>
 </section>
 <script>
@@ -35,6 +54,12 @@ const seen = seenAt ? new Date(seenAt).toLocaleDateString(locale, { day: 'numeri
 .badge-block{padding:18px 20px;display:flex;flex-direction:column;gap:10px;background:var(--paper-2)}
 .badge-block h2{font:700 24px/1 var(--hand);margin:0}
 .real{align-self:flex-start;height:28px;width:auto}
+.cards{display:flex;flex-wrap:wrap;gap:10px}
+.card{height:54px;width:auto;max-width:100%}
+details{display:flex;flex-direction:column;gap:10px}
+details[open]{display:flex}
+summary{cursor:pointer;font:700 17px/1 var(--hand);color:var(--pencil)}
+details > *+*{margin-top:10px}
 .snip{display:flex;flex-direction:column;gap:4px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .top span{font:700 17px/1 var(--hand);color:var(--pencil)}

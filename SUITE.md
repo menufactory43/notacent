@@ -1,10 +1,12 @@
 # Où on en est, et la suite
 
-Mis à jour le 21 septembre 2026, à la fin de la session qui a codé les pages « alternative à », la page Chiffres et le badge Markdown.
+Mis à jour le 22 septembre 2026, à la fin de la session du repositionnement : le nom veut dire « pas encore un centime gagné », et le premier euro devient un cap, pas une sortie.
 
 ## Le positionnement
 
-**Le travail vérifié, pas le revenu.** TrustMRR classe par revenu vérifié (Stripe) et vend l'entrée, la visibilité et la sortie (marché d'acquisition, commission). PeerPush fait payer la mise en ligne et vend de la visibilité auprès des IA. Nous : la donnée vérifiée, c'est le travail lu dans le repo GitHub (jours actifs, série, durée de vie). Être listé ne coûte pas un centime, et ça ne le coûtera jamais. Le zéro euro est la direction artistique, pas la promesse.
+**Le travail vérifié, pas le revenu.** TrustMRR classe par revenu vérifié (Stripe) et vend l'entrée, la visibilité et la sortie (marché d'acquisition, commission). PeerPush fait payer la mise en ligne et vend de la visibilité auprès des IA. Nous : la donnée vérifiée, c'est le travail lu dans le repo GitHub (jours actifs, série, durée de vie). On liste les apps qui n'ont pas encore gagné d'argent, quel que soit leur modèle économique : gratuites, achat unique, abonnement. Le revenu est déclaré sur l'honneur par le maker (case obligatoire pour publier) et la fiche l'écrit comme ça ; « vérifié » est réservé au travail, jamais « 0 € vérifié ». Être listé ne coûte rien non plus.
+
+Le premier euro : le maker le déclare avec sa date, l'app passe du classement « Pas un centime » au classement « Premier euro » (même critère, le travail), garde une frise sur sa fiche et prend un cachet « 1er € » sur son badge. L'emplacement sponsorisé est réservé à ces apps. La colonne `revenue_source` vaut 'declared' aujourd'hui ; une preuve (Stripe, RevenueCat, App Store Connect) y prendrait une autre valeur, sans rien changer d'autre. Migration : `scripts/migrations/2026-09-22-premier-euro.sql`.
 
 Deux publics : le maker (visibilité, SEO, badge, lien dofollow, acheteurs) et le chercheur de pépites (apps travaillées, pas encore vues, parfois à reprendre).
 
@@ -91,9 +93,9 @@ Ce que ça donne : une ligne « avant de télécharger » sur la fiche Mac, un t
 
 ### 3. Pages « alternative à » (codé le 21 septembre 2026, à remplir)
 
-C'est la requête la plus fréquente qu'un assistant reçoit. Un champ « Alternative gratuite à » sur la page de modification, trois noms au plus. Chaque nom devient une page `/alternative-a/notion` (et `/en/…`) sur le moule des pages Parcourir : classement, ItemList, RSS, alerte. La page n'existe que si une app s'en réclame, sinon 404 : pas de page vide à indexer. Deux orthographes du même produit donnent une seule page (la base garde le nom et son segment côte à côte, `alternative_to` et `alt_slugs`, et reprend l'orthographe déjà écrite). Une app terminée reste une alternative : ces pages ne filtrent pas sur « en cours ».
+C'est la requête la plus fréquente qu'un assistant reçoit. Un champ « Alternative à » sur la page de modification, trois noms au plus (« Alternative gratuite à » jusqu'au 22 septembre). Chaque nom devient une page `/alternative-a/notion` (et `/en/…`) sur le moule des pages Parcourir : classement, ItemList, RSS, alerte. La page n'existe que si une app s'en réclame, sinon 404 : pas de page vide à indexer. Deux orthographes du même produit donnent une seule page (la base garde le nom et son segment côte à côte, `alternative_to` et `alt_slugs`, et reprend l'orthographe déjà écrite). Une app terminée reste une alternative : ces pages ne filtrent pas sur « en cours ». Depuis le 22 septembre, une app payante aussi : le titre dit « Alternatives gratuites à X » seulement si la page contient une app gratuite déclarée par son maker, sinon « Alternatives à X », et les payantes suivent dans une section « Payantes, pas encore rentables ».
 
-Branché partout : ligne sur la fiche, colonne dans Parcourir, sitemap, llms.txt, IndexNow, `freeAlternativeTo` dans le MCP et dans les données structurées, et `search_apps` trouve « notion ».
+Branché partout : ligne sur la fiche, colonne dans Parcourir, sitemap, llms.txt, IndexNow, `alternativeTo` dans le MCP (avec `freeAlternativeTo` en alias déprécié) et dans les données structurées, et `search_apps` trouve « notion ».
 
 L'admin peut modifier une fiche non réclamée (bouton « ✎ remplir » dans les coulisses) : sans ça, quatorze fiches sur vingt-six n'auraient personne pour remplir le champ. Pour cette raison les pages disent « listées comme alternative à », jamais « leur maker dit ».
 
@@ -107,7 +109,7 @@ Le cron lit chaque nuit le README des repos publics réclamés et note la premi�
 
 ### 3 ter. La page Chiffres (codée le 21 septembre 2026)
 
-`/chiffres`, `/en/chiffres`, `/chiffres.json`. Ce qu'on cite, ce n'est pas un annuaire, c'est un chiffre : jours de commits en médiane derrière une app gratuite, quartiles, durée de vie, part sous vingt étoiles, part à un seul auteur, répartition par jour de la semaine, tableaux par plateforme et langage. Médianes, pas moyennes ; l'effectif à côté de chaque chiffre ; aucun groupe de moins de trois apps ; les repos privés sortis du calcul par jour de semaine (leurs vieux jours sont notés au dimanche). Données structurées `Dataset`, licence CC BY 4.0, une phrase prête à coller, et une section « ce que ces chiffres ne disent pas ». Un bandeau prévient tant qu'il y a moins de cent apps.
+`/chiffres`, `/en/chiffres`, `/chiffres.json`. Ce qu'on cite, ce n'est pas un annuaire, c'est un chiffre : jours de commits en médiane derrière une app qui n'a pas encore gagné d'argent (population élargie le 22 septembre : avant, les seules apps gratuites), jours actifs avant le premier euro (médiane à partir de cinq apps), quartiles, durée de vie, part sous vingt étoiles, part à un seul auteur, répartition par jour de la semaine, tableaux par plateforme et langage. Médianes, pas moyennes ; l'effectif à côté de chaque chiffre ; aucun groupe de moins de trois apps ; les repos privés sortis du calcul par jour de semaine (leurs vieux jours sont notés au dimanche). Données structurées `Dataset`, licence CC BY 4.0, une phrase prête à coller, et une section « ce que ces chiffres ne disent pas ». Un bandeau prévient tant qu'il y a moins de cent apps.
 
 Premier relevé, 25 apps : 103 jours en médiane, 6 mois, 92 % sous vingt étoiles, 27 % du travail le week-end (29 % si c'était au hasard : ils ne travaillent pas plus le week-end, contrairement à ce qu'on croit). C'est un angle de post.
 

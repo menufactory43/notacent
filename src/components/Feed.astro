@@ -7,7 +7,7 @@ const { locale } = Astro.props;
 const s = t(locale);
 const rows = await recentActivity(5).catch(() => []);
 const what = (r: (typeof rows)[number]) =>
-  r.kind === 'arrived' ? s.kindArrived : r.kind === 'sponsor' ? s.kindSponsor : r.kind === 'takeover' ? s.kindTakeover : r.kind === 'claimed' ? s.kindClaimed : r.kind === 'day' ? s.kindDay(Number(r.payload.n ?? 0)) : r.payload.status === 'done' ? s.kindDone : s.kindPaused;
+  r.kind === 'arrived' ? s.kindArrived : r.kind === 'sponsor' ? s.kindSponsor : r.kind === 'takeover' ? s.kindTakeover : r.kind === 'claimed' ? s.kindClaimed : r.kind === 'first_euro' ? s.kindFirstEuro : r.kind === 'day' ? s.kindDay(Number(r.payload.n ?? 0)) : r.payload.status === 'done' ? s.kindDone : s.kindPaused;
 const items = rows.length
   ? rows.map((r) => ({ l: r.name[0], name: r.name, href: localePath(locale, `/app/${r.slug}`), what: what(r), when: s.agoAuto(Date.now() - new Date(r.created_at).getTime()) }))
   : [

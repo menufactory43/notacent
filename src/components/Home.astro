@@ -7,7 +7,7 @@ import Gems from './Gems.astro';
 import Browse from './Browse.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
 import { apps as samples, ranked as rankedSamples } from '../data/apps';
-import { rankedApps, doneApps, browseApps, activeSponsor, weeklyGems } from '../lib/db';
+import { rankedApps, doneApps, firstEuroApps, browseApps, activeSponsor, weeklyGems } from '../lib/db';
 import { toView } from '../lib/view';
 import { githubReady } from '../lib/github';
 import { siteLd } from '../lib/seo';
@@ -16,13 +16,13 @@ interface Props { locale: Locale }
 const { locale } = Astro.props;
 const s = t(locale);
 const q = Astro.url.searchParams;
-const tab = (['all', 'month', 'new', 'race', 'done'] as const).find((x) => x === q.get('t')) ?? (q.get('p') === 'month' ? 'month' : q.get('etat') === 'done' ? 'done' : 'all');
+const tab = (['all', 'month', 'new', 'race', 'euro', 'done'] as const).find((x) => x === q.get('t')) ?? (q.get('p') === 'month' ? 'month' : q.get('etat') === 'done' ? 'done' : 'all');
 const tool = q.get('tool') ?? '';
 const tools = TOOLS.filter((x) => x !== 'Autre');
 
 // Le classement selon l'onglet. « En course » = un commit dans les sept derniers jours, par jours actifs du mois.
 let real = (
-  tab === 'done' ? await doneApps() : tab === 'new' ? await browseApps({ kind: 'intent', value: 'new' }) : await rankedApps(tab === 'month' || tab === 'race' ? 'month' : 'all')
+  tab === 'done' ? await doneApps() : tab === 'euro' ? await firstEuroApps() : tab === 'new' ? await browseApps({ kind: 'intent', value: 'new' }) : await rankedApps(tab === 'month' || tab === 'race' ? 'month' : 'all')
 ).map(toView);
 if (tab === 'race') real = real.filter((a) => a.lastCommitDaysAgo <= 7);
 if (tool) real = real.filter((a) => a.tool === tool);
@@ -46,7 +46,7 @@ const link = (params: Record<string, string>) => {
   const qs = u.toString();
   return localePath(locale, '/') + (qs ? `?${qs}` : '') + '#board';
 };
-const tabs: [typeof tab, string][] = [['all', s.tabAll], ['month', s.tabMonth], ['new', s.tabNew], ['race', s.tabRace], ['done', s.tabDone]];
+const tabs: [typeof tab, string][] = [['all', s.tabAll], ['month', s.tabMonth], ['new', s.tabNew], ['race', s.tabRace], ['euro', s.tabEuro], ['done', s.tabDone]];
 const seek = [
   { label: s.seekMac, href: browsePath({ kind: 'platform', value: 'Mac' }, locale) },
   { label: s.seekCli, href: browsePath({ kind: 'platform', value: 'CLI' }, locale) },
@@ -80,7 +80,7 @@ const seek = [
 
   <section id="board">
     <div class="sh">
-      <h2>{tab === 'done' ? s.done : s.boardTitle}</h2>
+      <h2>{tab === 'done' ? s.done : tab === 'euro' ? s.euroBoardTitle : s.boardTitle}</h2>
       <div class="seg" role="group">
         {tabs.map(([k, label]) => <a href={link({ t: k === 'all' ? '' : k })} aria-current={tab === k ? 'page' : undefined}>{label}</a>)}
       </div>
@@ -89,6 +89,7 @@ const seek = [
         {tools.map((x) => <a class="chip" href={link({ tool: x })} aria-pressed={tool === x ? 'true' : 'false'}>{x}</a>)}
       </div>
     </div>
+    {tab === 'euro' && <p class="sub hand">{s.euroBoardSub}</p>}
     {isSample && <p class="examples hand">{githubReady() ? s.emptyBoard : s.examples}</p>}
     {!isSample && board.length === 0 && <p class="examples hand">{s.nobody}</p>}
     <div class="cols hand" aria-hidden="true"><span></span><span></span><span>{s.colWeeks}</span><span class="r">{s.colDays}</span><span class="r">{s.colBravos}</span></div>
@@ -122,6 +123,7 @@ h1 :global(mark){background:linear-gradient(transparent 35%,var(--mark) 35%,var(
 .filters{display:flex;gap:6px;flex-wrap:wrap;width:100%}
 .chip{text-decoration:none}
 .examples{color:var(--redpen);font-size:17px;margin:0 0 14px}
+.sub{color:var(--pencil);font-size:18px;margin:0 0 10px}
 .cols{display:grid;grid-template-columns:36px 1fr 120px 130px 72px;gap:16px;padding:0 18px;font:500 15px/1 var(--hand);color:var(--pencil);margin:6px 0 4px}
 .cols .r{text-align:right}
 .board{display:grid;gap:14px}

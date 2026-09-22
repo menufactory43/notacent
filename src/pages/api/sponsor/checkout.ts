@@ -10,6 +10,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
   const f = await request.formData();
   const app = await appBySlug(String(f.get('slug') ?? ''));
   if (!app || app.user_id !== user.id || !stripeReady()) return redirect(lang === 'en' ? '/en' : '/', 302);
+  // L'emplacement sponsorisé est réservé aux apps « Premier euro » : une app à zéro n'a pas à payer pour être vue.
+  if (!app.first_euro_at || !app.published) return redirect(`${lang === 'en' ? '/en' : ''}/app/${app.slug}`, 302);
   try {
     return redirect(await createCheckout({ appId: app.id, slug: app.slug, name: app.name, origin: url.origin, locale: lang }), 303);
   } catch (e) { console.error(e); return redirect(`${lang === 'en' ? '/en' : ''}/app/${app.slug}?sponsor=erreur`, 302); }

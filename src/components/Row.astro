@@ -21,6 +21,7 @@ const stampLabel = stamp === 'week' ? s.stampWeekShort : stamp === 'streak' ? s.
       <p class="name">
         <a href={localePath(locale, `/app/${app.slug}`)}>{app.name}</a>
         {stampLabel && <span class="stamp red">{stampLabel}</span>}
+        {app.firstEuroAt && <span class="stamp red euro" title={s.kindFirstEuro}>{s.firstEuro}</span>}
         {app.takeover && <span class="stamp ink">{s.stampTakeover}</span>}
         {app.unclaimed && <span class="unclaimed-tag hand">{s.unclaimedStamp}</span>}
         {app.store && <span class="sig hand">✓ {s.tagStore}</span>}

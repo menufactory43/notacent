@@ -44,7 +44,7 @@ const platLink = app.platform && app.platform !== 'Autre' ? { href: browsePath({
 const langLink = app.language ? { href: browsePath({ kind: 'language', value: app.language }, locale), label: app.language } : null;
 const [rankTool, rankPlat, rankAll] = row ? await Promise.all([rankIn(row, 'tool'), rankIn(row, 'platform'), rankIn(row, 'all')]).catch(() => [null, null, null]) : [null, null, null];
 const rankParts = [
-  rankAll && s.rankIn(s.rankOf(rankAll), locale === 'fr' ? 'apps du classement' : 'all apps'),
+  rankAll && s.rankIn(s.rankOf(rankAll), rev === 'first' ? s.rankBoardEuro : s.rankBoardZero),
   rankTool && toolLink && s.rankIn(s.rankOf(rankTool), toolLink.label),
   rankPlat && platLink && s.rankIn(s.rankOf(rankPlat), platLink.label),
 ].filter(Boolean) as string[];
@@ -129,7 +129,8 @@ const workflowUrl = nota && app.repo ? `${app.repo}/blob/HEAD/${nota.path}` : nu
       {!user && !sample && !unclaimed && <p class="yours hand"><a href={claimHref}>{s.yours}</a></p>}
       {sponsorMsg && <p class="sponsor-msg hand">{sponsorMsg}</p>}
       {until && <p class="sponsor-msg hand">★ {s.sponsorUntil(new Date(until).toLocaleDateString(locale))}</p>}
-      {mine && stripeReady() && !until && (
+      {mine && stripeReady() && !until && rev !== 'first' && <p class="sponsor-note hand">{s.sponsorFirstOnly}</p>}
+      {mine && stripeReady() && !until && rev === 'first' && (
         <form method="post" action="/api/sponsor/checkout" class="sponsor">
           <input type="hidden" name="slug" value={app.slug} />
           <button class="sk sk-btn" type="submit">★ {s.sponsorBtn(sponsorDays(), price)}</button>
@@ -249,6 +250,7 @@ h1{font:700 40px/1 var(--hand);margin:0 0 2px}
 .bravo.given{background:var(--paper-2);color:var(--pencil)}
 .sponsor{margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .sponsor small{color:var(--pencil);font-size:16px}
+.sponsor-note{margin:14px 0 0;color:var(--pencil);font-size:16px}
 .sponsor-msg{margin:14px 0 0;color:var(--redpen);font-size:19px}
 .yours{margin:12px 0 0;font-size:17px}
 .yours a{color:var(--pencil);text-decoration:none;border-bottom:1.5px dashed var(--faint)}

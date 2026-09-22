@@ -5,7 +5,7 @@ import type { App } from '../data/apps';
 import { currentUser } from '../lib/session';
 import { stripeReady, sponsorDays, sponsorCents, sponsorCurrency } from '../lib/stripe';
 import { sponsorUntil, activeSponsor, rankIn, relatedApps, type DbApp } from '../lib/db';
-import { toView } from '../lib/view';
+import { toView, declaredFree, declaredPricing } from '../lib/view';
 import { softwareLd, breadcrumbLd } from '../lib/seo';
 import { browsePath, browseLabel } from '../lib/browse';
 import { apps as samples } from '../data/apps';
@@ -49,7 +49,8 @@ const ld = sample ? undefined : [softwareLd(app, locale), breadcrumbLd(locale, c
 const readOn = app.refreshedAt ? new Date(app.refreshedAt).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : null;
 const authors = app.authors ?? 1;
 const sinceLong = new Date(app.firstCommit).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
-const metaDesc = s.metaDesc(app.name, app.activeDays, sinceLong, app.tagline ?? undefined);
+// « Gratuit » seulement si le maker l'a déclaré : ni une app payante, ni une fiche non réclamée ne le sont d'office.
+const metaDesc = s.metaDesc(app.name, app.activeDays, sinceLong, app.tagline ?? undefined, declaredFree(app));
 // Avant de télécharger : le premier réflexe devant un binaire Mac. On ne le montre que là où la question se pose.
 const nota = app.notarized && app.notarized.level !== 'none' ? app.notarized : null;
 const showDist = Boolean(app.store || nota || app.platform === 'Mac');

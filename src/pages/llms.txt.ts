@@ -17,7 +17,7 @@ export const GET: APIRoute = async () => {
     ...Object.entries(counts.platform).map(([v, n]) => ({ b: { kind: 'platform' as const, value: v }, n })),
     ...Object.entries(counts.language).map(([v, n]) => ({ b: { kind: 'language' as const, value: v }, n })),
     ...INTENTS.map((v) => ({ b: { kind: 'intent' as const, value: v }, n: counts.intent[v] ?? 0 })),
-    ...(await altCounts().catch(() => [])).map((x) => ({ b: { kind: 'alt' as const, value: x.slug, label: x.name }, n: x.n })),
+    ...(await altCounts().catch(() => [])).map((x) => ({ b: { kind: 'alt' as const, value: x.slug, label: x.name, free: x.free }, n: x.n })),
   ].filter((x) => x.n > 0).map((x) => `- [${browseLabel(x.b, 'en')}](${SITE}${browsePath(x.b, 'en')}) (${x.n})`);
   const body = `# Not a Cent
 

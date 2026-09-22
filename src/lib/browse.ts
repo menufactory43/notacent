@@ -43,7 +43,8 @@ export function browseLabel(b: Browse | Record<string, never>, locale: Locale): 
       return p === 'Mac' ? 'Indie Mac apps' : p === 'CLI' ? 'Command-line tools' : p === 'MCP' ? 'MCP servers' : p === 'Web' ? 'Web apps' : p === 'Autre' ? 'Other platforms' : `${p} apps`;
     }
     case 'language': return fr ? `Apps écrites en ${b.value}` : `Apps written in ${b.value}`;
-    case 'alt': return fr ? `Alternatives gratuites à ${altLabel(b as Browse)}` : `Free alternatives to ${altLabel(b as Browse)}`;
+    // « gratuites » seulement si la page a au moins une app gratuite déclarée par son maker ; sinon, « Alternatives à X ».
+    case 'alt': return fr ? `Alternatives ${(b as Browse).free ? 'gratuites ' : ''}à ${altLabel(b as Browse)}` : `${(b as Browse).free ? 'Free alternatives' : 'Alternatives'} to ${altLabel(b as Browse)}`;
     case 'intent': {
       const i = b.value as Intent;
       const m: Record<Intent, [string, string]> = {
@@ -68,7 +69,9 @@ export function browseLede(b: Browse, locale: Locale): string {
     case 'tool': return fr ? `Des apps gratuites dont ${b.value} est l'outil principal, classées par jours de travail lus dans le repo GitHub. Pas de revenu, pas de vote : des commits.` : `Free apps built mainly with ${b.value}, ranked by days of work read from the GitHub repo. No revenue, no votes: commits.`;
     case 'platform': return fr ? `Des apps gratuites pour ${b.value}, faites par une personne, classées par jours actifs vérifiés sur GitHub.` : `Free ${b.value} apps made by one person, ranked by active days verified on GitHub.`;
     case 'language': return fr ? `Des apps gratuites écrites en ${b.value}, classées par jours actifs lus dans le repo.` : `Free apps written in ${b.value}, ranked by active days read from the repo.`;
-    case 'alt': return fr ? `Des apps gratuites, sans abonnement, listées comme alternative à ${altLabel(b)}. Classées par jours de travail lus dans le repo GitHub : on voit lesquelles sont encore entretenues.` : `Free apps, no subscription, listed as an alternative to ${altLabel(b)}. Ranked by days of work read from the GitHub repo, so you can see which ones are still maintained.`;
+    case 'alt': return b.free
+      ? (fr ? `Des apps gratuites listées comme alternative à ${altLabel(b)}, classées par jours de travail lus dans le repo GitHub : on voit lesquelles sont encore entretenues. Les payantes qui n'ont pas encore gagné d'argent, s'il y en a, suivent à part.` : `Free apps listed as an alternative to ${altLabel(b)}, ranked by days of work read from the GitHub repo, so you can see which ones are still maintained. Paid ones that haven't made money yet, if any, come after, separately.`)
+      : (fr ? `Des apps indépendantes listées comme alternative à ${altLabel(b)}, qui n'ont pas encore gagné d'argent. Classées par jours de travail lus dans le repo GitHub : on voit lesquelles sont encore entretenues.` : `Indie apps listed as an alternative to ${altLabel(b)} that haven't made money yet. Ranked by days of work read from the GitHub repo, so you can see which ones are still maintained.`);
     case 'intent': {
       const m: Record<Intent, [string, string]> = {
         radar: ['Beaucoup de jours de travail, peu d\'étoiles : les apps que personne n\'a encore vues. Classées par jours actifs rapportés aux étoiles GitHub.', 'Many days of work, few stars: the apps nobody has noticed yet. Ranked by active days relative to GitHub stars.'],
@@ -87,7 +90,7 @@ export function browseLede(b: Browse, locale: Locale): string {
 // Les autres filtres passent tels quels.
 export async function withAltName(b: Browse): Promise<Browse | null> {
   if (b.kind !== 'alt') return b;
-  const name = await altName(b.value).catch(() => null);
-  return name ? { ...b, label: name } : null;
+  const found = await altName(b.value).catch(() => null);
+  return found ? { ...b, label: found.name, free: found.free } : null;
 }
 export { PLATFORMS };

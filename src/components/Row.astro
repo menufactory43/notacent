@@ -2,6 +2,7 @@
 import Spark from './Spark.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
 import type { App } from '../data/apps';
+import { declaredPricing } from '../lib/view';
 // Une rangée du classement : rang, qui, la courbe, les jours actifs, les bravos. Le reste vit dans la fiche.
 interface Props { app: App; rank?: number; locale: Locale; seed: number; stamp?: 'week' | 'streak' | 'radar' }
 const { app, rank, locale, seed, stamp } = Astro.props;
@@ -9,6 +10,7 @@ const s = t(locale);
 const last = app.lastCommitDaysAgo === 0 ? s.today : s.ago(app.lastCommitDaysAgo, 'j');
 // La parole du maker dans la ligne : sa phrase quand il l'a écrite ; sur une fiche non réclamée, le vide visible et l'appel à réclamer.
 const claimHref = `/api/auth/github?lang=${locale}&back=${encodeURIComponent(localePath(locale, `/app/${app.slug}/modifier`))}`;
+const model = declaredPricing(app);
 const stampLabel = stamp === 'week' ? s.stampWeekShort : stamp === 'streak' ? s.stampStreak : stamp === 'radar' ? s.stampRadar : '';
 ---
 <article class:list={['sk', 'row', { sponsor: app.sponsored, unclaimed: app.unclaimed }]}>
@@ -28,7 +30,7 @@ const stampLabel = stamp === 'week' ? s.stampWeekShort : stamp === 'streak' ? s.
         {!app.store && app.notarized?.level === 'notarized' && <span class="sig hand">✓ {s.tagNotarized}</span>}
       </p>
       {app.tagline && <p class="tagline">{app.tagline}</p>}
-      <p class="by">@{app.owner} <span class="tool">{app.tool}</span> · {app.language}{app.platform && <> · {app.platform}</>} · {s.last} <b>{last}</b></p>
+      <p class="by">@{app.owner} <span class="tool">{app.tool}</span> · {app.language}{app.platform && <> · {app.platform}</>}{model && <> · {s.pricing[model]}</>} · {s.last} <b>{last}</b></p>
       {app.hasLongest
         ? <p class="said">« {app.longest[locale]} »<span class="hand lbl">{s.rowLongest}</span></p>
         : app.unclaimed && <p class="said void">« <span class="blank"></span> »<span class="hand lbl">{s.rowVoid(app.owner)} · <a href={claimHref}>{s.claimShort}</a></span></p>}

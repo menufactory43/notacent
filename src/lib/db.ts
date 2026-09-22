@@ -142,7 +142,8 @@ export const INTENTS: Intent[] = ['radar', 'takeover', 'veteran', 'new', 'done',
 // « Signées » : la fiche a un lien App Store vérifié chez Apple, ou une notarisation lue dans son workflow de publication.
 export const SIGNED_SQL = `(a.store is not null or a.notarized->>'level' = 'notarized')`;
 // Pour « alt », value est le segment d'URL (notion) et label le nom tel qu'on l'écrit (Notion), lu en base.
-export interface Browse { kind: BrowseKind; value: string; label?: string }
+// free : pour une page « alternative à », au moins une app de la page est gratuite, d'après son maker (le titre peut alors dire « gratuites »).
+export interface Browse { kind: BrowseKind; value: string; label?: string; free?: boolean }
 // Une alternative reste une alternative une fois terminée, et une app payante aussi en est une : l'éligibilité suffit.
 const ALT_BOARD = ELIGIBLE;
 
@@ -196,21 +197,24 @@ export async function browseCounts(): Promise<{ tool: Record<string, number>; pl
   return out;
 }
 // Les « alternative à » qui existent : le segment, le nom le plus écrit, le nombre d'apps.
-export interface AltCount { slug: string; name: string; n: number }
+// Une app gratuite, d'après son maker : gratuite ou à dons, sur une fiche réclamée. C'est la seule qui donne le droit d'écrire « gratuites ».
+export const DECLARED_FREE = `(a.pricing in ('free', 'donations') and coalesce(u.claimed, true))`;
+export interface AltCount { slug: string; name: string; n: number; free: boolean }
 export async function altCounts(): Promise<AltCount[]> {
   if (!hasDb) return [];
   return (await sql.query(
-    `select s as slug, mode() within group (order by a.alternative_to[array_position(a.alt_slugs, s)]) as name, count(*)::int as n
-     from apps a, unnest(a.alt_slugs) s where ${ALT_BOARD} group by s order by n desc, s`,
+    `select s as slug, mode() within group (order by a.alternative_to[array_position(a.alt_slugs, s)]) as name, count(*)::int as n, bool_or(${DECLARED_FREE}) as free
+     from apps a join users u on u.id = a.user_id, unnest(a.alt_slugs) s where ${ALT_BOARD} group by s order by n desc, s`,
   )) as AltCount[];
 }
-// Le nom affiché d'un segment, ou null si aucune app ne s'en réclame : la page n'existe alors pas.
-export async function altName(slug: string): Promise<string | null> {
+// Le nom affiché d'un segment, et s'il y a une app gratuite dans la page ; null si aucune app ne s'en réclame : la page n'existe alors pas.
+export async function altName(slug: string): Promise<{ name: string; free: boolean } | null> {
   if (!hasDb) return null;
   const [r] = (await sql.query(
-    `select mode() within group (order by a.alternative_to[array_position(a.alt_slugs, $1)]) as name from apps a where ${ALT_BOARD} and $1 = any(a.alt_slugs)`, [slug],
-  )) as { name: string | null }[];
-  return r?.name ?? null;
+    `select mode() within group (order by a.alternative_to[array_position(a.alt_slugs, $1)]) as name, coalesce(bool_or(${DECLARED_FREE}), false) as free
+     from apps a join users u on u.id = a.user_id where ${ALT_BOARD} and $1 = any(a.alt_slugs)`, [slug],
+  )) as { name: string | null; free: boolean }[];
+  return r?.name ? { name: r.name, free: r.free } : null;
 }
 // Le rang d'une app dans un classement donné (« 1re des apps faites avec Claude Code »). « all » : son classement à elle,
 // « Pas un centime » ou « Premier euro ». Outil et plateforme : les pages qui montrent les deux.

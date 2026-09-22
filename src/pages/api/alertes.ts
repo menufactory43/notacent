@@ -14,7 +14,9 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   const kind = String(f.get('kind') ?? ''), value = String(f.get('value') ?? '');
   const b = kind && value ? browseFromParams(KIND_PATH[kind as keyof typeof KIND_PATH] ?? '', kind === 'intent' && (INTENTS as string[]).includes(value) ? value : value.toLowerCase().replace(/\s+/g, '-')) : null;
   // Une alerte « alternative à » garde le nom lu en base : le mail dira « Notion », pas « notion ».
-  const filter = (b && (await withAltName(b))) ?? (kind === 'language' && value ? { kind: 'language' as const, value } : {});
+  // « free » dit ce que contient la page aujourd'hui : il ne fait pas partie du filtre (une alerte par page, pas deux).
+  const named = b && (await withAltName(b));
+  const filter = named ? { kind: named.kind, value: named.value, ...(named.label ? { label: named.label } : {}) } : kind === 'language' && value ? { kind: 'language' as const, value } : {};
   const r = await addAlert(email, lang, filter, randomBytes(16).toString('hex')).catch(() => 'exists' as const);
   return redirect(`${back}${sep}alerte=${r === 'added' ? 'ok' : 'exists'}`, 302);
 };

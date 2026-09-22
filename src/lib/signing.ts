@@ -55,10 +55,10 @@ const match = (text: string, table: [RegExp, string][]) => table.find(([re]) => 
 // pas dans le YAML : s'arrêter aux workflows ferait dire « rien » à des apps parfaitement notarisées.
 const RAW = 'https://raw.githubusercontent.com';
 const NAMED = /^(makefile|justfile|tauri\.conf\.json|package\.json|electron-builder\.(ya?ml|json|js)|fastlane\/fastfile)$/i;
-const BUILDY = /(notari[sz]|codesign|gatekeeper|release|publish|bundle|package|dist|build|sign|deploy|dmg|installer)/i;
+const BUILDY = /(notari[sz]|codesign|gatekeeper|release|publish|bundle|package|dist|build|sign|deploy|dmg|installer|make-?app|archive)/i;
 const CODE = /\.(sh|bash|zsh|ya?ml|js|mjs|cjs|ts|py|rb|toml|json|swift|ps1|mk)$/i;
 
-function candidates(tree: { path: string; type: string; size?: number }[]): string[] {
+export function candidates(tree: { path: string; type: string; size?: number }[]): string[] {
   const files = tree.filter((f) => f.type === 'blob' && (f.size ?? 0) < 100_000);
   const score = (p: string) => {
     const name = p.split('/').pop() ?? '';
@@ -66,7 +66,9 @@ function candidates(tree: { path: string; type: string; size?: number }[]): stri
     if (p.startsWith('.github/workflows/')) return /\.ya?ml$/i.test(name) ? 3 : 0;
     if (NAMED.test(p) || NAMED.test(name)) return 2;
     const inScripts = /^(script|scripts|ci|tools|build|packaging|dev)\//i.test(dir) || dir === '';
-    if (!inScripts) return 0;
+    // Un repo qui range l'app dans un sous-dossier (`Souffleuse/make-app.sh`, `mac/release.sh`) : on lit aussi le
+    // premier niveau, mais seulement un script au nom de publication, et après tout le reste.
+    if (!inScripts) return dir.split('/').length === 2 && BUILDY.test(name) && CODE.test(name) ? 1 : 0;
     // Le nom doit parler de publication (`create-dmg.sh`, `release.yml`), ou n'avoir aucune extension dans script/
     // (`script/bundle-mac`). Sinon on ramasse un `codesign` qui traîne dans un outil sans rapport, et on l'affiche à tort.
     if (BUILDY.test(name)) return CODE.test(name) || !name.includes('.') ? 2 : 0;

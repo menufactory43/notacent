@@ -1,4 +1,4 @@
-import { sql, hasDb, ELIGIBLE } from './db';
+import { sql, hasDb, ELIGIBLE, FIRST_EURO } from './db';
 
 // Les chiffres de l'annuaire entier : ce qu'on peut citer. Des médianes, pas des moyennes (une app à 900 jours tire tout vers le haut),
 // et la taille de l'échantillon à côté de chaque chiffre. Population : toutes les fiches listées, en cours ou terminées,
@@ -6,6 +6,10 @@ import { sql, hasDb, ELIGIBLE } from './db';
 const POP = ELIGIBLE;
 // Un groupe à une ou deux apps n'est pas une statistique, c'est une fiche : on ne le montre pas.
 export const MIN_GROUP = 3;
+// Pas de médiane « avant le premier euro » sous cinq apps : on dit « pas encore assez d'apps », avec l'effectif.
+export const MIN_FIRST_EURO = 5;
+// Le jour où la population est passée des apps gratuites à toutes les apps pas encore rentables.
+export const POPULATION_SINCE = '2026-09-22';
 
 export interface Group { value: string; n: number; medianDays: number; medianMonths: number }
 export interface Figures {
@@ -16,6 +20,9 @@ export interface Figures {
   byPlatform: Group[]; byLanguage: Group[]; byTool: Group[];
   // Jours actifs par jour de la semaine (1 = lundi), repos publics, 365 derniers jours, en UTC.
   weekdays: { dow: number; n: number }[]; weekendShare: number | null; weekdayApps: number;
+  // Jours actifs comptés jusqu'au premier euro déclaré : l'effectif, et la médiane seulement à partir de MIN_FIRST_EURO apps.
+  firstEuro: { n: number; medianDays: number | null; q1: number | null; q3: number | null };
+  populationSince: string;
 }
 
 const MONTHS = `extract(epoch from (coalesce(a.last_commit, a.created_at) - coalesce(a.first_commit, a.created_at))) / 2629800`;
@@ -51,6 +58,13 @@ export async function figures(): Promise<Figures | null> {
   const [{ apps: weekdayApps } = { apps: 0 }] = (await sql.query(
     `select count(distinct a.id)::int as apps from apps a, unnest(a.active_dates) d where ${POP} and not a.private and d > current_date - 365`,
   )) as { apps: number }[];
+  const [fe] = (await sql.query(
+    `select count(*)::int as n, percentile_cont(0.5) within group (order by a.first_euro_days) as median,
+       percentile_cont(0.25) within group (order by a.first_euro_days) as q1, percentile_cont(0.75) within group (order by a.first_euro_days) as q3
+     from apps a where ${POP} and ${FIRST_EURO} and a.first_euro_days is not null`,
+  )) as { n: number; median: number | null; q1: number | null; q3: number | null }[];
+  const enough = fe.n >= MIN_FIRST_EURO;
+  const firstEuro = { n: fe.n, medianDays: enough ? Math.round(Number(fe.median)) : null, q1: enough ? Math.round(Number(fe.q1)) : null, q3: enough ? Math.round(Number(fe.q3)) : null };
   const weekdays = [1, 2, 3, 4, 5, 6, 7].map((dow) => ({ dow, n: wd.find((r) => r.dow === dow)?.n ?? 0 }));
   const all = weekdays.reduce((s, r) => s + r.n, 0);
   const r = (v: number | null | undefined) => Math.round(Number(v ?? 0));
@@ -61,5 +75,6 @@ export async function figures(): Promise<Figures | null> {
     under20Stars: o.under20, solo: o.solo, veterans: o.veterans, over100Days: o.over100, claimed: o.claimed, signed: o.signed, macApps: o.mac,
     byPlatform, byLanguage, byTool,
     weekdays, weekendShare: all ? (weekdays[5].n + weekdays[6].n) / all : null, weekdayApps,
+    firstEuro, populationSince: POPULATION_SINCE,
   };
 }

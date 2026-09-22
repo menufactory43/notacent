@@ -1,9 +1,9 @@
 ---
-// La page Chiffres : ce que l'annuaire entier dit du travail derrière une app gratuite. Des médianes, l'échantillon à côté, la date de lecture.
+// La page Chiffres : ce que l'annuaire entier dit du travail derrière une app qui n'a pas encore gagné d'argent. Des médianes, l'échantillon à côté, la date de lecture.
 // C'est la page qu'on cite : un chiffre, une source, une méthode. Recalculée à chaque visite depuis la base.
 import Base from '../layouts/Base.astro';
 import { localePath, type Locale } from '../i18n/strings';
-import { figures, MIN_GROUP } from '../lib/figures';
+import { figures, MIN_GROUP, MIN_FIRST_EURO } from '../lib/figures';
 import { breadcrumbLd, SITE } from '../lib/seo';
 import { browsePath } from '../lib/browse';
 interface Props { locale: Locale }
@@ -15,16 +15,17 @@ const pct = (n: number, of: number) => (of ? Math.round((n / of) * 100) : 0);
 const readOn = f ? new Date(f.readOn).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
 const title = fr ? 'Chiffres' : 'Figures';
 const desc = f
-  ? fr ? `Combien de travail derrière une app gratuite faite par un indépendant : ${f.days.median} jours de commits en médiane, sur ${f.apps} apps lues dans leur repo GitHub. Médianes, répartitions, méthode.` : `How much work goes into a free app made by an indie: ${f.days.median} days with commits at the median, across ${f.apps} apps read from their GitHub repo. Medians, distributions, method.`
+  ? fr ? `Combien de travail derrière une app indépendante qui n'a pas encore gagné d'argent : ${f.days.median} jours de commits en médiane, sur ${f.apps} apps lues dans leur repo GitHub. Médianes, répartitions, méthode.` : `How much work goes into an indie app that hasn't made money yet: ${f.days.median} days with commits at the median, across ${f.apps} apps read from their GitHub repo. Medians, distributions, method.`
   : fr ? 'Les chiffres de l\'annuaire : jours de travail, durée de vie, étoiles.' : 'The directory\'s figures: days of work, lifetime, stars.';
 const page = `${SITE}${localePath(locale, '/chiffres')}`;
 const DAYS = fr ? ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const wdMax = f ? Math.max(1, ...f.weekdays.map((d) => d.n)) : 1;
 const wdAll = f ? f.weekdays.reduce((s, d) => s + d.n, 0) : 0;
 const small = Boolean(f && f.apps < 100);
+const since = f ? new Date(`${f.populationSince}T12:00:00Z`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
 const cite = f ? (fr
-  ? `Sur Not a Cent, une app gratuite faite par un indépendant représente en médiane ${f.days.median} jours de commits étalés sur ${f.medianMonths} mois (${f.apps} apps, lu le ${readOn}). Source : ${page}`
-  : `On Not a Cent, a free app made by an indie represents a median of ${f.days.median} days with commits spread over ${f.medianMonths} months (${f.apps} apps, read on ${readOn}). Source: ${page}`) : '';
+  ? `Sur Not a Cent, une app indépendante qui n'a pas encore gagné d'argent représente en médiane ${f.days.median} jours de commits étalés sur ${f.medianMonths} mois (${f.apps} apps, lu le ${readOn}). Source : ${page}`
+  : `On Not a Cent, an indie app that hasn't made money yet represents a median of ${f.days.median} days with commits spread over ${f.medianMonths} months (${f.apps} apps, read on ${readOn}). Source: ${page}`) : '';
 const groups = f ? [
   { title: fr ? 'Par plateforme' : 'By platform', kind: 'platform' as const, rows: f.byPlatform },
   { title: fr ? 'Par langage' : 'By language', kind: 'language' as const, rows: f.byLanguage },
@@ -34,11 +35,11 @@ const ld = f ? [
   breadcrumbLd(locale, [[fr ? 'Accueil' : 'Home', '/'], [title, '/chiffres']]),
   {
     '@context': 'https://schema.org', '@type': 'Dataset', '@id': page, url: page, inLanguage: locale,
-    name: fr ? 'Not a Cent : le travail derrière les apps gratuites indépendantes' : 'Not a Cent: the work behind free indie apps',
+    name: fr ? "Not a Cent : le travail derrière les apps indépendantes qui n'ont pas encore gagné d'argent" : 'Not a Cent: the work behind indie apps that have not made money yet',
     description: desc, dateModified: f.readOn, isAccessibleForFree: true, license: 'https://creativecommons.org/licenses/by/4.0/',
     creator: { '@type': 'Organization', name: 'Not a Cent', url: SITE },
     measurementTechnique: fr ? 'Jours calendaires (UTC) avec au moins un commit humain sur la branche par défaut, lus depuis le repo GitHub' : 'Calendar days (UTC) with at least one human commit on the default branch, read from the GitHub repo',
-    variableMeasured: ['active days', 'commits', 'lifetime in months', 'best streak in weeks', 'GitHub stars'],
+    variableMeasured: ['active days', 'commits', 'lifetime in months', 'best streak in weeks', 'GitHub stars', 'active days before the first euro (declared by the maker)'],
     distribution: [{ '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: `${SITE}/chiffres.json` }],
   },
 ] : undefined;
@@ -46,11 +47,14 @@ const ld = f ? [
 <Base locale={locale} path="/chiffres" title={title} description={desc} jsonLd={ld}>
   <article class="sk page">
     <h1>{title}</h1>
-    <p class="hand lede">{fr ? 'Combien de travail derrière une app gratuite ? On a compté.' : 'How much work goes into a free app? We counted.'}</p>
+    <p class="hand lede">{fr ? "Combien de travail derrière une app qui n'a pas encore gagné un centime ? On a compté." : "How much work goes into an app that hasn't made a cent yet? We counted."}</p>
     {!f && <p>{fr ? 'Les chiffres arrivent : la base n\'est pas branchée ici.' : 'Figures are coming: no database here.'}</p>}
     {f && (
       <>
-        <p class="prov mono">{fr ? `${nf(f.apps)} apps gratuites · lu le ${readOn} · repos relus chaque nuit` : `${nf(f.apps)} free apps · read on ${readOn} · repos re-read every night`} · <a href={localePath(locale, '/methode')}>{fr ? 'la méthode' : 'the method'}</a> · <a href="/chiffres.json">JSON</a></p>
+        <p class="prov mono">{fr ? `${nf(f.apps)} apps pas encore rentables · lu le ${readOn} · repos relus chaque nuit` : `${nf(f.apps)} apps not profitable yet · read on ${readOn} · repos re-read every night`} · <a href={localePath(locale, '/methode')}>{fr ? 'la méthode' : 'the method'}</a> · <a href="/chiffres.json">JSON</a></p>
+        <p class="pop">{fr
+          ? `Population élargie le ${since}. Avant, seules les apps gratuites comptaient. Depuis, toutes les apps listées : gratuites ou payantes, qui n'ont pas encore gagné d'argent d'après leur maker, ou tout juste leur premier euro. Les médianes ont bougé ce jour-là : si tu cites un chiffre d'avant, donne sa date.`
+          : `Population widened on ${since}. Before, only free apps counted. Since then, every listed app: free or paid, that hasn't made money yet according to its maker, or just its first euro. Medians moved that day: if you quote an older figure, give its date.`}</p>
         {small && <p class="warn hand">{fr ? `Échantillon encore petit : ${f.apps} apps. Les médianes bougeront. On donne le nombre à côté de chaque chiffre pour ça.` : `The sample is still small: ${f.apps} apps. Medians will move. That is why every figure comes with its count.`}</p>}
 
         <div class="tiles">
@@ -68,6 +72,16 @@ const ld = f ? [
           <li>{fr ? `Un jour de travail, c'est ${String(f.medianCommitsPerDay).replace('.', ',')} commits en médiane.` : `A day of work is ${f.medianCommitsPerDay} commits at the median.`}</li>
           {f.macApps >= MIN_GROUP && <li>{fr ? `${f.signed} apps Mac sur ${f.macApps} sont sur l'App Store ou notarisées, d'après leur repo.` : `${f.signed} of ${f.macApps} Mac apps are on the App Store or notarized, according to their repo.`} <a href={browsePath({ kind: 'intent', value: 'signed' }, locale)}>{fr ? 'Les voir' : 'See them'}</a></li>}
         </ul>
+
+        <h2>{fr ? 'Avant le premier euro' : 'Before the first euro'}</h2>
+        {f.firstEuro.medianDays !== null ? (
+          <div class="tiles one"><div class="tile"><b class="mono">{nf(f.firstEuro.medianDays)}</b><span>{fr ? 'jours actifs avant le premier euro, en médiane' : 'active days before the first euro, at the median'}</span><small class="mono">{fr ? `${f.firstEuro.n} apps ont déclaré leur premier euro · quartiles ${f.firstEuro.q1} – ${f.firstEuro.q3}` : `${f.firstEuro.n} apps have declared their first euro · quartiles ${f.firstEuro.q1} – ${f.firstEuro.q3}`}</small></div></div>
+        ) : (
+          <p>{fr
+            ? `Pas encore assez d'apps pour une médiane : ${f.firstEuro.n === 0 ? 'aucune n’a déclaré son premier euro' : f.firstEuro.n === 1 ? 'une seule a déclaré son premier euro' : `${f.firstEuro.n} ont déclaré leur premier euro`}, il en faut ${MIN_FIRST_EURO}. Le chiffre apparaîtra ici tout seul.`
+            : `Not enough apps for a median yet: ${f.firstEuro.n === 0 ? 'none has' : f.firstEuro.n === 1 ? 'only one has' : `${f.firstEuro.n} have`} declared a first euro, and it takes ${MIN_FIRST_EURO}. The figure will show up here by itself.`}</p>
+        )}
+        <p class="small">{fr ? 'Les jours actifs comptés dans le repo jusqu’au jour du premier euro, déclaré par le maker. Le travail est vérifié, la date du premier euro ne l’est pas.' : 'Active days counted in the repo up to the day of the first euro, as declared by the maker. The work is verified; the date of the first euro is not.'} <a href={browsePath({ kind: 'intent', value: 'premier-euro' }, locale)}>{fr ? 'Les apps « Premier euro »' : 'The “First euro” apps'}</a></p>
 
         {wdAll > 0 && f.weekendShare !== null && (
           <>
@@ -101,7 +115,8 @@ const ld = f ? [
 
         <h2>{fr ? 'Ce que ces chiffres ne disent pas' : 'What these figures do not say'}</h2>
         <ul>
-          <li>{fr ? 'Ce n\'est pas un échantillon de toutes les apps indépendantes : ce sont celles listées ici, gratuites, avec un repo GitHub, trouvées par nous ou inscrites par leur maker. Des apps qui durent, par construction.' : 'This is not a sample of all indie apps: these are the ones listed here, free, with a GitHub repo, found by us or listed by their maker. Apps that last, by construction.'}</li>
+          <li>{fr ? 'Ce n\'est pas un échantillon de toutes les apps indépendantes : ce sont celles listées ici, qui n\'ont pas encore gagné d\'argent (ou tout juste leur premier euro), avec un repo GitHub, trouvées par nous ou inscrites par leur maker. Des apps qui durent, par construction.' : 'This is not a sample of all indie apps: these are the ones listed here, which have not made money yet (or just their first euro), with a GitHub repo, found by us or listed by their maker. Apps that last, by construction.'}</li>
+          <li>{fr ? 'Le revenu est déclaré par le maker, pas vérifié. Une fiche non réclamée n\'a rien déclaré : elle compte quand même, parce que son travail, lui, est lu dans le repo.' : 'Revenue is declared by the maker, not verified. An unclaimed card has declared nothing: it still counts, because its work is read in the repo.'}</li>
           <li>{fr ? 'Un jour de commits n\'est pas une journée de huit heures. C\'est un jour où quelqu\'un a ouvert le projet et y a laissé quelque chose.' : 'A day with commits is not an eight-hour day. It is a day when someone opened the project and left something in it.'}</li>
           <li>{fr ? 'Les médianes sont recalculées chaque nuit : le chiffre que tu cites aujourd\'hui aura bougé dans un mois. Donne la date.' : 'Medians are recomputed every night: the figure you quote today will have moved in a month. Give the date.'}</li>
         </ul>
@@ -121,6 +136,8 @@ const ld = f ? [
 .prov a{color:inherit}
 .warn{color:var(--redpen);font-size:19px;margin:0 0 6px}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0 4px}
+.tiles.one{grid-template-columns:1fr;max-width:380px;margin-top:8px}
+.pop{font-size:14px!important;color:var(--pencil);margin:0 0 8px;border-left:3px solid var(--faint);padding-left:10px}
 .tile{border:2px solid var(--ink);border-radius:var(--sk2);padding:14px 16px;display:flex;flex-direction:column;gap:4px;background:var(--paper-2)}
 .tile b{font-size:34px;font-weight:500;line-height:1}
 .tile b i{font:700 20px/1 var(--hand);color:var(--pencil)}

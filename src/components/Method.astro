@@ -7,7 +7,7 @@ const { locale } = Astro.props;
 const fr = locale === 'fr';
 const code = 'https://github.com/menufactory43/notacent/blob/main/src/lib';
 ---
-<Base locale={locale} path="/methode" title={fr ? 'Méthode' : 'Method'} description={fr ? 'Comment Not a Cent compte les jours actifs : ce qu\'on lit dans le repo GitHub, ce qu\'on exclut, et ce que le chiffre ne dit pas.' : 'How Not a Cent counts active days: what we read in the GitHub repo, what we exclude, and what the number does not say.'}>
+<Base locale={locale} path="/methode" title={fr ? 'Méthode' : 'Method'} description={fr ? 'Comment Not a Cent compte les jours actifs, et comment on sait qu\'une app n\'a rien gagné : ce qu\'on lit dans le repo GitHub, ce que le maker déclare, ce que le chiffre ne dit pas.' : 'How Not a Cent counts active days, and how we know an app has made nothing: what we read in the GitHub repo, what the maker declares, what the number does not say.'}>
   <article class="sk page">
     <h1>{fr ? 'Méthode' : 'Method'}</h1>
     <p class="hand lede">{fr ? 'Un chiffre « vérifié » ne vaut que si on montre comment on vérifie.' : 'A “verified” number is only worth something if we show how we verify.'}</p>
@@ -29,7 +29,27 @@ const code = 'https://github.com/menufactory43/notacent/blob/main/src/lib';
       <li>{fr ? 'Les robots : dependabot, renovate, github-actions, semantic-release, snyk, imgbot, copilot et tout compte marqué « Bot » par GitHub. Leurs commits ne font ni un jour ni un auteur.' : 'Bots: dependabot, renovate, github-actions, semantic-release, snyk, imgbot, copilot and any account GitHub flags as “Bot”. Their commits make neither a day nor an author.'}</li>
       <li>{fr ? 'Les autres branches : on ne lit que la branche par défaut. Le travail sur une branche jamais fusionnée n\'apparaît pas.' : 'Other branches: only the default branch is read. Work on a branch never merged does not show.'}</li>
       <li>{fr ? 'Le contenu : jamais une ligne de code, jamais un message de commit. Seulement des dates et des noms d\'auteurs.' : 'Content: never a line of code, never a commit message. Only dates and author names.'}</li>
-      <li>{fr ? 'Les apps payantes : elles peuvent avoir une fiche, elles ne sont pas dans le classement.' : 'Paid apps: they can have a card, they are not on the board.'}</li>
+    </ul>
+    <p>{fr ? 'Le modèle économique n\'exclut personne. Gratuite, achat unique, abonnement, freemium : la fiche l\'affiche pour info, le classement ne le regarde pas.' : 'The business model excludes nobody. Free, one-time purchase, subscription, freemium: the card shows it for information, the ranking ignores it.'}</p>
+
+    <h2 id="revenu">{fr ? 'Comment on sait qu\'une app n\'a rien gagné' : 'How we know an app has made nothing'}</h2>
+    <p>{fr
+      ? 'On ne le sait pas : on le demande. Le revenu ne se lit pas dans un repo. Pour publier, le maker coche une case : « Ces apps n\'ont pas encore gagné d\'argent. Je le déclare sur l\'honneur. » Pas un euro de ventes, d\'abonnements ou de dons. Une app payante qui n\'a encore rien vendu a sa place, au même titre qu\'une app gratuite.'
+      : 'We don\'t know. We ask. Revenue can\'t be read in a repo. To publish, the maker ticks a box: “These apps haven\'t made any money yet. I declare it on my honour.” Not a single euro from sales, subscriptions or donations. A paid app that hasn\'t sold anything yet belongs here, just like a free one.'}</p>
+    <ul>
+      <li>{fr ? 'La fiche sépare les deux : « travail : vérifié dans le repo », « revenu : déclaré par le maker ». Le mot « vérifié » est réservé au travail. On n\'écrit jamais « 0 € vérifié ».' : 'The card keeps them apart: “work: verified in the repo”, “revenue: declared by the maker”. The word “verified” belongs to the work. We never write “$0 verified”.'}</li>
+      <li>{fr ? 'Une fiche que nous avons créée depuis un repo public, pas encore réclamée, écrit « revenu : non déclaré » et n\'a pas de tampon « 0 € gagné ». Elle reste listée : son travail, lui, est lu.' : 'A card we created from a public repo, not claimed yet, says “revenue: not declared” and has no “$0 earned” stamp. It stays listed: its work is read.'}</li>
+      <li>{fr ? 'Un maker peut mentir. Comme pour les commits, il ment alors devant tout le monde, sous son nom. Si tu sais qu\'une app listée gagne de l\'argent, ' : 'A maker can lie. As with commits, they then lie in front of everyone, under their own name. If you know a listed app makes money, '}<a href="https://github.com/menufactory43/notacent/issues">{fr ? 'ouvre une issue' : 'open an issue'}</a>.</li>
+      <li>{fr ? 'Plus tard, peut-être : une preuve lue chez Stripe, RevenueCat ou App Store Connect. Ce jour-là, la fiche dira d\'où vient le chiffre. D\'ici là, c\'est une déclaration, et c\'est écrit comme ça.' : 'Later, maybe: proof read from Stripe, RevenueCat or App Store Connect. That day, the card will say where the number comes from. Until then it is a declaration, and it is written as one.'}</li>
+    </ul>
+
+    <h2 id="premier-euro">{fr ? 'Le premier euro' : 'The first euro'}</h2>
+    <p>{fr
+      ? 'Le jour où l\'app gagne son premier euro, le maker le déclare, avec la date. L\'app ne sort pas, elle franchit un cap : elle quitte le classement « Pas un centime » pour le classement « Premier euro », rangé au même critère, les jours actifs. Sa fiche garde une frise (listée le…, premier euro le…, après N jours actifs), son badge continue de compter et prend un cachet « 1er € ».'
+      : 'The day the app makes its first euro, the maker declares it, with the date. The app doesn\'t leave, it crosses a line: it moves from the “Not a cent yet” board to the “First euro” board, ranked by the same thing, active days. Its card keeps a timeline (listed on…, first euro on…, after N active days), and its badge keeps counting and gets a “1st €” stamp.'}</p>
+    <ul>
+      <li>{fr ? 'Les jours actifs jusqu\'au premier euro sont comptés dans le registre des jours et figés au moment de la déclaration. La page Chiffres en donne la médiane, avec l\'effectif, dès que cinq apps l\'ont déclaré. Avant, elle dit « pas encore assez d\'apps ».' : 'Active days up to the first euro are counted from the day ledger and frozen when it is declared. The Figures page gives the median, with the count, once five apps have declared it. Before that, it says “not enough apps yet”.'}</li>
+      <li>{fr ? 'L\'emplacement sponsorisé de l\'accueil est réservé aux apps « Premier euro ». Tant qu\'une app est à zéro, être vue ne lui coûte rien.' : 'The sponsored slot on the home page is for “First euro” apps only. While an app is at zero, being seen costs it nothing.'}</li>
     </ul>
 
     <h2>{fr ? 'Comment on lit' : 'How we read'}</h2>
@@ -69,7 +89,7 @@ const code = 'https://github.com/menufactory43/notacent/blob/main/src/lib';
 
     <h2>{fr ? 'Le code' : 'The code'}</h2>
     <p>{fr ? 'Tout ce qui est écrit ici est dans le code du site, ouvert : ' : 'Everything written here is in the site\'s code, open: '}<a href={`${code}/work.ts`}>work.ts</a>{fr ? ' pour les calculs et la liste des robots, ' : ' for the maths and the bot list, '}<a href={`${code}/metrics.ts`}>metrics.ts</a>{fr ? ' pour la lecture GitHub, ' : ' for the GitHub read, '}<a href={`${code}/signing.ts`}>signing.ts</a>{fr ? ' pour l\'App Store et la notarisation. Si tu trouves une erreur, ouvre une issue.' : ' for the App Store and notarization. If you find a mistake, open an issue.'}</p>
-    <p class="mono small">{fr ? 'Dernière mise à jour : 18 septembre 2026.' : 'Last updated: September 18, 2026.'}</p>
+    <p class="mono small">{fr ? 'Dernière mise à jour : 22 septembre 2026.' : 'Last updated: September 22, 2026.'}</p>
   </article>
 </Base>
 <style>

@@ -1,6 +1,6 @@
 import type { App } from '../data/apps';
 import type { Locale } from '../i18n/strings';
-import { declaredFree } from './view';
+import { declaredFree, declaredPricing, revenueState } from './view';
 export const SITE = 'https://notacent.app';
 
 // Données structurées : ce qu'un moteur, et l'assistant qui s'en sert, lisent d'une app sans deviner.
@@ -28,8 +28,14 @@ export function softwareLd(app: App, locale: Locale) {
       { '@type': 'PropertyValue', name: 'mainTool', value: app.tool },
       { '@type': 'PropertyValue', name: 'githubStars', value: app.stars ?? 0 },
       ...(app.platform ? [{ '@type': 'PropertyValue', name: 'platform', value: app.platform }] : []),
-      // Pas pour une app payante : elle n'est pas une alternative « gratuite », et ses pages « alternative à » n'existent pas.
-      ...((app.alternativeTo ?? []).length && declaredFree(app) ? [{ '@type': 'PropertyValue', name: 'freeAlternativeTo', value: app.alternativeTo!.map((x) => x.name).join(', '), description: 'Products this app is listed as a free alternative to' }] : []),
+      ...((app.alternativeTo ?? []).length ? [{ '@type': 'PropertyValue', name: 'alternativeTo', value: app.alternativeTo!.map((x) => x.name).join(', '), description: 'Products this app is listed as an alternative to' }] : []),
+      // Le modèle économique et le revenu, tels que le maker les a déclarés. Rien quand personne n'a rien dit.
+      ...(declaredPricing(app) ? [{ '@type': 'PropertyValue', name: 'businessModel', value: declaredPricing(app), description: 'Declared by the maker' }] : []),
+      ...(revenueState(app) === 'zero' ? [{ '@type': 'PropertyValue', name: 'revenueToDate', value: 0, unitCode: 'EUR', description: 'Nothing earned yet, declared by the maker, not verified' }] : []),
+      ...(revenueState(app) === 'first' ? [
+        { '@type': 'PropertyValue', name: 'firstEuroOn', value: app.firstEuroAt, description: 'First euro made, declared by the maker, not verified' },
+        ...(app.firstEuroDays != null ? [{ '@type': 'PropertyValue', name: 'activeDaysBeforeFirstEuro', value: app.firstEuroDays, description: 'Active days read from the repo up to the declared first euro' }] : []),
+      ] : []),
       ...(app.takeover ? [{ '@type': 'PropertyValue', name: 'openToTakeover', value: true, description: 'The maker is open to handing the app over' }] : []),
     ],
   };
@@ -58,11 +64,11 @@ export function siteLd(locale: Locale, apps: App[]) {
   return [
     {
       '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${SITE}/#site`, url: home, name: 'Not a Cent', inLanguage: locale,
-      description: fr ? 'Le travail vérifié, pas le revenu : des apps gratuites peaufinées pendant des mois, classées par jours de commit lus dans le repo GitHub. Être listé ne coûte pas un centime.' : 'Verified work, not revenue: free apps polished for months, ranked by commit days read from the GitHub repo. Being listed costs not a cent.',
+      description: fr ? "Le travail vérifié, pas le revenu : des apps peaufinées pendant des mois qui n'ont pas encore gagné un centime, classées par jours de commit lus dans le repo GitHub. Être listé ne coûte rien." : "Verified work, not revenue: apps polished for months that haven't made a cent yet, ranked by commit days read from the GitHub repo. Being listed costs nothing.",
       publisher: { '@type': 'Organization', name: 'Not a Cent', url: SITE, logo: `${SITE}/favicon.svg` },
     },
     {
-      '@context': 'https://schema.org', '@type': 'ItemList', name: fr ? 'En cours de peaufinage' : 'Still polishing', itemListOrder: 'https://schema.org/ItemListOrderDescending', numberOfItems: apps.length,
+      '@context': 'https://schema.org', '@type': 'ItemList', name: fr ? 'Pas un centime' : 'Not a cent yet', itemListOrder: 'https://schema.org/ItemListOrderDescending', numberOfItems: apps.length,
       itemListElement: apps.map((a, i) => ({ '@type': 'ListItem', position: i + 1, item: softwareLd(a, locale) })),
     },
   ];

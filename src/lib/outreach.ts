@@ -120,7 +120,7 @@ J'ai trouvé ${c.name} sur GitHub : ${days} jours de commits depuis ${since}, ${
 
 ${page}
 
-C'est gratuit, ça ne le sera jamais. Si tu te connectes avec GitHub, la fiche est à toi : une phrase, une image, et un badge « ${days} jours actifs, vérifié » pour ton README. Si tu préfères qu'elle disparaisse, réponds « non » et je la retire.
+Not a Cent liste les apps qui n'ont pas encore gagné d'argent. Si la tienne en gagne, dis-le et on ajuste la fiche. L'inscription, elle, est gratuite et le restera. Si tu te connectes avec GitHub, la fiche est à toi : une phrase, une image, et un badge « ${days} jours actifs, vérifié » pour ton README. Si tu préfères qu'elle disparaisse, réponds « non » et je la retire.
 
 Ton adresse vient de ton profil GitHub public, je ne t'écrirai pas deux fois. Les détails : ${privacy}
 
@@ -136,7 +136,7 @@ I found ${c.name} on GitHub: ${days} days with commits since ${since}, ${streak}
 
 ${page}
 
-Listing is free and always will be. If you sign in with GitHub, the card is yours: a line, a picture, and a "${days} active days, verified" badge for your README. If you'd rather it disappear, reply "no" and I'll take it down.
+Not a Cent lists apps that haven't made money yet. If yours does, tell me and I'll adjust the card. Listing itself is free and always will be. If you sign in with GitHub, the card is yours: a line, a picture, and a "${days} active days, verified" badge for your README. If you'd rather it disappear, reply "no" and I'll take it down.
 
 Your address comes from your public GitHub profile, and I won't write twice. Details: ${privacy}
 

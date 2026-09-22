@@ -8,7 +8,7 @@ const { locale, title, description, path = '/', image, jsonLd } = Astro.props;
 const user = await currentUser(Astro.cookies).catch(() => null);
 const s = t(locale);
 const other = otherLocale(locale);
-const tot = await totals().catch(() => ({ apps: 0, days: 0 }));
+const tot = await totals().catch(() => ({ apps: 0, days: 0, firstEuro: 0 }));
 const fullTitle = title ? `${title} · Not a Cent` : 'Not a Cent';
 const canonical = new URL(localePath(locale, path), Astro.site ?? Astro.url);
 // Carte de partage : celle de la fiche si on en a une, sinon la carte du site.
@@ -51,7 +51,7 @@ const ogImage = new URL(image ?? (locale === 'fr' ? '/og.png' : '/og-en.png'), A
     <nav>
       <a class="logo" href={localePath(locale, '/')}><span>Not a</span><span class="zero">Cent</span></a>
       <div class="nav-r">
-        <span class="tally mono"><b>{tot.apps}</b> {s.apps} · <b>{tot.days.toLocaleString(locale)}</b> {s.totalDays} · <b>0 €</b></span>
+        <span class="tally mono"><b>{tot.apps}</b> {s.apps} · <b>{tot.days.toLocaleString(locale)}</b> {s.totalDays} · {tot.firstEuro ? <><b>{tot.firstEuro}</b> {s.tallyFirst(tot.firstEuro)}</> : <><b>{locale === 'fr' ? '0 €' : '$0'}</b> {s.tallyZero}</>}</span>
         {user && <form method="post" action="/api/auth/logout" class="me"><span class="hand">@{user.login}</span><button type="submit" class="chip">{s.logout}</button></form>}
         <div class="seg" role="group" aria-label="Langue / Language">
           <a href={localePath('fr', path)} aria-current={locale === 'fr' ? 'page' : undefined}>FR</a>

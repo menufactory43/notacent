@@ -19,7 +19,9 @@ const comakers = app.comakers ?? [];
 const mine = Boolean(user && ((ownerId && user.id === ownerId) || comakers.some((l) => l.toLowerCase() === user.login.toLowerCase())));
 const makers = [app.owner, ...comakers];
 const since = new Date(app.firstCommit).toLocaleDateString(locale, { month: 'short', year: 'numeric' });
-const stamp = app.pricing === 'donations' ? s.donations : app.pricing === 'paid' ? '€' : s.free;
+// Le tampon dit le prix déclaré par le maker. Fiche non réclamée : personne ne l'a déclaré, pas de tampon.
+const pricing = declaredPricing(app);
+const stamp = pricing === 'donations' ? s.donations : pricing === 'paid' ? s.paid : pricing === 'free' ? s.free : null;
 const stateNote = app.status === 'done' ? s.doneStatus : app.status === 'paused' ? s.paused : '';
 const until = appId ? await sponsorUntil(appId).catch(() => null) : null;
 const someoneElse = appId && !until ? await activeSponsor().catch(() => null) : null;
@@ -60,7 +62,7 @@ const workflowUrl = nota && app.repo ? `${app.repo}/blob/HEAD/${nota.path}` : nu
   {sample && <p class="examples hand">{s.examples}</p>}
   <p class="crumb">{crumbs.slice(0, -1).map((c) => <><a href={localePath(locale, c[1])}>{c[0]}</a> › </>)}<span>{app.name}</span></p>
   <article class="sk fiche">
-    <span class="stamp">{stamp}</span>
+    {stamp && <span class="stamp">{stamp}</span>}
     <div class="shot">
       {app.imageUrl ? <img src={app.imageUrl} alt="" loading="lazy" /> : <canvas id="shot" width="520" height="390" aria-hidden="true"></canvas>}
     </div>

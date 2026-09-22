@@ -187,7 +187,7 @@ export interface AppCard {
   tool: string;
   language: string;
   stats: { value: string; label: string }[];
-  stampLabel: string;
+  stampLabel?: string; // absent : pas de tampon (prix non déclaré)
   byLabel: string;
   shot?: string; // data URI
   /** Le calendrier des jours actifs : les dates AAAA-MM-JJ, la légende surlignée, la ligne de provenance. */
@@ -241,7 +241,7 @@ export function appCard(c: AppCard): Node {
       )
     : null;
   return frame(
-    stamp(c.stampLabel),
+    c.stampLabel ? stamp(c.stampLabel) : null,
     logo(34),
     h(
       'div',

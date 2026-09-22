@@ -27,6 +27,13 @@ const inBatch = pos >= 0 && batch.length > 1;
 const next = inBatch ? batch[pos + 1] : undefined;
 // L'image déjà envoyée reste en base tant qu'on n'en choisit pas une autre : on la montre pour que ce soit clair.
 const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.image_url;
+// Le revenu ne se lit pas dans le repo : seul le maker peut le déclarer. L'admin qui remplit une fiche non réclamée n'y touche pas.
+const maker = canEdit(app, user);
+const firstEuro = app.first_euro_at ? new Date(app.first_euro_at).toISOString().slice(0, 10) : null;
+const today = new Date().toISOString().slice(0, 10);
+const firstCommit = app.first_commit ? new Date(app.first_commit).toISOString().slice(0, 10) : undefined;
+const euroLong = firstEuro ? new Date(`${firstEuro}T12:00:00Z`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+const err = Astro.url.searchParams.get('erreur');
 ---
 <Base locale={locale} path={`/app/${slug}/modifier`} title={s.editTitle}>
   <section class="edit">
@@ -36,7 +43,9 @@ const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.ima
     {Astro.url.searchParams.get('reclamee') === '1' && !app.private && <div class="claimed-badge"><Badge locale={locale} slug={app.slug} days={app.active_days} title={s.badgeClaimed} /></div>}
     <form method="post" action="/api/apps/update" class="sk" enctype="multipart/form-data">
       {Astro.url.searchParams.get('erreur') === 'image' && <p class="err hand">{s.errImage}</p>}
-      {Astro.url.searchParams.get('erreur') === 'store' && <p class="err hand">{s.errStore}</p>}
+      {err === 'store' && <p class="err hand">{s.errStore}</p>}
+      {err === 'revenu' && <p class="err hand">{s.errRevenue}</p>}
+      {err === 'date' && <p class="err hand">{s.errEuroDate}</p>}
       {Astro.url.searchParams.get('reclamee') === '1' && <p class="ok hand">{s.claimed}</p>}
       <input type="hidden" name="slug" value={app.slug} />
       <label><span>{s.fName}</span><input name="name" value={app.name} maxlength="80" /></label>
@@ -56,7 +65,7 @@ const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.ima
           <select name="tool">{TOOLS.map((x) => <option value={x} selected={app.tool === x}>{x}</option>)}</select>
         </label>
         <label><span>{s.fPricing}</span>
-          <select name="pricing">{PRICINGS.map((p) => <option value={p} selected={app.pricing === p}>{s.pricing[p]}</option>)}</select>
+          <select name="pricing" aria-describedby="pricing-hint">{PRICINGS.map((p) => <option value={p} selected={app.pricing === p}>{s.pricing[p]}</option>)}</select>
         </label>
         <label><span>{s.fStatus}</span>
           <select name="status">
@@ -69,6 +78,13 @@ const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.ima
           <select name="platform">{PLATFORMS.map((x) => <option value={x} selected={app.platform === x}>{x}</option>)}</select>
         </label>
       </div>
+      <small id="pricing-hint" class="under-grid">{s.fPricingHint}</small>
+      {maker && !firstEuro && (
+        <fieldset class="revenue">
+          <legend class="hand">{s.fRevenue}</legend>
+          <label class="check"><input type="checkbox" name="revenue_zero" required checked={app.revenue_source === 'declared'} /><span><b>{s.fZero}</b><small>{s.fZeroHint}</small></span></label>
+        </fieldset>
+      )}
       <label><span>{s.fMakers}</span>
         {owner
           ? <><input name="makers" value={makers.map((m) => m.login).join(', ')} placeholder="login, login" maxlength="80" /><small>{s.fMakersHint}{makers.some((m) => !m.confirmed) && <> · {makers.filter((m) => !m.confirmed).map((m) => `@${m.login}`).join(', ')} : {s.pending}</>}</small></>
@@ -80,6 +96,32 @@ const current = app.has_image ? `/api/img/${app.slug}?v=${Date.now()}` : app.ima
         {next ? <a class="back hand" href={localePath(locale, `/app/${next}/modifier`)}>{s.skip} →</a> : <a class="back hand" href={localePath(locale, `/app/${app.slug}`)}>← {app.name}</a>}
       </div>
     </form>
+    {maker && (
+      <section class="sk euro" id="premier-euro">
+        <h2 class="hand">{s.euroTitle}</h2>
+        {firstEuro ? (
+          <>
+            <p class="set"><span class="stamp1">{locale === 'fr' ? '1er €' : '1st €'}</span> {s.euroSet(euroLong, app.first_euro_days ?? app.active_days)}</p>
+            <form method="post" action="/api/apps/premier-euro" class="line">
+              <input type="hidden" name="slug" value={app.slug} />
+              <input type="date" name="date" value={firstEuro} min={firstCommit} max={today} required aria-label={s.euroDate} />
+              <button class="sk sk-btn" type="submit">{s.euroFix}</button>
+            </form>
+            <form method="post" action="/api/apps/premier-euro">
+              <input type="hidden" name="slug" value={app.slug} /><input type="hidden" name="undo" value="1" />
+              <button type="submit" class="hand danger">{s.euroUndo}</button>
+            </form>
+          </>
+        ) : (
+          <form method="post" action="/api/apps/premier-euro" class="grid2">
+            <input type="hidden" name="slug" value={app.slug} />
+            <label><span>{s.euroDate}</span><input type="date" name="date" value={today} min={firstCommit} max={today} required /></label>
+            <button class="sk sk-btn" type="submit">{s.euroBtn}</button>
+            <small>{s.euroHint}</small>
+          </form>
+        )}
+      </section>
+    )}
     {owner && <form method="post" action="/api/apps/remove" class="remove" onsubmit={`return confirm(${JSON.stringify(s.removeConfirm)})`}>
       <input type="hidden" name="slug" value={app.slug} />
       <button type="submit" class="hand danger">{s.remove}</button>
@@ -135,6 +177,17 @@ textarea{resize:vertical}
 .remove{margin:18px 0 0;text-align:right}
 .danger{display:inline-block;width:auto;background:none;border:0;padding:0;font-size:17px;color:var(--pencil);cursor:pointer;border-bottom:1.5px dashed var(--faint)}
 .danger:hover{color:var(--redpen);border-bottom-color:var(--redpen)}
+.under-grid{color:var(--pencil);font-size:13px;margin-top:-8px}
+.revenue{border:2px dashed var(--faint);border-radius:var(--sk2);padding:10px 14px 12px;margin:0}
+.revenue legend{font:700 19px/1 var(--hand);padding:0 6px;color:var(--ink)}
+.euro{margin-top:22px;padding:18px 22px;display:grid;gap:10px}
+.euro h2{font:700 26px/1 var(--hand);margin:0}
+.euro form{padding:0;display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.euro .grid2 label{flex:1;min-width:180px}
+.euro small{color:var(--pencil);font-size:13px;flex-basis:100%}
+.euro .set{margin:0}
+.euro input[type=date]{width:auto}
+.stamp1{display:inline-block;transform:rotate(-4deg);border:3px double var(--redpen);color:var(--redpen);font:700 18px/1 var(--hand);padding:3px 9px;border-radius:12px 40px 14px 44px/40px 12px 44px 14px;background:var(--paper);margin-right:6px}
 .others{margin-top:36px;border-top:2px dashed var(--faint);padding-top:16px}
 .others h2{font-size:24px;margin:0 0 8px;color:var(--pencil)}
 .others ul{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px 18px}

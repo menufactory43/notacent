@@ -18,6 +18,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const form = await request.formData();
   const ids = form.getAll('repo').map(Number).filter(Boolean);
   if (!ids.length) return redirect(`${lang}/ajouter`, 302);
+  // La règle d'entrée : pas encore d'argent gagné, déclaré sur l'honneur. Le travail se lit dans le repo, le revenu non.
+  if (form.get('declare') !== 'on') return redirect(`${lang}/ajouter?erreur=revenu`, 302);
   const installationId = await syncInstallation(user);
   const repos = (await makerRepos(user.login, installationId)).filter((r) => ids.includes(r.id));
   const slugs: string[] = [];
@@ -37,12 +39,13 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     const sign = await refreshSigning({ full_name: r.full_name, private: r.private, platform, store_url: null, url: r.homepage, homepage: r.homepage, store: null, notarized: null }, r.private ? null : token).catch(() => ({ store: null, notarized: null }));
     const [row] = (await sql.query(
       `insert into apps (user_id, repo_id, full_name, slug, name, description, language, private, homepage, url,
-         first_commit, last_commit, commits, active_days, active_days_30, best_streak_weeks, weekly, published, refreshed_at, stars, platform, active_dates, authors, owner_commits, store, notarized)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9,$10,$11,$12,$13,$14,$15,$16,true,now(),$17,$18,$19,$20,$21,$22,$23)
+         first_commit, last_commit, commits, active_days, active_days_30, best_streak_weeks, weekly, published, refreshed_at, stars, platform, active_dates, authors, owner_commits, store, notarized, revenue_source, revenue_declared_at)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9,$10,$11,$12,$13,$14,$15,$16,true,now(),$17,$18,$19,$20,$21,$22,$23,'declared',now())
        on conflict (repo_id) do update set description = excluded.description, language = excluded.language, homepage = excluded.homepage,
          first_commit = excluded.first_commit, last_commit = excluded.last_commit, commits = excluded.commits, active_days = excluded.active_days,
          active_days_30 = excluded.active_days_30, best_streak_weeks = excluded.best_streak_weeks, weekly = excluded.weekly, published = true, refreshed_at = now(),
-         stars = excluded.stars, platform = coalesce(apps.platform, excluded.platform), active_dates = excluded.active_dates, authors = coalesce(excluded.authors, apps.authors), owner_commits = coalesce(excluded.owner_commits, apps.owner_commits), store = coalesce(excluded.store, apps.store), notarized = coalesce(excluded.notarized, apps.notarized)
+         stars = excluded.stars, platform = coalesce(apps.platform, excluded.platform), active_dates = excluded.active_dates, authors = coalesce(excluded.authors, apps.authors), owner_commits = coalesce(excluded.owner_commits, apps.owner_commits), store = coalesce(excluded.store, apps.store), notarized = coalesce(excluded.notarized, apps.notarized),
+         revenue_source = coalesce(apps.revenue_source, 'declared'), revenue_declared_at = coalesce(apps.revenue_declared_at, now())
        returning id, slug, (xmax = 0) as inserted`,
       [user.id, r.id, r.full_name, slug, r.name, r.description, r.language, r.private, r.homepage || null,
        m.first_commit, m.last_commit, m.commits, m.active_days, m.active_days_30, m.best_streak_weeks, m.weekly, stars, platform, read.ledger, read.authors ?? 1, read.ownerCommits ?? null, sign.store && JSON.stringify(sign.store), sign.notarized && JSON.stringify(sign.notarized)],

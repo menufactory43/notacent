@@ -32,6 +32,11 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (!before || !(canEdit(before, user) || (before.unclaimed && isAdmin(user.login)))) return redirect(`${lang}/?erreur=fiche`, 302);
   // Le modèle économique : une info, sans effet sur le classement. Valeur inconnue : on garde celle d'avant.
   const pricing: Pricing = (PRICINGS as string[]).includes(String(f.get('pricing'))) ? (String(f.get('pricing')) as Pricing) : before.pricing;
+  // Le revenu : seul le maker le déclare, sur l'honneur, tant que l'app n'a pas déclaré son premier euro. Sans la case, rien n'est enregistré.
+  // L'admin qui remplit une fiche non réclamée ne déclare rien à la place de personne.
+  const maker = canEdit(before, user);
+  const declareZero = maker && !before.first_euro_at && f.get('revenue_zero') === 'on';
+  if (maker && !before.first_euro_at && !declareZero) return redirect(`${lang}/app/${slug}/modifier?erreur=revenu`, 302);
   // Le lien App Store : déclaré ici, vérifié chez Apple tout de suite, jamais gardé s'il ne mène à aucune app.
   // Champ vide mais lien de l'app déjà sur l'App Store : on le retrouve là, comme le fait le cron chaque nuit.
   const url = httpOnly(clean(f.get('url'), 500));
@@ -53,9 +58,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const altNames = typed.map(([k, x]) => known.find((r) => r.slug === k)?.name ?? x);
   const rows = (await sql.query(
     `update apps set url = $1, image_url = coalesce($2, image_url), longest = $3, tool = $4, pricing = $5, status = $6, name = coalesce($7, name),
-       image = coalesce($10, image), image_type = coalesce($11, image_type), tagline = $12, platform = coalesce($13, platform), takeover = $14, store_url = $15, store = $16, alternative_to = $17, alt_slugs = $18
+       image = coalesce($10, image), image_type = coalesce($11, image_type), tagline = $12, platform = coalesce($13, platform), takeover = $14, store_url = $15, store = $16, alternative_to = $17, alt_slugs = $18,
+       revenue_source = case when $19 then 'declared' else revenue_source end, revenue_declared_at = case when $19 then coalesce(revenue_declared_at, now()) else revenue_declared_at end
      where id = $9 and slug = $8 returning id, slug`,
-    [url, httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, before.id, image, imageType, clean(f.get('tagline'), 140), platform, takeover, declared ? storeUrl : null, store && JSON.stringify(store), altNames, altSlugs],
+    [url, httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, before.id, image, imageType, clean(f.get('tagline'), 140), platform, takeover, declared ? storeUrl : null, store && JSON.stringify(store), altNames, altSlugs, declareZero],
   )) as { id: number; slug: string }[];
   if (!rows.length) return redirect(`${lang}/?erreur=fiche`, 302);
   // Les pages « alternative à » touchées, anciennes et nouvelles, changent aussi.

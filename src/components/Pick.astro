@@ -25,6 +25,7 @@ const installUrl = `https://github.com/apps/${appSlug()}/installations/new`;
     <h1>{s.pickTitle}</h1>
     <p class="lede">{s.pickLede} <a href="https://github.com/menufactory43/notacent/blob/main/src/lib/metrics.ts">{s.hintSource}</a>.</p>
     {error && <p class="notice sk hand">{error}</p>}
+    {Astro.url.searchParams.get('erreur') === 'revenu' && <p class="notice sk hand">{s.errPickDeclare}</p>}
     <form method="post" action="/api/apps/publish">
       {repos.length === 0 && !error && <p class="hand empty">{s.pickNone}</p>}
       <ul class="repos">
@@ -43,6 +44,7 @@ const installUrl = `https://github.com/apps/${appSlug()}/installations/new`;
           </li>
         ))}
       </ul>
+      <label class="declare sk"><input type="checkbox" name="declare" required /><span class="body"><b>{s.pickDeclare}</b><span class="desc">{s.pickDeclareHint}</span></span></label>
       <div class="actions">
         <button class="sk sk-btn primary" type="submit" disabled={repos.length === 0}>{s.publish}</button>
         <a class="back hand" href={localePath(locale, '/')}>← Not a Cent</a>
@@ -68,6 +70,7 @@ input[type=checkbox]{width:22px;height:22px;margin-top:3px;accent-color:var(--re
 .body .desc:empty{display:none}
 .desc{color:var(--pencil);font-size:14px}
 .meta{color:var(--pencil);font-size:12px}
+.declare{margin:0 0 16px;border-style:dashed;background:var(--paper-2)}
 .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .back{color:var(--pencil);font-size:18px;text-decoration:none}
 .private{margin:18px 0 0;color:var(--pencil);font-size:18px}

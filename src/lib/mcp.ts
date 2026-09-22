@@ -21,7 +21,8 @@ function card(a: DbApp) {
     imageUrl: v.imageUrl ? new URL(v.imageUrl, SITE).toString() : null, bravos: v.bravos,
     githubStars: v.stars ?? 0, platform: v.platform ?? null, openToTakeover: v.takeover ?? false,
     // Ce que l'app remplace : « une alternative gratuite à Notion » est la question la plus posée.
-    freeAlternativeTo: (v.alternativeTo ?? []).map((x) => ({ name: x.name, listUrl: `${SITE}/en/alternative-a/${x.slug}` })),
+    // Une app payante n'est pas dans ces pages (listUrl renverrait 404) et n'est pas une alternative « gratuite » : liste vide.
+    freeAlternativeTo: v.pricing === 'paid' ? [] : (v.alternativeTo ?? []).map((x) => ({ name: x.name, listUrl: `${SITE}/en/alternative-a/${x.slug}` })),
     // Ce qu'un Mac vérifie avant d'ouvrir un binaire téléchargé : un assistant qui recommande une app Mac doit pouvoir le dire.
     appStore: v.store ? { url: v.store.url, name: v.store.name, seller: v.store.seller, kind: v.store.kind, checkedWithApple: v.store.at } : null,
     macSigning: v.notarized ? { level: v.notarized.level, seenIn: v.notarized.path || null, evidence: v.notarized.hit || null, readOn: v.notarized.at } : null,

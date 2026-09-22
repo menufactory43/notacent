@@ -4,7 +4,7 @@ import { t, localePath, type Locale } from '../i18n/strings';
 import type { App } from '../data/apps';
 import { currentUser } from '../lib/session';
 import { stripeReady, sponsorDays, sponsorCents, sponsorCurrency } from '../lib/stripe';
-import { sponsorUntil, activeSponsor, rankIn, relatedApps, type DbApp } from '../lib/db';
+import { sponsorUntil, activeSponsor, rankIn, relatedApps, altName, type DbApp } from '../lib/db';
 import { toView, declaredFree, declaredPricing } from '../lib/view';
 import { softwareLd, breadcrumbLd } from '../lib/seo';
 import { browsePath, browseLabel } from '../lib/browse';
@@ -40,7 +40,12 @@ const rankParts = [
 ].filter(Boolean) as string[];
 const related = row ? (await relatedApps(row).catch(() => [])).map(toView) : sample ? samples.filter((a) => a.slug !== app.slug && !a.sponsored).slice(0, 3) : [];
 // « Alternative gratuite à » : chaque nom mène à sa page, qui classe toutes les apps qui s'en réclament.
-const alts = (app.alternativeTo ?? []).map((x) => ({ name: x.name, href: browsePath({ kind: 'alt', value: x.slug }, locale) }));
+// On ne lie que les pages qui existent : une app payante ou pas publiée n'entre pas dans les pages « alternative à »,
+// son nom n'en crée donc aucune. Et « Alternative gratuite à » serait faux sur une app payante : la ligne ne s'affiche pas.
+const altOwn = !row || (row.published && row.pricing !== 'paid');
+const altList = app.pricing === 'paid' ? [] : (app.alternativeTo ?? []);
+const altLive = altOwn ? altList : (await Promise.all(altList.map(async (x) => ((await altName(x.slug).catch(() => null)) ? x : null)))).filter((x) => x !== null);
+const alts = altLive.map((x) => ({ name: x.name, href: browsePath({ kind: 'alt', value: x.slug }, locale) }));
 const host = (() => { try { return app.url ? new URL(app.url).host : ''; } catch { return ''; } })();
 // Fiche non réclamée : créée depuis le repo public. Pas de dofollow ni de badge tant que le maker ne l'a pas prise en main.
 const unclaimed = Boolean(app.unclaimed) && !mine;

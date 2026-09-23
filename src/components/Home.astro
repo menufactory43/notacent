@@ -5,6 +5,7 @@ import Feed from './Feed.astro';
 import Gains from './Gains.astro';
 import Gems from './Gems.astro';
 import Browse from './Browse.astro';
+import AppOfTheWeek from './AppOfTheWeek.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
 import { apps as samples, ranked as rankedSamples } from '../data/apps';
 import { rankedApps, doneApps, firstEuroApps, browseApps, activeSponsor, weeklyGems } from '../lib/db';
@@ -57,6 +58,7 @@ const seek = [
 ---
 <Base locale={locale} path="/" jsonLd={isSample ? undefined : siteLd(locale, board)}>
   {notice && <p class="notice sk hand">{notice}</p>}
+  <AppOfTheWeek locale={locale} />
   <section class="hero">
     <div>
       <h1 set:html={s.h1} />

@@ -1,0 +1,45 @@
+---
+import { t, localePath, type Locale } from '../i18n/strings';
+import { appOfTheWeek as a, withUtm } from '../data/appOfTheWeek';
+// L'encart éditorial en haut de l'accueil. Les données vivent dans src/data/appOfTheWeek.ts.
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const s = t(locale);
+const href = a ? withUtm(a.url[locale]) : '';
+---
+{a && (
+<aside class="aotw sk" aria-label={`${s.aotwLabel}, ${a.name}`}>
+  <span class="logo-app" aria-hidden="true">{a.imageUrl ? <img src={a.imageUrl} alt="" /> : a.name[0]}</span>
+  <div class="txt">
+    <p class="head">
+      <span class="stamp hand">{s.aotwLabel}</span>
+      <a class="name" href={href} rel="noopener sponsored">{a.name}</a>
+      {a.ours && <span class="ours hand">· {s.aotwOurs}</span>}
+    </p>
+    <p class="pitch">{a.pitch[locale]}</p>
+    <p class="price hand">{a.price[locale]}</p>
+  </div>
+  <div class="go">
+    <a class="sk sk-btn" href={href} rel="noopener sponsored">{s.aotwVisit} <span aria-hidden="true">↗</span></a>
+    {a.slug && <a class="fiche hand" href={localePath(locale, `/app/${a.slug}`)}>{s.aotwFiche}</a>}
+  </div>
+</aside>
+)}
+<style>
+.aotw{display:grid;grid-template-columns:auto 1fr auto;gap:14px 16px;align-items:center;padding:12px 16px;margin:0 0 28px;background:var(--paper-2);border-width:1.5px}
+.txt{min-width:0}
+.head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:0}
+.stamp{display:inline-block;transform:rotate(-3deg);border:2px solid var(--redpen);color:var(--redpen);font:700 16px/1 var(--hand);padding:3px 8px;border-radius:12px 40px 14px 44px/40px 12px 44px 14px}
+.name{font-weight:700;font-size:18px;text-decoration:none}
+.name:hover{text-decoration:underline}
+.ours{font:500 16px/1 var(--hand);color:var(--pencil)}
+.pitch{margin:4px 0 0;font-size:15px}
+.price{margin:2px 0 0;font:500 16px/1.2 var(--hand);color:var(--pencil)}
+.go{display:flex;flex-direction:column;align-items:center;gap:6px}
+.go .sk-btn{white-space:nowrap}
+.fiche{font:500 16px/1 var(--hand);color:var(--pencil)}
+@media (max-width:760px){
+  .aotw{grid-template-columns:auto 1fr;align-items:start}
+  .go{grid-column:1/-1;flex-direction:row;justify-content:flex-start;gap:14px}
+}
+</style>

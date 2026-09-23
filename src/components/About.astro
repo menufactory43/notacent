@@ -1,0 +1,165 @@
+---
+// La page À propos : ce qu'est l'annuaire, qui le fait, l'essentiel en <dl>. Les faits communs aux sites de Meffysto sont écrits à l'identique partout.
+import Base from '../layouts/Base.astro';
+import { localePath, type Locale } from '../i18n/strings';
+import { totals } from '../lib/db';
+import { SITE } from '../lib/seo';
+import { stripeReady, sponsorCents, sponsorDays, sponsorCurrency } from '../lib/stripe';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const fr = locale === 'fr';
+const L = (p: string) => localePath(locale, p);
+const repo = 'https://github.com/menufactory43/notacent';
+// Seuls chiffres de la page : ceux que le site calcule en direct. Rien en base, rien d'affiché.
+const tot = await totals().catch(() => ({ apps: 0, days: 0, firstEuro: 0 }));
+const sponsorPrice = stripeReady() ? new Intl.NumberFormat(locale, { style: 'currency', currency: sponsorCurrency().toUpperCase(), maximumFractionDigits: 0 }).format(sponsorCents() / 100) : null;
+const meffysto = { '@type': 'Person', name: 'Meffysto', url: 'https://github.com/menufactory43', sameAs: ['https://x.com/Meffysto69', 'https://github.com/menufactory43'] };
+const pageUrl = `${SITE}${L('/a-propos')}`;
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'AboutPage', '@id': pageUrl, url: pageUrl, inLanguage: locale,
+  name: fr ? 'À propos de Not a Cent' : 'About Not a Cent',
+  mainEntity: {
+    '@type': 'WebSite', '@id': `${SITE}/#site`, name: 'Not a Cent', url: fr ? SITE : `${SITE}/en`, inLanguage: ['fr', 'en'],
+    description: fr
+      ? "Un annuaire d'apps peaufinées pendant des mois qui n'ont pas encore gagné un centime, classées par jours actifs lus dans le repo GitHub. Le revenu est déclaré par le maker. Être listé ne coûte rien."
+      : "A directory of apps polished for months that haven't made a cent yet, ranked by active days read from the GitHub repo. Revenue is declared by the maker. Being listed costs nothing.",
+    author: meffysto, publisher: meffysto,
+  },
+  author: meffysto, publisher: meffysto,
+};
+// Les apps de Meffysto : libellés du brief commun, corrigés là où le site de l'app dit autre chose (le site fait foi).
+const others = fr ? [
+  ['Souffleuse', 'https://souffleuse.app', 'Autocomplétion IA 100 % locale, dans toutes les apps. Mac. Licence Studio à partir de 29 € (achat unique).'],
+  ['Fauconnier', 'https://fauconnier.app', 'Neuf agents de code sur un canvas, pilotés à la voix. Mac (+ Perchoir sur iPhone). Gratuit.'],
+  ['Daybard', 'https://daybard.com', 'Ta journée rejouée en épopée RPG le soir. iPhone et Mac.'],
+  ['TimeVault', 'https://timevault-wine.vercel.app', "Bloqueur d'apps : on scelle jusqu'à une échéance, ça n'ouvre que sur une preuve. iPhone, Mac. Gratuit."],
+  ['Lanes', 'https://menufactory43.github.io/lanes/', 'Tableau de bord Git en lecture seule. Mac. Gratuit, open source (MIT).'],
+] : [
+  ['Souffleuse', 'https://souffleuse.app', 'Fully local AI autocomplete, in every app. Mac. Studio licence from €29 (one-time purchase).'],
+  ['Fauconnier', 'https://fauconnier.app', 'Nine coding agents on a canvas, driven by voice. Mac (+ Perchoir on iPhone). Free.'],
+  ['Daybard', 'https://daybard.com', 'Your day replayed as an RPG epic in the evening. iPhone and Mac.'],
+  ['TimeVault', 'https://timevault-wine.vercel.app', 'App blocker: you seal until a deadline, and it only opens with a proof. iPhone, Mac. Free.'],
+  ['Lanes', 'https://menufactory43.github.io/lanes/', 'Read-only Git dashboard. Mac. Free, open source (MIT).'],
+];
+---
+<Base locale={locale} path="/a-propos" title={fr ? 'À propos' : 'About'} jsonLd={jsonLd} description={fr
+  ? "Not a Cent est un annuaire d'apps qui n'ont pas encore gagné un centime, classées par jours actifs lus sur GitHub. Qui le fait, comment ça marche, ce qui change."
+  : "Not a Cent is a directory of apps that haven't made a cent yet, ranked by active days read from GitHub. Who makes it, how it works, what is different."}>
+  <article class="sk page">
+    <h1>{fr ? 'À propos' : 'About'}</h1>
+    <p class="lede-p">{fr
+      ? "Not a Cent est un annuaire web qui classe des apps peaufinées pendant des mois, mais qui n'ont pas encore gagné un centime, pour les makers qui les construisent et pour ceux qui cherchent la prochaine pépite."
+      : "Not a Cent is a web directory that ranks apps polished for months that haven't made a cent yet, for the makers who build them and for people looking for the next gem."}</p>
+
+    <h2>{fr ? 'Ce que fait Not a Cent' : 'What Not a Cent does'}</h2>
+    <h3>{fr ? 'Il montre le travail, pas le revenu' : 'It shows the work, not the revenue'}</h3>
+    <p>{fr
+      ? "Chaque app est classée par jours actifs : les jours avec au moins un commit humain sur la branche par défaut, lus dans le repo GitHub. Dix commits le même jour comptent pour un. C'est le seul chiffre qui classe."
+      : 'Every app is ranked by active days: days with at least one human commit on the default branch, read from the GitHub repo. Ten commits on the same day count as one. It is the only number that ranks.'}</p>
+    <h3>{fr ? 'Il relit tout, chaque nuit' : 'It re-reads everything, every night'}</h3>
+    <p>{fr
+      ? "Chaque fiche est relue chaque nuit depuis GitHub : jours actifs, commits, série max, durée de vie. Sans commit pendant 90 jours, l'app passe en « terminée » ou « en pause »."
+      : 'Every card is re-read from GitHub every night: active days, commits, best streak, lifetime. After 90 days without a commit, the app moves to “done” or “paused”.'}</p>
+    <h3>{fr ? 'Il suit le premier euro' : 'It follows the first euro'}</h3>
+    <p>{fr
+      ? "Le jour où l'app gagne son premier euro, le maker le déclare avec la date. Elle reste listée et passe dans le classement « Premier euro », rangé lui aussi par jours actifs."
+      : 'The day the app makes its first euro, the maker declares it with the date. It stays listed and moves to the “First euro” board, also ranked by active days.'}</p>
+    <h3>{fr ? 'Il répond aux assistants' : 'It answers assistants'}</h3>
+    <p>{fr
+      ? "Un serveur MCP public, en lecture seule, sur /api/mcp : ChatGPT, Claude et les autres peuvent chercher une app, lire une fiche ou le classement. Ils voient exactement ce que montrent les pages."
+      : 'A public, read-only MCP server at /api/mcp: ChatGPT, Claude and the others can search apps, read a card or the board. They see exactly what the pages show.'}</p>
+
+    <h2>{fr ? 'Ce qui change des classements habituels' : 'What is different from the usual rankings'}</h2>
+    <h3>{fr ? 'Ni revenu, ni votes, ni étoiles' : 'No revenue, no votes, no stars'}</h3>
+    <p>{fr
+      ? "Le rang vient des jours actifs, rien d'autre. Les étoiles GitHub sont affichées mais ne classent jamais : elles disent qui n'a pas encore été vu. Le « bravo » est compté par app, pas par personne, et ne change pas le rang."
+      : 'The rank comes from active days, nothing else. GitHub stars are shown but never rank: they tell who has not been noticed yet. “Nice one” is counted per app, not per person, and does not change the rank.'}</p>
+    <h3>{fr ? '« Vérifié » ne s\'applique qu\'au travail' : '“Verified” only applies to the work'}</h3>
+    <p>{fr
+      ? "Le revenu ne se lit pas dans un repo. La fiche sépare les deux : « travail : vérifié dans le repo », « revenu : déclaré par le maker ». On n'écrit jamais « 0 € vérifié »."
+      : 'Revenue can’t be read in a repo. The card keeps them apart: “work: verified in the repo”, “revenue: declared by the maker”. We never write “$0 verified”.'}</p>
+    <h3>{fr ? 'Être listé ne coûte rien' : 'Being listed costs nothing'}</h3>
+    <p>{fr
+      ? "Le seul emplacement payant est l'emplacement sponsorisé de l'accueil. Il est étiqueté, ne change pas le rang, et il est réservé aux apps « Premier euro » : tant qu'une app est à zéro, être vue ne lui coûte rien."
+      : 'The only paid spot is the sponsored slot on the home page. It is labeled, it never changes the rank, and it is for “First euro” apps only: while an app is at zero, being seen costs it nothing.'}</p>
+    <h3>{fr ? 'La méthode et le code sont ouverts' : 'The method and the code are open'}</h3>
+    <p>{fr ? 'Ce qu\'on compte, ce qu\'on exclut et ce que le chiffre ne dit pas est écrit sur la page ' : 'What we count, what we exclude and what the number does not say is written on the '}<a href={L('/methode')}>{fr ? 'Méthode' : 'Method'}</a>{fr ? '. Le code du site est public sur ' : ' page. The site\'s code is public on '}<a href={repo}>GitHub</a>.</p>
+
+    <h2>{fr ? 'Pour qui' : 'Who it is for'}</h2>
+    <ul>
+      <li>{fr ? "Les makers indépendants qui peaufinent une app depuis des mois sans qu'elle ait rapporté un euro, quel que soit son modèle : gratuite, achat unique, abonnement, freemium." : 'Independent makers polishing an app for months without it making a euro, whatever its model: free, one-time purchase, subscription, freemium.'}</li>
+      <li>{fr ? 'Les makers dont le repo est privé : une seule permission « métadonnées » suffit, le code reste invisible.' : 'Makers with a private repo: a single “metadata” permission is enough, the code stays invisible.'}</li>
+      <li>{fr ? 'Ceux qui cherchent des apps peaufinées avant tout le monde, avant qu\'elles aient rapporté un centime.' : 'People looking for polished apps before everyone else, before they have made a cent.'}</li>
+      <li>{fr ? 'Ceux qui écrivent sur les apps indépendantes et veulent des chiffres à citer : la page ' : 'People writing about independent apps who want figures they can quote: the '}<a href={L('/chiffres')}>{fr ? 'Chiffres' : 'Figures'}</a>{fr ? ' donne des médianes, avec l\'effectif.' : ' page gives medians, with the sample size.'}</li>
+      <li>{fr ? 'Les assistants IA, par le serveur MCP.' : 'AI assistants, through the MCP server.'}</li>
+    </ul>
+
+    <h2>{fr ? 'Qui fait Not a Cent' : 'Who makes Not a Cent'}</h2>
+    <p>{fr
+      ? <>Not a Cent est fait par <b>Meffysto</b>, développeur indépendant en France. Il construit des apps Mac et iPhone seul, sans pub ni pistage publicitaire, et raconte tout en public sur X.</>
+      : <>Not a Cent is made by <b>Meffysto</b>, an independent developer in France. He builds Mac and iPhone apps on his own, with no ads and no ad tracking, and shares the whole process in public on X.</>}</p>
+    <p>{fr ? 'Liens : ' : 'Links: '}<a href="https://x.com/Meffysto69">X</a> · <a href="https://github.com/menufactory43">GitHub</a></p>
+
+    <h2>{fr ? 'Comment ça marche' : 'How it works'}</h2>
+    <ul>
+      <li><b>{fr ? 'Installation' : 'Setup'}</b> : {fr ? 'rien à installer, c\'est un site web, en français et en anglais. Pour lister une app : ' : 'nothing to install, it is a website, in French and English. To list an app: '}<a href={L('/ajouter')}>{fr ? 'connexion GitHub' : 'sign in with GitHub'}</a>{fr ? ', on coche ses repos, on remplit quatre champs (lien, image, ce qui a pris le plus de temps, outil) et on déclare sur l\'honneur que l\'app n\'a pas encore gagné d\'argent.' : ', tick your repos, fill four fields (link, image, what took the longest, tool) and declare on your honour that the app hasn\'t made money yet.'}</li>
+      <li><b>{fr ? 'Prix' : 'Price'}</b> : {fr ? 'gratuit pour lister et pour consulter.' : 'free to list and to browse.'}{sponsorPrice && (fr ? ` L'emplacement sponsorisé (apps « Premier euro » seulement) coûte ${sponsorPrice} pour ${sponsorDays()} jours.` : ` The sponsored slot (“First euro” apps only) costs ${sponsorPrice} for ${sponsorDays()} days.`)}</li>
+      <li><b>{fr ? 'Mises à jour' : 'Updates'}</b> : {fr ? 'les chiffres sont relus chaque nuit depuis GitHub. La fiche dit la date de la dernière lecture.' : 'numbers are re-read from GitHub every night. The card shows the date of the last read.'}</li>
+      <li><b>Support</b> : {fr ? 'une issue sur ' : 'an issue on '}<a href={`${repo}/issues`}>GitHub</a>{fr ? ' ou un mail à ' : ' or an email to '}<a href="mailto:meffysto@gmail.com">meffysto@gmail.com</a>.</li>
+      <li><b>{fr ? 'Données' : 'Data'}</b> : {fr ? 'on lit des dates de commit et des noms d\'auteurs, jamais une ligne de code ni un message de commit. Aucun jeton gardé à ton nom, pas de cookie tiers. Le détail est sur la page ' : 'we read commit dates and author names, never a line of code nor a commit message. No token kept in your name, no third-party cookie. The details are on the '}<a href={L('/confidentialite')}>{fr ? 'Confidentialité' : 'Privacy'}</a>{fr ? '.' : ' page.'}</li>
+    </ul>
+
+    <h2>{fr ? 'L\'essentiel' : 'Key facts'}</h2>
+    <dl class="facts">
+      <dt>{fr ? 'Nom' : 'Name'}</dt><dd>Not a Cent</dd>
+      <dt>Type</dt><dd>{fr ? "Annuaire d'apps pas encore rentables, classées par jours actifs lus sur GitHub" : 'Directory of apps not yet making money, ranked by active days read from GitHub'}</dd>
+      <dt>{fr ? 'Plateformes' : 'Platforms'}</dt><dd>{fr ? 'Web (français et anglais), serveur MCP pour les assistants' : 'Web (French and English), MCP server for assistants'}</dd>
+      <dt>{fr ? 'Prix' : 'Price'}</dt><dd>{fr ? 'Gratuit. Seul payant : l\'emplacement sponsorisé, réservé aux apps « Premier euro »' : 'Free. Only paid thing: the sponsored slot, for “First euro” apps only'}</dd>
+      <dt>{fr ? 'Lancé' : 'Launched'}</dt><dd>{fr ? 'Septembre 2026' : 'September 2026'}</dd>
+      {tot.apps > 0 && <><dt>{fr ? 'Apps listées' : 'Apps listed'}</dt><dd class="mono">{tot.apps} · {tot.days.toLocaleString(locale)} {fr ? 'jours actifs cumulés' : 'total active days'}</dd></>}
+      <dt>{fr ? 'Éditeur' : 'Publisher'}</dt><dd>{fr ? 'Meffysto, développeur indépendant, France' : 'Meffysto, independent developer, France'}</dd>
+      <dt>Site</dt><dd><a href={fr ? SITE : `${SITE}/en`}>notacent.app</a></dd>
+      <dt>Contact</dt><dd><a href="mailto:meffysto@gmail.com">meffysto@gmail.com</a></dd>
+      <dt>{fr ? 'Données / confidentialité' : 'Data / privacy'}</dt><dd>{fr ? 'Dates de commit et noms d\'auteurs seulement, jamais le code. ' : 'Commit dates and author names only, never the code. '}<a href={L('/confidentialite')}>{fr ? 'Confidentialité' : 'Privacy'}</a></dd>
+      <dt>{fr ? 'Code source' : 'Source code'}</dt><dd><a href={repo}>github.com/menufactory43/notacent</a></dd>
+      <dt>{fr ? 'Autres apps du même éditeur' : 'Other apps by the same maker'}</dt>
+      <dd>
+        <ul class="others">
+          {others.map(([name, url, what]) => <li><a href={url}>{name}</a> : {what}</li>)}
+        </ul>
+        <span class="note">{fr ? 'Aucune n\'est listée dans l\'annuaire : Not a Cent ne se liste pas lui-même, ni les apps de son éditeur.' : 'None of them is listed in the directory: Not a Cent does not list itself, nor its maker\'s apps.'}</span>
+      </dd>
+    </dl>
+
+    <h2>{fr ? 'Questions fréquentes' : 'Frequently asked questions'}</h2>
+    <h3>{fr ? 'Lister une app coûte quelque chose ?' : 'Does listing an app cost anything?'}</h3>
+    <p>{fr ? "Non. Être listé ne coûte rien, et être vu non plus tant que l'app est à zéro. Le seul emplacement payant est réservé aux apps qui ont déclaré leur premier euro." : 'No. Being listed costs nothing, and neither does being seen while the app is at zero. The only paid slot is for apps that have declared their first euro.'}</p>
+    <h3>{fr ? 'Mon app est payante, elle a sa place ?' : 'My app is paid, does it belong here?'}</h3>
+    <p>{fr ? "Oui, si elle n'a encore rien vendu. Le modèle économique est affiché pour info, le classement ne le regarde pas." : 'Yes, if it hasn’t sold anything yet. The business model is shown for information, the ranking ignores it.'}</p>
+    <h3>{fr ? 'Vous lisez mon code ?' : 'Do you read my code?'}</h3>
+    <p>{fr ? "Non. Un repo public est lu comme n'importe qui le lit sur github.com, et on n'en garde que les dates de commit et les auteurs. Un repo privé est lu par ses statistiques, avec la seule permission « métadonnées »." : 'No. A public repo is read the way anyone reads it on github.com, and we only keep commit dates and authors. A private repo is read through its statistics, with the single “metadata” permission.'}</p>
+    <h3>{fr ? "Comment vous savez qu'une app n'a rien gagné ?" : 'How do you know an app has made nothing?'}</h3>
+    <p>{fr ? "On ne le sait pas, on le demande : le maker le déclare sur l'honneur, et la fiche écrit « déclaré par le maker ». Si tu sais qu'une app listée gagne de l'argent, " : 'We don’t, we ask: the maker declares it on their honour, and the card says “declared by the maker”. If you know a listed app makes money, '}<a href={`${repo}/issues`}>{fr ? 'ouvre une issue' : 'open an issue'}</a>.</p>
+    <h3>{fr ? 'Et quand mon app gagne son premier euro ?' : 'And when my app makes its first euro?'}</h3>
+    <p>{fr ? "Tu le déclares depuis ta fiche, avec la date. L'app reste listée, passe au classement « Premier euro », et son badge prend un tampon « 1er € »." : 'You declare it from your card, with the date. The app stays listed, moves to the “First euro” board, and its badge gets a “1st €” stamp.'}</p>
+    <h3>{fr ? 'Pourquoi Not a Cent n\'est pas dans son propre classement ?' : 'Why is Not a Cent not in its own ranking?'}</h3>
+    <p>{fr ? 'Le site ne se liste pas lui-même : son repo est public, ça suffit.' : 'The site does not list itself: its repo is public, that is enough.'}</p>
+  </article>
+</Base>
+<style>
+.page{padding:32px 36px;max-width:760px;margin:0 auto}
+.page h1{font:700 44px/1 var(--hand);margin:0 0 12px}
+.page .lede-p{font-size:19px;line-height:1.5;margin:0 0 20px}
+.page h2{font:700 26px/1.1 var(--hand);margin:32px 0 8px}
+.page h3{font:700 17px/1.3 var(--body);margin:18px 0 4px}
+.page h3 + p{margin-top:0}
+.page p,.page li{font-size:17px;line-height:1.5}
+.page ul{padding-left:22px}
+.facts{display:grid;grid-template-columns:minmax(150px,max-content) 1fr;gap:8px 18px;margin:12px 0 0;border-top:2px dashed var(--faint);padding-top:12px}
+.facts dt{font:500 13px/1.6 var(--mono);color:var(--pencil);text-transform:uppercase;letter-spacing:.03em;padding-top:2px}
+.facts dd{margin:0;font-size:16px;line-height:1.5;overflow-wrap:anywhere}
+.facts .others{margin:0;padding-left:18px}
+.facts .others li{font-size:15px}
+.facts .note{display:block;font-size:13px;color:var(--pencil);margin-top:4px}
+@media (max-width:760px){.page{padding:24px 20px}.facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:10px}}
+</style>

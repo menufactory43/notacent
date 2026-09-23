@@ -7,7 +7,7 @@ export const GET: APIRoute = async () => {
   // Chaque fiche publiée, qu'elle soit au classement ou non : une app payante a une fiche publique elle aussi.
   const apps = await publishedFiches().catch(() => []);
   const pages: { fr: string; en: string; mod?: string; prio: string }[] = [
-    { fr: '/', en: '/en', prio: '1.0' }, { fr: '/ajouter', en: '/en/ajouter', prio: '0.5' }, { fr: '/methode', en: '/en/methode', prio: '0.6' }, { fr: '/chiffres', en: '/en/chiffres', prio: '0.7' }, { fr: '/confidentialite', en: '/en/confidentialite', prio: '0.2' },
+    { fr: '/', en: '/en', prio: '1.0' }, { fr: '/ajouter', en: '/en/ajouter', prio: '0.5' }, { fr: '/methode', en: '/en/methode', prio: '0.6' }, { fr: '/chiffres', en: '/en/chiffres', prio: '0.7' }, { fr: '/confidentialite', en: '/en/confidentialite', prio: '0.2' }, { fr: '/a-propos', en: '/en/a-propos', prio: '0.5' },
     ...apps.map((a) => ({ fr: `/app/${a.slug}`, en: `/en/app/${a.slug}`, mod: new Date(a.last_commit ?? a.created_at).toISOString().slice(0, 10), prio: '0.8' })),
   ];
   // Les pages « Parcourir » : chaque valeur qui a au moins une app, plus les intentions.

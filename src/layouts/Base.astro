@@ -62,7 +62,7 @@ const ogImage = new URL(image ?? (locale === 'fr' ? '/og.png' : '/og-en.png'), A
     <slot />
     <footer>
       <span class="hand f1">{s.foot1}</span>
-      <span>{s.foot2} · <a href={localePath(locale, '/methode')}>{s.method}</a> · <a href={localePath(locale, '/chiffres')}>{locale === 'fr' ? 'Chiffres' : 'Figures'}</a> · <a href={localePath(locale, '/confidentialite')}>{locale === 'fr' ? 'Confidentialité' : 'Privacy'}</a> · <a href="/api/mcp" title="Model Context Protocol">MCP</a></span>
+      <span>{s.foot2} · <a href={localePath(locale, '/methode')}>{s.method}</a> · <a href={localePath(locale, '/chiffres')}>{locale === 'fr' ? 'Chiffres' : 'Figures'}</a> · <a href={localePath(locale, '/confidentialite')}>{locale === 'fr' ? 'Confidentialité' : 'Privacy'}</a> · <a href={localePath(locale, '/a-propos')}>{locale === 'fr' ? 'À propos' : 'About'}</a> · <a href="/api/mcp" title="Model Context Protocol">MCP</a></span>
     </footer>
   </div>
 </body>

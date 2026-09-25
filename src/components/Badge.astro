@@ -4,8 +4,9 @@ import { SITE } from '../lib/seo';
 // Le badge, prêt à coller : la carte façon annuaire de lancement d'abord (le vrai SVG tel qu'il
 // s'affichera, en clair et en sombre), puis le badge compact pour qui aligne déjà une rangée de badges.
 // Un README s'écrit en Markdown : c'est cette ligne-là qu'on montre en premier.
-interface Props { locale: Locale; slug: string; days: number; title: string; seenAt?: string; firstEuro?: boolean }
-const { locale, slug, days, title, seenAt, firstEuro } = Astro.props;
+// Le code ne sert qu'au maker : un visiteur voit le badge, dans le thème du site, et de quoi avoir le sien.
+interface Props { locale: Locale; slug: string; days: number; title: string; seenAt?: string; firstEuro?: boolean; code?: boolean }
+const { locale, slug, days, title, seenAt, firstEuro, code = true } = Astro.props;
 const s = t(locale);
 const lang = locale === 'en' ? '&lang=en' : '';
 const cardPath = `/api/badge/${slug}.svg?style=card${lang}`;
@@ -18,6 +19,13 @@ const snippets = (path: string) => [
 ];
 const seen = seenAt ? new Date(seenAt).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : null;
 ---
+{!code ? (
+<section class="sk badge-block lite">
+  <img class="card light" src={cardPath} alt={alt} width="256" height="54" />
+  <img class="card dark" src={`${cardPath}&theme=dark`} alt={alt} width="256" height="54" />
+  <p class="hand yours"><a href={localePath(locale, '/ajouter')}>{s.badgeVisitor}</a></p>
+</section>
+) : (
 <section class="sk badge-block">
   <h2 class="hand">{title}</h2>
   <div class="cards">
@@ -43,6 +51,7 @@ const seen = seenAt ? new Date(seenAt).toLocaleDateString(locale, { day: 'numeri
   </details>
   <small>{s.badgeHint}{seen && <> <b class="hand seen">✓ {s.badgeSeen(seen)}</b></>}</small>
 </section>
+)}
 <script>
   document.querySelectorAll<HTMLButtonElement>('.badge-block .copy').forEach((b) => b.addEventListener('click', async () => {
     await navigator.clipboard.writeText(b.dataset.code ?? '');
@@ -67,4 +76,15 @@ details > *+*{margin-top:10px}
 pre{margin:0;padding:10px 12px;border:1.5px dashed var(--pencil);border-radius:6px;white-space:pre-wrap;word-break:break-all;background:var(--paper);font-size:12px}
 small{color:var(--pencil);font-size:13px}
 .seen{color:var(--ink);font-size:16px}
+.lite{align-items:flex-start;justify-content:center}
+.lite .dark{display:none}
+@media (prefers-color-scheme: dark){
+  :global(:root:not([data-theme="light"])) .lite .light{display:none}
+  :global(:root:not([data-theme="light"])) .lite .dark{display:block}
+}
+:global(:root[data-theme="dark"]) .lite .light{display:none}
+:global(:root[data-theme="dark"]) .lite .dark{display:block}
+.yours{margin:0;font-size:17px}
+.yours a{color:var(--pencil);text-decoration:none;border-bottom:1.5px dashed var(--faint)}
+.yours a:hover{color:var(--ink);border-bottom-color:var(--ink)}
 </style>

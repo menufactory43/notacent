@@ -17,6 +17,9 @@ export async function createCheckout(o: { appId: number; slug: string; name: str
     cancel_url: `${o.origin}${o.locale === 'en' ? '/en' : ''}/app/${o.slug}`,
     'metadata[app_id]': String(o.appId),
     'metadata[slug]': o.slug,
+    // Le compte Stripe est partagé (Daybard, Opuscule…) : le paiement dit lui-même qu'il vient de Not a Cent.
+    'payment_intent_data[description]': `Not a Cent · emplacement sponsorisé · ${o.slug}`,
+    'payment_intent_data[metadata][produit]': 'notacent',
     locale: o.locale === 'en' ? 'en' : 'fr',
   });
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {

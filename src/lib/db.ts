@@ -69,6 +69,18 @@ export async function totals(): Promise<{ apps: number; days: number; firstEuro:
   const [r] = (await sql.query(`select count(*)::int as apps, coalesce(sum(a.active_days),0)::int as days, count(*) filter (where ${FIRST_EURO})::int as "firstEuro" from apps a where ${ELIGIBLE}`)) as { apps: number; days: number; firstEuro: number }[];
   return r;
 }
+// La page Sponsoriser : ce que voit un annonceur, calculé en direct. Les abonnés aux alertes ne s'affichent qu'à partir de dix.
+export async function sponsorAudience(): Promise<{ apps: number; makers: number; claimed: number; clicks: number; days: number; subscribers: number }> {
+  const none = { apps: 0, makers: 0, claimed: 0, clicks: 0, days: 0, subscribers: 0 };
+  if (!hasDb) return none;
+  const [r] = (await sql.query(
+    `select count(*)::int as apps, count(distinct a.user_id)::int as makers, count(distinct a.user_id) filter (where u.claimed)::int as claimed,
+            coalesce(sum(a.clicks),0)::int as clicks, coalesce(sum(a.active_days),0)::int as days,
+            (select count(distinct email)::int from alerts where confirmed) as subscribers
+     from apps a join users u on u.id = a.user_id where ${ELIGIBLE}`,
+  )) as (typeof none)[];
+  return r ?? none;
+}
 export async function recentActivity(limit = 8) {
   if (!hasDb) return [];
   return (await sql.query(

@@ -80,8 +80,8 @@ const others = fr ? [
       : 'Revenue can’t be read in a repo. The card keeps them apart: “work: verified in the repo”, “revenue: declared by the maker”. We never write “$0 verified”.'}</p>
     <h3>{fr ? 'Être listé ne coûte rien' : 'Being listed costs nothing'}</h3>
     <p>{fr
-      ? "Le seul emplacement payant est l'emplacement sponsorisé de l'accueil. Il est étiqueté, ne change pas le rang, et il est réservé aux apps « Premier euro » : tant qu'une app est à zéro, être vue ne lui coûte rien."
-      : 'The only paid spot is the sponsored slot on the home page. It is labeled, it never changes the rank, and it is for “First euro” apps only: while an app is at zero, being seen costs it nothing.'}</p>
+      ? "Pour une app, le seul emplacement payant est l'emplacement sponsorisé de l'accueil. Il est étiqueté, ne change pas le rang, et il est réservé aux apps « Premier euro » : tant qu'une app est à zéro, être vue ne lui coûte rien. Le site accepte aussi un sponsor, une marque utile aux makers : étiqueté lui aussi, il n'entre jamais dans le classement."
+      : 'For an app, the only paid spot is the sponsored slot on the home page. It is labeled, it never changes the rank, and it is for “First euro” apps only: while an app is at zero, being seen costs it nothing. The site also takes one sponsor, a brand useful to makers: labeled too, it never enters the ranking.'}</p>
     <h3>{fr ? 'La méthode et le code sont ouverts' : 'The method and the code are open'}</h3>
     <p>{fr ? 'Ce qu\'on compte, ce qu\'on exclut et ce que le chiffre ne dit pas est écrit sur la page ' : 'What we count, what we exclude and what the number does not say is written on the '}<a href={L('/methode')}>{fr ? 'Méthode' : 'Method'}</a>{fr ? '. Le code du site est public sur ' : ' page. The site\'s code is public on '}<a href={repo}>GitHub</a>.</p>
 
@@ -114,7 +114,7 @@ const others = fr ? [
       <dt>{fr ? 'Nom' : 'Name'}</dt><dd>Not a Cent</dd>
       <dt>Type</dt><dd>{fr ? "Annuaire d'apps pas encore rentables, classées par jours actifs lus sur GitHub" : 'Directory of apps not yet making money, ranked by active days read from GitHub'}</dd>
       <dt>{fr ? 'Plateformes' : 'Platforms'}</dt><dd>{fr ? 'Web (français et anglais), serveur MCP pour les assistants' : 'Web (French and English), MCP server for assistants'}</dd>
-      <dt>{fr ? 'Prix' : 'Price'}</dt><dd>{fr ? 'Gratuit. Seul payant : l\'emplacement sponsorisé, réservé aux apps « Premier euro »' : 'Free. Only paid thing: the sponsored slot, for “First euro” apps only'}</dd>
+      <dt>{fr ? 'Prix' : 'Price'}</dt><dd>{fr ? 'Gratuit. Seul payant pour une app : l\'emplacement sponsorisé, réservé aux apps « Premier euro »' : 'Free. Only paid thing for an app: the sponsored slot, for “First euro” apps only'}</dd>
       <dt>{fr ? 'Lancé' : 'Launched'}</dt><dd>{fr ? 'Septembre 2026' : 'September 2026'}</dd>
       {tot.apps > 0 && <><dt>{fr ? 'Apps listées' : 'Apps listed'}</dt><dd class="mono">{tot.apps} · {tot.days.toLocaleString(locale)} {fr ? 'jours actifs cumulés' : 'total active days'}</dd></>}
       <dt>{fr ? 'Éditeur' : 'Publisher'}</dt><dd>{fr ? 'Meffysto, développeur indépendant, France' : 'Meffysto, independent developer, France'}</dd>

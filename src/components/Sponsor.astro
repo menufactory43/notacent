@@ -1,0 +1,87 @@
+---
+// La page Sponsoriser : une marque utile aux makers, une seule place, jamais dans le classement.
+// Rien n'est vendu en libre-service : on en parle par mail, puis l'emplacement se code pour le premier sponsor.
+import Base from '../layouts/Base.astro';
+import { localePath, type Locale } from '../i18n/strings';
+import { sponsorAudience } from '../lib/db';
+import { SITE } from '../lib/seo';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const fr = locale === 'fr';
+const L = (p: string) => localePath(locale, p);
+// Prix fondateur : gardé tant que le sponsor reste. À revoir à 20 000 visites par mois (SUITE.md, « Plus tard »).
+const PRICE_EUR = 49, MIN_MONTHS = 3;
+const price = new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(PRICE_EUR);
+const n = await sponsorAudience().catch(() => ({ apps: 0, makers: 0, claimed: 0, clicks: 0, days: 0, subscribers: 0 }));
+const num = (x: number) => x.toLocaleString(locale);
+const mail = `mailto:meffysto@gmail.com?subject=${encodeURIComponent(fr ? 'Sponsor Not a Cent' : 'Sponsoring Not a Cent')}`;
+const pageUrl = `${SITE}${L('/sponsor')}`;
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'WebPage', '@id': pageUrl, url: pageUrl, inLanguage: locale,
+  name: fr ? 'Sponsoriser Not a Cent' : 'Sponsor Not a Cent',
+  offers: { '@type': 'Offer', name: fr ? 'Sponsor fondateur' : 'Founding sponsor', price: String(PRICE_EUR), priceCurrency: 'EUR', url: pageUrl },
+};
+---
+<Base locale={locale} path="/sponsor" title={fr ? 'Sponsoriser' : 'Sponsor'} jsonLd={jsonLd} description={fr
+  ? `Une place de sponsor sur Not a Cent, l'annuaire des apps qui n'ont pas encore gagné un centime : ${num(n.apps)} apps, ${num(n.makers)} makers. Jamais dans le classement. ${price} par mois.`
+  : `One sponsor spot on Not a Cent, the directory of apps that haven't made a cent yet: ${num(n.apps)} apps, ${num(n.makers)} makers. Never in the ranking. ${price} a month.`}>
+  <article class="sk page">
+    <h1>{fr ? 'Sponsoriser Not a Cent' : 'Sponsor Not a Cent'}</h1>
+    <p class="lede-p">{fr
+      ? "Ici passent des makers qui construisent une app depuis des mois et n'ont pas encore gagné leur premier euro. Ils cherchent un moyen d'encaisser, d'héberger, de mesurer, de se faire voir. Si ton outil les aide, il y a une place pour lui."
+      : "The people here are makers who have been building an app for months and haven't made their first euro yet. They need a way to get paid, to host, to measure, to be seen. If your tool helps them, there is a spot for it."}</p>
+
+    <h2>{fr ? 'Les chiffres, en direct' : 'The numbers, live'}</h2>
+    <dl class="nums">
+      <div><dt>{fr ? 'apps listées' : 'apps listed'}</dt><dd class="mono">{num(n.apps)}</dd></div>
+      <div><dt>makers</dt><dd class="mono">{num(n.makers)}</dd></div>
+      <div><dt>{fr ? 'jours de commits derrière' : 'days of commits behind them'}</dt><dd class="mono">{num(n.days)}</dd></div>
+      <div><dt>{fr ? 'clics vers les apps' : 'clicks out to the apps'}</dt><dd class="mono">{num(n.clicks)}</dd></div>
+      {n.subscribers >= 10 && <div><dt>{fr ? 'abonnés aux alertes' : 'alert subscribers'}</dt><dd class="mono">{num(n.subscribers)}</dd></div>}
+    </dl>
+    <p class="note">{fr
+      ? <>Le site a ouvert en septembre 2026 et il est encore petit : c'est pour ça que le prix l'est aussi. Les visites du mois (mesurées par Umami, sans cookie) te sont envoyées telles quelles sur demande. Les makers viennent de GitHub : {num(n.claimed)} ont déjà réclamé leur fiche.</>
+      : <>The site opened in September 2026 and it is still small: that is why the price is too. This month's visits (measured by Umami, cookie-free) are sent to you as they are, on request. Makers come from GitHub: {num(n.claimed)} have already claimed their card.</>}</p>
+
+    <h2>{fr ? 'Ce que tu as' : 'What you get'}</h2>
+    <ul>
+      <li>{fr ? 'Ton logo, ton nom et une phrase en pied de chaque page du site, en français et en anglais.' : 'Your logo, your name and one line at the foot of every page of the site, in French and English.'}</li>
+      <li>{fr ? <>« Présenté par » en tête de la page <a href={L('/chiffres')}>Chiffres</a>, celle que citent ceux qui écrivent sur les apps indépendantes.</> : <>“Presented by” at the top of the <a href={L('/chiffres')}>Figures</a> page, the one people quote when they write about independent apps.</>}</li>
+      <li>{fr ? "Une ligne dans le mail hebdomadaire des alertes, envoyé aux makers et aux chercheurs de pépites qui l'ont demandé." : 'One line in the weekly alerts email, sent to the makers and gem hunters who asked for it.'}</li>
+      <li>{fr ? 'Chaque mois, le nombre de clics vers ton site, compté par Not a Cent.' : 'Every month, the number of clicks to your site, counted by Not a Cent.'}</li>
+    </ul>
+
+    <h2>{fr ? 'Les règles' : 'The rules'}</h2>
+    <ul>
+      <li>{fr ? "Jamais dans le classement, jamais sur une fiche d'app. Le sponsor ne change aucun rang." : 'Never in the ranking, never on an app card. The sponsor changes no rank.'}</li>
+      <li>{fr ? <>Toujours étiqueté « sponsor », avec un lien marqué <code>rel="sponsored"</code>.</> : <>Always labeled “sponsor”, with a link marked <code>rel="sponsored"</code>.</>}</li>
+      <li>{fr ? 'Pas de pixel, pas de cookie, pas de pistage des visiteurs.' : 'No pixel, no cookie, no visitor tracking.'}</li>
+      <li>{fr ? "Une seule place à la fois, pour un outil utile à quelqu'un qui cherche son premier euro : paiement, hébergement, outils de dev, mesure d'audience, e-mail. Pas de crypto ni de jeux d'argent." : 'One spot at a time, for a tool that helps someone chasing their first euro: payments, hosting, dev tools, analytics, email. No crypto, no gambling.'}</li>
+    </ul>
+
+    <h2>{fr ? 'Le prix' : 'The price'}</h2>
+    <p class="price"><span class="mono big">{price}</span> {fr ? `par mois, ${MIN_MONTHS} mois au moins.` : `a month, ${MIN_MONTHS} months minimum.`}</p>
+    <p>{fr ? 'Prix fondateur : il reste le tien tant que tu restes, même quand le site grandit.' : 'Founding price: it stays yours for as long as you stay, even as the site grows.'}</p>
+    <p><a class="sk sk-btn" href={mail}>{fr ? 'Écrire pour réserver la place' : 'Email to book the spot'} →</a></p>
+    <p class="note">{fr
+      ? <>Tu es un maker et tu veux mettre ton app en avant ? C'est l'<a href={L('/a-propos')}>emplacement sponsorisé</a> de l'accueil, réservé aux apps « Premier euro ».</>
+      : <>A maker who wants to feature an app? That's the <a href={L('/a-propos')}>sponsored slot</a> on the home page, for “First euro” apps only.</>}</p>
+  </article>
+</Base>
+<style>
+.page{padding:32px 36px;max-width:760px;margin:0 auto}
+.page h1{font:700 44px/1 var(--hand);margin:0 0 12px}
+.page .lede-p{font-size:19px;line-height:1.5;margin:0 0 20px}
+.page h2{font:700 26px/1.1 var(--hand);margin:32px 0 8px}
+.page p,.page li{font-size:17px;line-height:1.5}
+.page ul{padding-left:22px}
+.page li{margin-bottom:6px}
+.nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0 10px}
+.nums div{border:2px dashed var(--faint);border-radius:10px;padding:12px 14px}
+.nums dt{font:500 13px/1.4 var(--mono);color:var(--pencil);text-transform:uppercase;letter-spacing:.03em}
+.nums dd{margin:4px 0 0;font-size:30px;line-height:1}
+.note{color:var(--pencil);font-size:15px !important}
+.price{margin:8px 0 4px}
+.price .big{font-size:34px;color:var(--ink)}
+@media (max-width:760px){.page{padding:24px 20px}}
+</style>

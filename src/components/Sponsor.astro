@@ -14,7 +14,7 @@ const PRICE_EUR = 49, MIN_MONTHS = 3;
 const price = new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(PRICE_EUR);
 const n = await sponsorAudience().catch(() => ({ apps: 0, makers: 0, claimed: 0, clicks: 0, days: 0, subscribers: 0 }));
 const num = (x: number) => x.toLocaleString(locale);
-const mail = `mailto:meffysto@gmail.com?subject=${encodeURIComponent(fr ? 'Sponsor Not a Cent' : 'Sponsoring Not a Cent')}`;
+const mail = `mailto:gabriel@getnotacent.com?subject=${encodeURIComponent(fr ? 'Sponsor Not a Cent' : 'Sponsoring Not a Cent')}`;
 const pageUrl = `${SITE}${L('/sponsor')}`;
 const jsonLd = {
   '@context': 'https://schema.org', '@type': 'WebPage', '@id': pageUrl, url: pageUrl, inLanguage: locale,

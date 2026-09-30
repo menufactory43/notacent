@@ -1,0 +1,6 @@
+---
+import NotFound from '../components/NotFound.astro';
+export const prerender = false;
+// Une seule page 404 pour les deux langues : la langue se lit dans le chemin demandé.
+---
+<NotFound locale={Astro.url.pathname.startsWith('/en/') || Astro.url.pathname === '/en' ? 'en' : 'fr'} />

@@ -1,8 +1,10 @@
 ---
 import Edit from '../../../components/Edit.astro';
+import NotFound from '../../../components/NotFound.astro';
 import { editAccess } from '../../../lib/guard';
 export const prerender = false;
 const access = await editAccess(Astro.cookies, 'fr', Astro.params.slug ?? '');
 if (access instanceof Response) return access;
+if (!('app' in access)) Astro.response.status = 'notYours' in access ? 403 : 404;
 ---
-<Edit locale="fr" user={access.user} app={access.app} />
+{'app' in access ? <Edit locale="fr" user={access.user} app={access.app} /> : <NotFound locale="fr" notYours={'notYours' in access ? access.notYours : undefined} />}

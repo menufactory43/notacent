@@ -1,0 +1,47 @@
+---
+// Le 404 du site, et sa variante sur /modifier quand la fiche existe mais n'est pas à la personne connectée :
+// on dit à qui elle est et comment changer de compte, plutôt qu'un « introuvable » qui fait croire à une panne.
+import Base from '../layouts/Base.astro';
+import { localePath, type Locale } from '../i18n/strings';
+interface Props { locale: Locale; notYours?: { slug: string; owner: string; me: string } }
+const { locale, notYours } = Astro.props;
+const fr = locale === 'fr';
+const L = (p: string) => localePath(locale, p);
+---
+<Base locale={locale} path={notYours ? `/app/${notYours.slug}/modifier` : '/'} title={notYours ? (fr ? 'Pas ta fiche' : 'Not your card') : (fr ? 'Page introuvable' : 'Page not found')}>
+  <section class="nf">
+    {notYours ? (
+      <>
+        <h1>{fr ? 'Cette fiche n\'est pas à toi' : 'This card isn\'t yours'}</h1>
+        <p class="lede">{fr ? <>Elle appartient à <b>@{notYours.owner}</b>, et tu es connecté en tant que <b>@{notYours.me}</b>.</> : <>It belongs to <b>@{notYours.owner}</b>, and you're signed in as <b>@{notYours.me}</b>.</>}</p>
+        <p>{fr
+          ? 'Si c\'est ton app, déconnecte-toi ici, puis reconnecte-toi avec le bon compte GitHub. Si GitHub te reconnecte tout seul avec le mauvais, déconnecte-toi aussi sur github.com.'
+          : 'If it\'s your app, sign out here, then sign back in with the right GitHub account. If GitHub signs you straight back in as the wrong one, sign out on github.com too.'}</p>
+        <div class="go">
+          <form method="post" action="/api/auth/logout">
+            <input type="hidden" name="back" value={L(`/app/${notYours.slug}/modifier`)} />
+            <button class="sk sk-btn primary" type="submit">{fr ? 'Changer de compte' : 'Switch account'}</button>
+          </form>
+          <a class="sk sk-btn" href={L(`/app/${notYours.slug}`)}>{fr ? 'Voir la fiche' : 'See the card'}</a>
+        </div>
+      </>
+    ) : (
+      <>
+        <h1>{fr ? 'Rien ici' : 'Nothing here'}</h1>
+        <p class="lede">{fr ? 'Cette page n\'existe pas, ou plus. Une fiche peut avoir été retirée par son maker.' : 'This page doesn\'t exist, or not anymore. A maker may have taken their card down.'}</p>
+        <div class="go">
+          <a class="sk sk-btn primary" href={L('/')}>{fr ? 'Retour à l\'annuaire' : 'Back to the directory'}</a>
+        </div>
+      </>
+    )}
+  </section>
+</Base>
+<style>
+.nf{padding:48px 36px;max-width:640px;margin:0 auto}
+.nf h1{font:700 44px/1 var(--hand);margin:0 0 14px}
+.nf .lede{font-size:19px;line-height:1.5;margin:0 0 12px}
+.nf p{font-size:17px;line-height:1.5}
+.go{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+.go form{margin:0}
+@media (max-width:760px){.nf{padding:32px 16px}}
+</style>

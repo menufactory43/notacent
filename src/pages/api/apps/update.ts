@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sql, appBySlug, canEdit, setMakers, GH_LOGIN, PRICINGS, type Pricing } from '../../../lib/db';
 import { currentUser } from '../../../lib/session';
-import { PLATFORMS } from '../../../lib/platform';
+import { cleanPlatforms } from '../../../lib/platform';
 import { pingIndexNow, appPaths } from '../../../lib/indexnow';
 import { storeIdFrom, lookupStore } from '../../../lib/signing';
 import { slugOf } from '../../../lib/browse';
@@ -19,7 +19,6 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const slug = clean(f.get('slug'), 120);
   const tool = TOOLS.includes(String(f.get('tool'))) ? String(f.get('tool')) : null;
   const status = ['polishing', 'done', 'paused'].includes(String(f.get('status'))) ? String(f.get('status')) : 'polishing';
-  const platform = (PLATFORMS as readonly string[]).includes(String(f.get('platform'))) ? String(f.get('platform')) : null;
   const takeover = f.get('takeover') === 'on';
   const file = f.get('image');
   let image: Buffer | null = null, imageType: string | null = null;
@@ -28,6 +27,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     image = Buffer.from(await file.arrayBuffer()); imageType = file.type;
   }
   const before = slug ? await appBySlug(slug) : null;
+  // Rien de coché : on garde ce qu'on avait plutôt que de vider la fiche.
+  const platforms = cleanPlatforms(f.getAll('platforms'), before?.platform);
   // Une fiche non réclamée n'a personne pour la remplir : l'admin peut le faire en attendant son maker.
   if (!before || !(canEdit(before, user) || (before.unclaimed && isAdmin(user.login)))) return redirect(`${lang}/?erreur=fiche`, 302);
   // Le modèle économique : une info, sans effet sur le classement. Valeur inconnue : on garde celle d'avant.
@@ -58,10 +59,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const altNames = typed.map(([k, x]) => known.find((r) => r.slug === k)?.name ?? x);
   const rows = (await sql.query(
     `update apps set url = $1, image_url = coalesce($2, image_url), longest = $3, tool = $4, pricing = $5, status = $6, name = coalesce($7, name),
-       image = coalesce($10, image), image_type = coalesce($11, image_type), tagline = $12, platform = coalesce($13, platform), takeover = $14, store_url = $15, store = $16, alternative_to = $17, alt_slugs = $18,
+       image = coalesce($10, image), image_type = coalesce($11, image_type), tagline = $12, platforms = case when cardinality($13::text[]) > 0 then $13::text[] else platforms end, takeover = $14, store_url = $15, store = $16, alternative_to = $17, alt_slugs = $18,
        revenue_source = case when $19 then 'declared' else revenue_source end, revenue_declared_at = case when $19 then coalesce(revenue_declared_at, now()) else revenue_declared_at end
      where id = $9 and slug = $8 returning id, slug`,
-    [url, httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, before.id, image, imageType, clean(f.get('tagline'), 140), platform, takeover, declared ? storeUrl : null, store && JSON.stringify(store), altNames, altSlugs, declareZero],
+    [url, httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, before.id, image, imageType, clean(f.get('tagline'), 140), platforms, takeover, declared ? storeUrl : null, store && JSON.stringify(store), altNames, altSlugs, declareZero],
   )) as { id: number; slug: string }[];
   if (!rows.length) return redirect(`${lang}/?erreur=fiche`, 302);
   // Les pages « alternative à » touchées, anciennes et nouvelles, changent aussi.

@@ -109,13 +109,13 @@ export async function readNotarized(token: string, fullName: string): Promise<No
 // Ce que le cron relit chaque nuit, et ce que la publication lit une première fois.
 // Le lien App Store vaut pour toutes les plateformes ; la notarisation ne se lit que sur un repo public d'app Mac.
 // En cas de pépin (Apple ou GitHub qui ne répond pas), on garde ce qu'on savait plutôt que d'effacer.
-export interface SigningIn { full_name: string; private: boolean; platform: string | null; store_url: string | null; url?: string | null; homepage?: string | null; store: Store | null; notarized: Notarized | null }
+export interface SigningIn { full_name: string; private: boolean; platforms: string[] | null; store_url: string | null; url?: string | null; homepage?: string | null; store: Store | null; notarized: Notarized | null }
 export async function refreshSigning(a: SigningIn, token: string | null): Promise<{ store: Store | null; notarized: Notarized | null }> {
   const id = storeIdFrom(a.store_url) ?? storeIdFrom(a.url) ?? storeIdFrom(a.homepage);
   const store = id ? await lookupStore(id).catch((e) => { console.error('App Store', a.full_name, e); return a.store; }) : null;
   // La lecture coûte une arborescence et une poignée de fichiers : une fois par semaine suffit, un workflow ne bouge pas tous les jours.
   const fresh = a.notarized && Date.now() - Date.parse(a.notarized.at) < 7 * 86_400_000;
-  const mac = !a.private && token && a.platform === 'Mac';
+  const mac = !a.private && token && a.platforms?.includes('Mac');
   const notarized = !mac ? null : fresh ? a.notarized : await readNotarized(token!, a.full_name).catch((e) => { console.error('notarisation', a.full_name, e); return a.notarized; });
   return { store, notarized };
 }

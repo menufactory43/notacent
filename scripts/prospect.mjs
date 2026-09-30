@@ -10,7 +10,7 @@
 import { execSync } from 'node:child_process';
 import { neon } from '@neondatabase/serverless';
 import { compute, isBot } from '../src/lib/work.ts';
-import { guessPlatform } from '../src/lib/platform.ts';
+import { guessPlatforms } from '../src/lib/platform.ts';
 
 const url = process.env.DATABASE_URL;
 if (!url) { console.error('DATABASE_URL manquante'); process.exit(1); }
@@ -157,7 +157,7 @@ for (const name of names) {
          on conflict (repo_id) do update set stars = excluded.stars, pushed_at = excluded.pushed_at, metrics = excluded.metrics, score = excluded.score`,
         [r.id, r.full_name, r.name, r.description, r.language, r.homepage, r.topics ?? [], r.stargazers_count, contributors.length || 1, Boolean(release), r.created_at, r.pushed_at,
          r.owner.id, r.owner.login, owner.name ?? null, owner.avatar_url ?? null, owner.email ?? null, commitEmail, owner.blog || null, owner.twitter_username ?? null, owner.location ?? null,
-         JSON.stringify({ ...m, platform: guessPlatform({ language: r.language, topics: r.topics, name: r.name, description: r.description, homepage: r.homepage }) }), sc, name],
+         JSON.stringify({ ...m, platforms: guessPlatforms({ language: r.language, topics: r.topics, name: r.name, description: r.description, homepage: r.homepage }) }), sc, name],
       );
       known.add(String(r.id));
       kept++;

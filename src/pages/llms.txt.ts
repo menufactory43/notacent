@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { rankedApps, doneApps, firstEuroApps, browseCounts, altCounts, INTENTS } from '../lib/db';
 import { browsePath, browseLabel } from '../lib/browse';
 import { toView, declaredPricing, revenueState } from '../lib/view';
+import { platformsOf } from '../lib/platform';
 import { SITE } from '../lib/seo';
 export const prerender = false;
 export const GET: APIRoute = async () => {
@@ -18,7 +19,7 @@ export const GET: APIRoute = async () => {
   };
   // La phrase du maker, terminée par un point s'il l'a oublié : la suite de la ligne ne s'y colle pas.
   const sentence = (t: string) => (t.trim() ? `${t.trim()}${/[.!?…]$/.test(t.trim()) ? '' : '.'} ` : '');
-  const line = (a: ReturnType<typeof toView>) => `- [${a.name}](${SITE}/en/app/${a.slug}): ${sentence(a.tagline ?? a.longest.en ?? '')}${model(a)}${revenue(a)}${a.platform ? `${a.platform}, ` : ''}${a.language || ''} by ${[a.owner, ...(a.comakers ?? [])].map((l) => `@${l}`).join(', ')}, built with ${a.tool}${a.alternativeTo?.length ? `, alternative to ${a.alternativeTo.map((x) => x.name).join(', ')}` : ''}, ${a.activeDays} active days, ${a.commits} commits since ${a.firstCommit.slice(0, 10)}, ${a.stars ?? 0} GitHub stars${a.takeover ? ', open to a takeover' : ''}.${a.url ? ` App: ${a.url}` : ''}${a.repo ? ` Repo: ${a.repo}` : ''}`;
+  const line = (a: ReturnType<typeof toView>) => `- [${a.name}](${SITE}/en/app/${a.slug}): ${sentence(a.tagline ?? a.longest.en ?? '')}${model(a)}${revenue(a)}${platformsOf(a).length ? `${platformsOf(a).join('/')}, ` : ''}${a.language || ''} by ${[a.owner, ...(a.comakers ?? [])].map((l) => `@${l}`).join(', ')}, built with ${a.tool}${a.alternativeTo?.length ? `, alternative to ${a.alternativeTo.map((x) => x.name).join(', ')}` : ''}, ${a.activeDays} active days, ${a.commits} commits since ${a.firstCommit.slice(0, 10)}, ${a.stars ?? 0} GitHub stars${a.takeover ? ', open to a takeover' : ''}.${a.url ? ` App: ${a.url}` : ''}${a.repo ? ` Repo: ${a.repo}` : ''}`;
   const counts = await browseCounts().catch(() => ({ tool: {}, platform: {}, language: {}, intent: {} as Record<string, number> }));
   const browse = [
     ...Object.entries(counts.tool).map(([v, n]) => ({ b: { kind: 'tool' as const, value: v }, n })),

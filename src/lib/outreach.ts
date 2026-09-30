@@ -14,7 +14,7 @@ export interface Candidate {
   topics: string[]; stars: number; contributors: number; has_release: boolean; repo_created: string | null; pushed_at: string | null;
   owner_id: number; owner_login: string; owner_name: string | null; owner_avatar: string | null; owner_email: string | null; commit_email: string | null;
   owner_blog: string | null; owner_twitter: string | null; owner_location: string | null;
-  metrics: Metrics & { platform?: string }; score: number; query: string | null; status: OutreachStatus; app_id: number | null; note: string | null;
+  metrics: Metrics & { platform?: string; platforms?: string[] }; score: number; query: string | null; status: OutreachStatus; app_id: number | null; note: string | null;
   listed_at: string | null; sent_at: string | null; answered_at: string | null; found_at: string;
   slug?: string | null; active_days?: number | null; best_streak_weeks?: number | null; first_commit?: string | null; app_platform?: string | null;
 }
@@ -24,12 +24,12 @@ export async function candidates(status: OutreachStatus | OutreachStatus[], limi
   if (!hasDb) return [];
   const list = Array.isArray(status) ? status : [status];
   return (await sql.query(
-    `select o.*, a.slug, a.active_days, a.best_streak_weeks, a.first_commit, a.platform as app_platform
+    `select o.*, a.slug, a.active_days, a.best_streak_weeks, a.first_commit, a.platforms[1] as app_platform
      from outreach o left join apps a on a.id = o.app_id where o.status = any($1) order by o.score desc, o.found_at desc limit $2`, [list, limit],
   )) as Candidate[];
 }
 export async function candidate(id: number): Promise<Candidate | null> {
-  const rows = (await sql.query(`select o.*, a.slug, a.active_days, a.best_streak_weeks, a.first_commit, a.platform as app_platform from outreach o left join apps a on a.id = o.app_id where o.id = $1`, [id])) as Candidate[];
+  const rows = (await sql.query(`select o.*, a.slug, a.active_days, a.best_streak_weeks, a.first_commit, a.platforms[1] as app_platform from outreach o left join apps a on a.id = o.app_id where o.id = $1`, [id])) as Candidate[];
   return rows[0] ?? null;
 }
 export async function counts(): Promise<Record<OutreachStatus, number>> {
@@ -61,10 +61,10 @@ export async function listCandidate(id: number): Promise<{ ok: true; slug: strin
   const m = c.metrics;
   const [row] = (await sql.query(
     `insert into apps (user_id, repo_id, full_name, slug, name, description, language, private, homepage, url,
-       first_commit, last_commit, commits, active_days, active_days_30, best_streak_weeks, weekly, published, refreshed_at, stars, platform, authors)
+       first_commit, last_commit, commits, active_days, active_days_30, best_streak_weeks, weekly, published, refreshed_at, stars, platforms, authors)
      values ($1,$2,$3,$4,$5,$6,$7,false,$8,$8,$9,$10,$11,$12,$13,$14,$15,true,now(),$16,$17,$18)
      on conflict (repo_id) do update set published = true returning id, slug`,
-    [u.id, c.repo_id, c.full_name, slug, c.name, c.description, c.language, c.homepage, m.first_commit, m.last_commit, m.commits, m.active_days, m.active_days_30, m.best_streak_weeks, m.weekly ?? [], c.stars, m.platform ?? 'Autre', Math.max(1, c.contributors || 1)],
+    [u.id, c.repo_id, c.full_name, slug, c.name, c.description, c.language, c.homepage, m.first_commit, m.last_commit, m.commits, m.active_days, m.active_days_30, m.best_streak_weeks, m.weekly ?? [], c.stars, m.platforms?.length ? m.platforms : [m.platform ?? 'Autre'], Math.max(1, c.contributors || 1)],
   )) as { id: number; slug: string }[];
   await sql.query(`insert into activity (app_id, kind) values ($1, 'arrived')`, [row.id]);
   await sql.query(`update outreach set status = 'listed', app_id = $2, listed_at = now() where id = $1`, [id, row.id]);
@@ -105,7 +105,7 @@ export async function composeMail(c: Candidate, locale: MailLocale = guessLocale
   const days = c.active_days ?? c.metrics.active_days;
   const streak = c.best_streak_weeks ?? c.metrics.best_streak_weeks;
   const firstCommit = new Date(c.first_commit ?? c.metrics.first_commit ?? Date.now());
-  const platform = c.app_platform ?? c.metrics.platform ?? null;
+  const platform = c.app_platform ?? c.metrics.platforms?.[0] ?? c.metrics.platform ?? null;
   const [rankPlat, rankAll] = row ? await Promise.all([rankIn(row, 'platform'), rankIn(row, 'all')]).catch(() => [null, null]) : [null, null];
   const page = `${SITE}${locale === 'en' ? '/en' : ''}/app/${c.slug ?? ''}`;
   const privacy = `${SITE}${locale === 'en' ? '/en' : ''}/confidentialite`;

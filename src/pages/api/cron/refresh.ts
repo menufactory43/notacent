@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sql, hasDb, browseCounts, altCounts, INTENTS } from '../../../lib/db';
 import { repoInfo, readme, serverToken, installationToken } from '../../../lib/github';
-import { guessPlatform } from '../../../lib/platform';
+import { guessPlatforms } from '../../../lib/platform';
 import { sendAlerts } from '../../../lib/alerts';
 import { readDates, compute, statusFor } from '../../../lib/metrics';
 import { pingIndexNow, appPaths } from '../../../lib/indexnow';
@@ -14,7 +14,7 @@ export const GET: APIRoute = async ({ request }) => {
   const secret = import.meta.env.CRON_SECRET ?? process.env.CRON_SECRET;
   if (!hasDb || !secret || request.headers.get('authorization') !== `Bearer ${secret}`) return new Response('non', { status: 401 });
   const apps = (await sql.query(
-    `select a.id, a.full_name, a.active_days, a.commits, a.status, a.private, a.platform, a.language, a.name, a.description, a.homepage, a.url, a.store_url, a.store, a.notarized, a.active_dates, a.badge_at, a.slug, coalesce(u.claimed, true) as claimed, u.installation_id, u.login,
+    `select a.id, a.full_name, a.active_days, a.commits, a.status, a.private, a.platforms, a.language, a.name, a.description, a.homepage, a.url, a.store_url, a.store, a.notarized, a.active_dates, a.badge_at, a.slug, coalesce(u.claimed, true) as claimed, u.installation_id, u.login,
        (select coalesce(array_agg(m.login), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers
      from apps a join users u on u.id = a.user_id where a.published`,
   )) as (SigningIn & { id: number; active_days: number; commits: number; status: string; language: string | null; name: string; description: string | null; active_dates: string[] | null; badge_at: string | null; slug: string; claimed: boolean; installation_id: number | null; login: string; comakers: string[] })[];
@@ -28,12 +28,12 @@ export const GET: APIRoute = async ({ request }) => {
       const token = a.private ? (a.installation_id ? await installationToken(a.installation_id) : null) : await serverToken();
       const info = token ? await repoInfo(token, a.full_name).catch(() => null) : null;
       const stars = a.private ? 0 : info?.stargazers_count ?? null;
-      const platform = a.platform ?? guessPlatform({ language: info?.language ?? a.language, topics: info?.topics, name: a.name, description: a.description, homepage: a.homepage });
+      const platforms = a.platforms?.length ? a.platforms : guessPlatforms({ language: info?.language ?? a.language, topics: info?.topics, name: a.name, description: a.description, homepage: a.homepage });
       // Ce qui rassure avant le téléchargement : la fiche App Store vérifiée chez Apple, la notarisation lue dans le workflow.
-      const sign = await refreshSigning({ ...a, platform }, a.private ? null : token);
+      const sign = await refreshSigning({ ...a, platforms }, a.private ? null : token);
       await sql.query(
-        `update apps set first_commit=$2, last_commit=$3, commits=$4, active_days=$5, active_days_30=$6, best_streak_weeks=$7, weekly=$8, status=$9, refreshed_at=now(), stars=coalesce($10, stars), platform=$11, active_dates=$12, authors=coalesce($13, authors), owner_commits=coalesce($14, owner_commits), store=$15, notarized=$16 where id=$1`,
-        [a.id, m.first_commit, m.last_commit, m.commits, m.active_days, m.active_days_30, m.best_streak_weeks, m.weekly, status, stars, platform, read.ledger, read.authors ?? null, read.ownerCommits ?? null, sign.store && JSON.stringify(sign.store), sign.notarized && JSON.stringify(sign.notarized)],
+        `update apps set first_commit=$2, last_commit=$3, commits=$4, active_days=$5, active_days_30=$6, best_streak_weeks=$7, weekly=$8, status=$9, refreshed_at=now(), stars=coalesce($10, stars), platforms=$11, active_dates=$12, authors=coalesce($13, authors), owner_commits=coalesce($14, owner_commits), store=$15, notarized=$16 where id=$1`,
+        [a.id, m.first_commit, m.last_commit, m.commits, m.active_days, m.active_days_30, m.best_streak_weeks, m.weekly, status, stars, platforms, read.ledger, read.authors ?? null, read.ownerCommits ?? null, sign.store && JSON.stringify(sign.store), sign.notarized && JSON.stringify(sign.notarized)],
       );
       // Le badge dans le README : le lien entrant qui compte. On ne regarde que les repos publics réclamés, les seuls à qui on le propose.
       // Un README illisible ce soir ne défait rien : on ne touche à la date que si on a pu lire.

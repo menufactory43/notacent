@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { rankedApps, doneApps, firstEuroApps, appBySlug, searchApps, totals, PRICINGS, type DbApp, type Pricing } from './db';
 import { toView, declaredPricing, declaredFree, revenueState } from './view';
+import { PLATFORMS, platformsOf } from './platform';
 
 // Le serveur MCP de Not a Cent : trois outils en lecture, un pour soumettre. Des apps qui n'ont pas encore gagné d'argent,
 // quel que soit leur modèle : le modèle (pricing) et le revenu (revenue) sont dans chaque carte, tels que le maker les a déclarés.
@@ -27,7 +28,7 @@ function card(a: DbApp) {
     whatTookLongest: a.longest ?? null,
     appUrl: v.url ?? null, repoUrl: v.repo ?? null, pageUrl: `${SITE}/app/${v.slug}`, pageUrlEn: `${SITE}/en/app/${v.slug}`,
     imageUrl: v.imageUrl ? new URL(v.imageUrl, SITE).toString() : null, bravos: v.bravos,
-    githubStars: v.stars ?? 0, platform: v.platform ?? null, openToTakeover: v.takeover ?? false,
+    githubStars: v.stars ?? 0, platform: v.platform ?? null, platforms: platformsOf(v), openToTakeover: v.takeover ?? false,
     // Ce que l'app remplace, gratuite ou payante : chaque nom a sa page, qui existe dès qu'une app s'en réclame.
     alternativeTo: (v.alternativeTo ?? []).map((x) => ({ name: x.name, listUrl: `${SITE}/en/alternative-a/${x.slug}` })),
     // Déprécié, gardé pour les clients existants : la même liste, remplie seulement pour une app déclarée gratuite (ou à dons).
@@ -61,7 +62,7 @@ export function createServer() {
     inputSchema: {
       query: z.string().min(1).max(200).describe('Keywords, e.g. "screen time blocker mac", "messaging inbox", "swift"'),
       tool: z.enum(['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre']).optional().describe('Only apps built mainly with this tool'),
-      platform: z.enum(['Mac', 'iOS', 'Web', 'CLI', 'Android', 'Windows', 'Linux', 'MCP', 'Autre']).optional().describe('Only apps for this platform'),
+      platform: z.enum(PLATFORMS).optional().describe('Only apps for this platform (among the ones it ships on)'),
       pricing: z.array(z.enum(PRICINGS.filter((p) => p !== 'unknown') as [Pricing, ...Pricing[]])).optional().describe('Only apps whose maker declared one of these business models, e.g. ["free", "donations"] for free apps. Cards with no declared model are left out when this is set.'),
       includeDone: z.boolean().optional().describe('Also include apps marked done or paused (default: only apps still being polished)'),
       limit: z.number().int().min(1).max(50).optional().describe('Max results, default 10'),

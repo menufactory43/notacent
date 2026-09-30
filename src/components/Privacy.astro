@@ -25,7 +25,7 @@ const fr = locale === 'fr';
       <li>{fr ? 'Les quatre champs de la fiche : lien, image, ce qui a pris le plus de temps, outil.' : 'The four card fields: link, image, what took the longest, main tool.'}</li>
       <li>{fr ? 'Un cookie de session signé, pour rester connecté. Aucun cookie tiers ni traceur publicitaire. Les visites sont comptées par Vercel Web Analytics, l\'outil de l\'hébergeur, et par Umami, un outil libre que nous hébergeons nous-mêmes en Europe : pages vues, provenance, pays et type d\'appareil, en chiffres agrégés, sans cookie et sans garder d\'adresse IP.' : 'A signed session cookie, to stay signed in. No third-party cookie and no ad tracker. Visits are counted by Vercel Web Analytics, the host\'s own tool, and by Umami, an open-source tool we host ourselves in Europe: page views, referrers, country and device type, as aggregate numbers, with no cookie and no IP address kept.'}</li>
     </ul>
-    <p>{fr ? 'Le geste « bravo » et les clics sont comptés par app, jamais par personne.' : '“Nice one” and clicks are counted per app, never per person.'}</p>
+    <p>{fr ? 'Le geste « bravo » et les clics sont comptés par app, jamais par personne. Pour qu\'un bravo ne compte qu\'une fois, on garde une empreinte de l\'adresse IP (un hachage à clé secrète, d\'où l\'on ne peut pas retrouver l\'adresse) à côté de l\'app applaudie, rien d\'autre.' : '“Nice one” and clicks are counted per app, never per person. So that a “nice one” counts only once, we keep a fingerprint of the IP address (a keyed hash the address can\'t be recovered from) next to the app, nothing else.'}</p>
 
     <h2>{fr ? 'Les fiches non réclamées' : 'Unclaimed cards'}</h2>
     <p>{fr

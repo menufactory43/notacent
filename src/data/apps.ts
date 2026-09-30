@@ -31,7 +31,8 @@ export interface App {
   imageUrl?: string;
   tagline?: string;
   stars?: number;
-  platform?: string;
+  platform?: string; // la principale
+  platforms?: string[]; // toutes, principale d'abord
   takeover?: boolean;
   unclaimed?: boolean; // fiche créée depuis le repo public, pas encore réclamée par son maker
   hasLongest?: boolean; // la phrase « ce qui m'a pris le plus de temps » est écrite par le maker, pas reprise du repo

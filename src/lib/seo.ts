@@ -1,6 +1,7 @@
 import type { App } from '../data/apps';
 import type { Locale } from '../i18n/strings';
 import { declaredFree, declaredPricing, revenueState } from './view';
+import { platformsOf } from './platform';
 export const SITE = 'https://notacent.app';
 
 // Données structurées : ce qu'un moteur, et l'assistant qui s'en sert, lisent d'une app sans deviner.
@@ -27,7 +28,7 @@ export function softwareLd(app: App, locale: Locale) {
       ...(app.refreshedAt ? [{ '@type': 'PropertyValue', name: 'readOn', value: app.refreshedAt.slice(0, 10), description: 'Last time the repo was read' }] : []),
       { '@type': 'PropertyValue', name: 'mainTool', value: app.tool },
       { '@type': 'PropertyValue', name: 'githubStars', value: app.stars ?? 0 },
-      ...(app.platform ? [{ '@type': 'PropertyValue', name: 'platform', value: app.platform }] : []),
+      ...(platformsOf(app).length ? [{ '@type': 'PropertyValue', name: 'platform', value: platformsOf(app).join(', ') }] : []),
       ...((app.alternativeTo ?? []).length ? [{ '@type': 'PropertyValue', name: 'alternativeTo', value: app.alternativeTo!.map((x) => x.name).join(', '), description: 'Products this app is listed as an alternative to' }] : []),
       // Le modèle économique et le revenu, tels que le maker les a déclarés. Rien quand personne n'a rien dit.
       ...(declaredPricing(app) ? [{ '@type': 'PropertyValue', name: 'businessModel', value: declaredPricing(app), description: 'Declared by the maker' }] : []),

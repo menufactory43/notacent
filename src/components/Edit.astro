@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
 import { currentUser } from '../lib/session';
 import { appBySlug, appsByUser, makersOf, canEdit, PRICINGS } from '../lib/db';
-import { PLATFORMS } from '../lib/platform';
+import { PLATFORMS, platformsOf } from '../lib/platform';
 import { isAdmin } from '../lib/outreach';
 import Badge from './Badge.astro';
 interface Props { locale: Locale; slug: string }
@@ -74,11 +74,13 @@ const err = Astro.url.searchParams.get('erreur');
             <option value="paused" selected={app.status === 'paused'}>{s.stPaused}</option>
           </select>
         </label>
-        <label><span>{s.fPlatform}</span>
-          <select name="platform">{PLATFORMS.map((x) => <option value={x} selected={app.platform === x}>{x}</option>)}</select>
-        </label>
       </div>
       <small id="pricing-hint" class="under-grid">{s.fPricingHint}</small>
+      <fieldset class="plats">
+        <legend class="hand">{s.fPlatform}</legend>
+        <div class="opts">{PLATFORMS.map((x) => <label class="opt"><input type="checkbox" name="platforms" value={x} checked={platformsOf(app).includes(x)} /><span>{x}</span></label>)}</div>
+        <small>{s.fPlatformHint}</small>
+      </fieldset>
       {maker && !firstEuro && (
         <fieldset class="revenue">
           <legend class="hand">{s.fRevenue}</legend>
@@ -165,7 +167,7 @@ input[type=file]{border-style:dashed;padding:10px 12px}
 #preview{width:96px;height:96px;object-fit:cover;border:2px solid var(--ink);border-radius:var(--sk2);background:var(--paper);flex:none}
 input,textarea,select{font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:2px solid var(--ink);border-radius:var(--sk2);padding:8px 12px;width:100%}
 textarea{resize:vertical}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .check{display:flex;gap:10px;align-items:flex-start;grid-template-columns:none}
 .check input{width:20px;height:20px;margin-top:3px;flex:none}
 .check span{display:grid;gap:2px}
@@ -180,6 +182,15 @@ textarea{resize:vertical}
 .under-grid{color:var(--pencil);font-size:13px;margin-top:-8px}
 .revenue{border:2px dashed var(--faint);border-radius:var(--sk2);padding:10px 14px 12px;margin:0}
 .revenue legend{font:700 19px/1 var(--hand);padding:0 6px;color:var(--ink)}
+.plats{border:0;padding:0;margin:0;display:grid;gap:6px}
+.plats legend{font:700 17px/1.2 var(--hand);color:var(--pencil);padding:0;margin-bottom:6px}
+.plats small{color:var(--pencil);font-size:13px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--ink);border-radius:var(--sk2);padding:6px 12px;min-height:40px;cursor:pointer;background:var(--paper)}
+.opt:has(input:checked){background:var(--mark)}
+.opt:has(input:focus-visible){outline:2px solid var(--ink);outline-offset:2px}
+.opt input{width:18px;height:18px;margin:0;padding:0;flex:none;accent-color:var(--ink)}
+.opt span{font:500 16px/1 var(--body);color:var(--ink)}
 .euro{margin-top:22px;padding:18px 22px;display:grid;gap:10px}
 .euro h2{font:700 26px/1 var(--hand);margin:0}
 .euro form{padding:0;display:flex;gap:10px;align-items:end;flex-wrap:wrap}

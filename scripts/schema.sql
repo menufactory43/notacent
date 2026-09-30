@@ -67,6 +67,16 @@ alter table apps add column if not exists platform text;
 -- « Ouverte à une reprise » : un signal posé par le maker, on met en relation, on ne vend rien.
 alter table apps add column if not exists takeover boolean default false;
 create index if not exists apps_browse on apps (published, tool, platform, language);
+-- Plusieurs plateformes (2026-09-30) : la première est la principale. Remplace platform, qui n'est plus lue.
+alter table apps add column if not exists platforms text[] not null default '{}';
+create index if not exists apps_platforms on apps using gin (platforms);
+-- Un bravo par app et par votant (empreinte HMAC de l'IP), en plus du cookie.
+create table if not exists bravo_votes (
+  app_id int not null references apps(id) on delete cascade,
+  voter text not null,
+  created_at timestamptz default now(),
+  primary key (app_id, voter)
+);
 -- Alertes gratuites : un filtre enregistré, un mail hebdo quand des apps le matchent.
 create table if not exists alerts (
   id serial primary key,

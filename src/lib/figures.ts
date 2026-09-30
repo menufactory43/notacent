@@ -40,15 +40,16 @@ export async function figures(): Promise<Figures | null> {
        count(*) filter (where coalesce(a.stars, 0) < 20)::int as under20, count(*) filter (where coalesce(a.authors, 1) = 1)::int as solo,
        count(*) filter (where a.first_commit < now() - interval '365 days' and a.status = 'polishing')::int as veterans,
        count(*) filter (where a.active_days >= 100)::int as over100, count(*) filter (where coalesce(u.claimed, true))::int as claimed,
-       count(*) filter (where a.platform = 'Mac')::int as mac,
-       count(*) filter (where a.platform = 'Mac' and (a.store is not null or a.notarized->>'level' = 'notarized'))::int as signed
+       count(*) filter (where 'Mac' = any(a.platforms))::int as mac,
+       count(*) filter (where 'Mac' = any(a.platforms) and (a.store is not null or a.notarized->>'level' = 'notarized'))::int as signed
      from apps a join users u on u.id = a.user_id where ${POP}`,
   )) as Record<string, number>[];
-  const group = async (col: string) => ((await sql.query(
+  // Une app multiplateforme compte dans chacune de ses plateformes.
+  const group = async (col: string, from = '') => ((await sql.query(
     `select ${col} as value, count(*)::int as n, percentile_cont(0.5) within group (order by a.active_days) as days, percentile_cont(0.5) within group (order by ${MONTHS}) as months
-     from apps a where ${POP} and ${col} is not null and ${col} <> 'Autre' group by ${col} having count(*) >= ${MIN_GROUP} order by n desc, value`,
+     from apps a${from} where ${POP} and ${col} is not null and ${col} <> 'Autre' group by ${col} having count(*) >= ${MIN_GROUP} order by n desc, value`,
   )) as { value: string; n: number; days: number; months: number }[]).map((g) => ({ value: g.value, n: g.n, medianDays: Math.round(g.days), medianMonths: Math.round(g.months) }));
-  const [byPlatform, byLanguage, byTool] = await Promise.all([group('a.platform'), group('a.language'), group('a.tool')]);
+  const [byPlatform, byLanguage, byTool] = await Promise.all([group('p', ', unnest(a.platforms) p'), group('a.language'), group('a.tool')]);
   // Les jours d'un repo privé vieux de plus d'un an sont notés au dimanche de leur semaine (voir /methode) : ils fausseraient la part du week-end.
   // On ne compte donc que les repos publics, sur les 365 derniers jours.
   const wd = (await sql.query(

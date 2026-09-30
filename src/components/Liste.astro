@@ -6,6 +6,7 @@ import { t, localePath, type Locale } from '../i18n/strings';
 import { browseApps, type Browse as BrowseFilter } from '../lib/db';
 import { toView, declaredFree, declaredPaid } from '../lib/view';
 import { browseLabel, browseLede, browsePath } from '../lib/browse';
+import { platformsOf } from '../lib/platform';
 import { listLd, breadcrumbLd } from '../lib/seo';
 import { apps as samples } from '../data/apps';
 // Une page « Parcourir » : un titre, une phrase, un classement, une alerte. Indexable, régénérée à chaque visite.
@@ -19,7 +20,7 @@ const real = rows.map(toView);
 // Sans base branchée, on montre les échantillons qui correspondent, pour que la page ne soit jamais vide en dev.
 const sample = !rows.length && !(import.meta.env.DATABASE_URL ?? process.env.DATABASE_URL);
 const board = sample
-  ? samples.filter((a) => (browse.kind === 'tool' ? a.tool === browse.value : browse.kind === 'platform' ? a.platform === browse.value : browse.kind === 'language' ? a.language === browse.value : browse.value === 'takeover' ? a.takeover : true))
+  ? samples.filter((a) => (browse.kind === 'tool' ? a.tool === browse.value : browse.kind === 'platform' ? platformsOf(a).includes(browse.value) : browse.kind === 'language' ? a.language === browse.value : browse.value === 'takeover' ? a.takeover : true))
   : real;
 // Une page « Alternatives gratuites à X » ne met en tête que les apps gratuites déclarées. Les payantes (pas encore rentables)
 // et celles dont personne n'a déclaré le modèle suivent, chacune dans sa section : le titre dit vrai sur ce qu'il liste.

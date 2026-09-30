@@ -11,7 +11,7 @@ export interface DbApp {
   first_commit: string | null; last_commit: string | null; commits: number; active_days: number;
   active_days_30: number; best_streak_weeks: number; weekly: number[]; bravos: number; clicks: number;
   published: boolean; refreshed_at: string | null; created_at: string; login?: string; has_image?: boolean; sponsored?: boolean;
-  stars: number; platform: string | null; takeover: boolean; unclaimed?: boolean; authors: number; active_dates: (string | Date)[] | null; owner_commits: number | null; comakers: string[];
+  stars: number; platform: string | null; platforms: string[]; takeover: boolean; unclaimed?: boolean; authors: number; active_dates: (string | Date)[] | null; owner_commits: number | null; comakers: string[];
   store_url: string | null; store: Store | null; notarized: Notarized | null;
   alternative_to: string[]; alt_slugs: string[]; badge_at: string | null;
   revenue_source: RevenueSource | null; revenue_declared_at: string | null; first_euro_at: string | Date | null; first_euro_days: number | null;
@@ -23,7 +23,7 @@ export const PRICINGS: Pricing[] = ['free', 'donations', 'one_time', 'subscripti
 export type RevenueSource = 'declared';
 
 // Les colonnes d'une fiche, une fois pour toutes : chaque requête les lit telles quelles.
-const COLS = `a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image, coalesce(a.stars, 0) as stars, a.platform, coalesce(a.takeover, false) as takeover, (not coalesce(u.claimed, true)) as unclaimed, coalesce(a.authors, 1) as authors, a.active_dates, a.owner_commits, (select coalesce(array_agg(m.login order by m.added_at), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers, a.store_url, a.store, a.notarized, coalesce(a.alternative_to, '{}') as alternative_to, coalesce(a.alt_slugs, '{}') as alt_slugs, a.badge_at, a.revenue_source, a.revenue_declared_at, a.first_euro_at, a.first_euro_days`;
+const COLS = `a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image, coalesce(a.stars, 0) as stars, a.platforms[1] as platform, a.platforms, coalesce(a.takeover, false) as takeover, (not coalesce(u.claimed, true)) as unclaimed, coalesce(a.authors, 1) as authors, a.active_dates, a.owner_commits, (select coalesce(array_agg(m.login order by m.added_at), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers, a.store_url, a.store, a.notarized, coalesce(a.alternative_to, '{}') as alternative_to, coalesce(a.alt_slugs, '{}') as alt_slugs, a.badge_at, a.revenue_source, a.revenue_declared_at, a.first_euro_at, a.first_euro_days`;
 const FROM = `from apps a join users u on u.id = a.user_id`;
 // L'éligibilité, une seule fois pour tout le site : une fiche publiée. Le modèle économique ne compte pas
 // (gratuite, payante, abonnement : même règle). Classement, parcourir, alternatives, recherche MCP, alertes,
@@ -112,7 +112,7 @@ export async function searchApps(query: string, opts: { tool?: string; platform?
   const params: unknown[] = [limit];
   const clauses = words.map((w) => { params.push(`%${w}%`); const i = params.length; return `(a.name ilike $${i} or a.tagline ilike $${i} or a.description ilike $${i} or a.longest ilike $${i} or a.language ilike $${i} or u.login ilike $${i} or exists (select 1 from unnest(a.alternative_to) x where x ilike $${i}))`; });
   if (opts.tool) { params.push(opts.tool); clauses.push(`a.tool = $${params.length}`); }
-  if (opts.platform) { params.push(opts.platform); clauses.push(`a.platform = $${params.length}`); }
+  if (opts.platform) { params.push(opts.platform); clauses.push(onPlatform(params.length)); }
   // Le modèle déclaré par le maker : une fiche non réclamée n'en a pas, elle ne sort donc pas sur « free ».
   if (opts.pricing?.length) { params.push(opts.pricing); clauses.push(`a.pricing = any($${params.length}) and coalesce(u.claimed, true)`); }
   if (!opts.includeDone) clauses.push(`a.status = 'polishing'`);
@@ -159,6 +159,9 @@ export interface Browse { kind: BrowseKind; value: string; label?: string; free?
 // Une alternative reste une alternative une fois terminée, et une app payante aussi en est une : l'éligibilité suffit.
 const ALT_BOARD = ELIGIBLE;
 
+// Une app est « sur » une plateforme si elle l'a parmi les siennes, principale ou non. $i : le paramètre qui porte le nom.
+const onPlatform = (i: number) => `exists (select 1 from unnest(a.platforms) p where lower(p) = lower($${i}))`;
+
 // La clause et l'ordre d'un filtre. « radar » = beaucoup de jours pour peu d'étoiles, avec un plancher pour qu'un repo invisible ne prenne pas la tête.
 function browseWhere(b: Browse, params: unknown[]): { where: string; order: string } {
   const order = `a.active_days desc, a.commits desc`;
@@ -176,7 +179,8 @@ function browseWhere(b: Browse, params: unknown[]): { where: string; order: stri
   }
   params.push(b.value);
   if (b.kind === 'alt') return { where: `${ALT_BOARD} and $${params.length} = any(a.alt_slugs)`, order };
-  const col = b.kind === 'tool' ? 'a.tool' : b.kind === 'platform' ? 'a.platform' : 'a.language';
+  if (b.kind === 'platform') return { where: `${POLISHING} and ${onPlatform(params.length)}`, order };
+  const col = b.kind === 'tool' ? 'a.tool' : 'a.language';
   return { where: `${POLISHING} and lower(${col}) = lower($${params.length})`, order };
 }
 export async function browseApps(b: Browse, limit = 100): Promise<DbApp[]> {
@@ -192,7 +196,7 @@ export async function browseCounts(): Promise<{ tool: Record<string, number>; pl
   if (!hasDb) return out;
   const rows = (await sql.query(
     `select 'tool' as kind, tool as value, count(*)::int as n from apps a where ${POLISHING} and tool is not null group by tool
-     union all select 'platform', platform, count(*)::int from apps a where ${POLISHING} and platform is not null group by platform
+     union all select 'platform', p, count(*)::int from apps a, unnest(a.platforms) p where ${POLISHING} group by p
      union all select 'language', language, count(*)::int from apps a where ${POLISHING} and language is not null group by language`,
   )) as { kind: 'tool' | 'platform' | 'language'; value: string; n: number }[];
   for (const r of rows) out[r.kind][r.value] = r.n;
@@ -236,7 +240,7 @@ export async function rankIn(app: DbApp, kind: 'tool' | 'platform' | 'all'): Pro
   if (app.status !== 'polishing' && !(kind === 'all' && first)) return null;
   const params: unknown[] = [app.active_days, app.commits];
   let extra = '';
-  if (kind !== 'all') { const v = kind === 'tool' ? app.tool : app.platform; if (!v) return null; params.push(v); extra = ` and lower(${kind === 'tool' ? 'a.tool' : 'a.platform'}) = lower($3)`; }
+  if (kind !== 'all') { const v = kind === 'tool' ? app.tool : app.platform; if (!v) return null; params.push(v); extra = ` and ${kind === 'tool' ? 'lower(a.tool) = lower($3)' : onPlatform(3)}`; }
   const board = kind !== 'all' ? POLISHING : first ? FIRST_BOARD : ON_BOARD;
   const [r] = (await sql.query(`select count(*)::int + 1 as rank from apps a where ${board}${extra} and (a.active_days > $1 or (a.active_days = $1 and a.commits > $2))`, params)) as { rank: number }[];
   return r?.rank ?? null;
@@ -245,9 +249,9 @@ export async function rankIn(app: DbApp, kind: 'tool' | 'platform' | 'all'): Pro
 export async function relatedApps(app: DbApp, limit = 3): Promise<DbApp[]> {
   if (!hasDb) return [];
   return (await sql.query(
-    `select ${COLS} ${FROM} where ${POLISHING} and a.id <> $1 and (lower(a.tool) = lower($2) or lower(a.platform) = lower($3) or lower(a.language) = lower($4))
-     order by coalesce((lower(a.tool) = lower($2))::int, 0) + coalesce((lower(a.platform) = lower($3))::int, 0) desc, a.active_days desc limit $5`,
-    [app.id, app.tool ?? '', app.platform ?? '', app.language ?? '', limit],
+    `select ${COLS} ${FROM} where ${POLISHING} and a.id <> $1 and (lower(a.tool) = lower($2) or a.platforms && $3::text[] or lower(a.language) = lower($4))
+     order by coalesce((lower(a.tool) = lower($2))::int, 0) + (a.platforms && $3::text[])::int desc, a.active_days desc limit $5`,
+    [app.id, app.tool ?? '', app.platforms ?? [], app.language ?? '', limit],
   )) as DbApp[];
 }
 
@@ -308,8 +312,7 @@ export async function alertMatches(a: Alert): Promise<DbApp[]> {
       where = `${ELIGIBLE} and $2 = any(a.alt_slugs) and (a.created_at > $1 or exists (select 1 from activity x where x.app_id = a.id and x.kind = 'alt' and x.created_at > $1))`;
     } else {
       params.push(f.value);
-      const col = f.kind === 'tool' ? 'a.tool' : f.kind === 'platform' ? 'a.platform' : 'a.language';
-      where += ` and lower(${col}) = lower($2)`;
+      where += f.kind === 'platform' ? ` and ${onPlatform(2)}` : ` and lower(${f.kind === 'tool' ? 'a.tool' : 'a.language'}) = lower($2)`;
     }
   }
   return (await sql.query(`select ${COLS} ${FROM} where ${where} order by a.active_days desc limit 20`, params)) as DbApp[];

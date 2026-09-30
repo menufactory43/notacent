@@ -1,5 +1,8 @@
 ---
 import Pick from '../../components/Pick.astro';
+import { signedIn } from '../../lib/guard';
 export const prerender = false;
+const user = await signedIn(Astro.cookies, 'en');
+if (user instanceof Response) return user;
 ---
-<Pick locale="en" />
+<Pick locale="en" user={user} />

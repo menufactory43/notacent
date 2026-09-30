@@ -1,15 +1,14 @@
 ---
 import Base from '../layouts/Base.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
-import { currentUser } from '../lib/session';
+import type { SessionUser } from '../lib/session';
 import { appSlug, type GhRepo } from '../lib/github';
 import { makerRepos, syncInstallation } from '../lib/repos';
 import { sql } from '../lib/db';
-interface Props { locale: Locale }
-const { locale } = Astro.props;
+// La page a déjà vérifié la session (lib/guard.ts).
+interface Props { locale: Locale; user: SessionUser }
+const { locale, user } = Astro.props;
 const s = t(locale);
-const user = await currentUser(Astro.cookies).catch(() => null);
-if (!user) return Astro.redirect(`/api/auth/github?lang=${locale}`, 302);
 // Les repos publics se lisent sans rien demander. Les privés n'apparaissent que si le maker a installé la GitHub App (« Metadata » seule).
 const installationId = await syncInstallation(user).catch(() => null);
 let repos: GhRepo[] = [];

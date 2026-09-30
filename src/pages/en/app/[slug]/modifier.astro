@@ -1,5 +1,8 @@
 ---
 import Edit from '../../../../components/Edit.astro';
+import { editAccess } from '../../../../lib/guard';
 export const prerender = false;
+const access = await editAccess(Astro.cookies, 'en', Astro.params.slug ?? '');
+if (access instanceof Response) return access;
 ---
-<Edit locale="en" slug={Astro.params.slug ?? ''} />
+<Edit locale="en" user={access.user} app={access.app} />

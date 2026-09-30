@@ -14,10 +14,10 @@ export const GET: APIRoute = async ({ request }) => {
   const secret = import.meta.env.CRON_SECRET ?? process.env.CRON_SECRET;
   if (!hasDb || !secret || request.headers.get('authorization') !== `Bearer ${secret}`) return new Response('non', { status: 401 });
   const apps = (await sql.query(
-    `select a.id, a.full_name, a.active_days, a.commits, a.status, a.private, a.platforms, a.language, a.name, a.description, a.homepage, a.url, a.store_url, a.store, a.notarized, a.active_dates, a.badge_at, a.slug, coalesce(u.claimed, true) as claimed, u.installation_id, u.login,
+    `select a.id, a.full_name, a.active_days, a.commits, a.status, a.private, a.platforms, a.language, a.name, a.description, a.homepage, a.url, a.store_url, a.store, a.notarized, a.active_dates, a.badge_at, a.slug, coalesce(u.claimed, true) as claimed, u.installation_id, u.login, u.id as user_id, u.github_id,
        (select coalesce(array_agg(m.login), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers
      from apps a join users u on u.id = a.user_id where a.published`,
-  )) as (SigningIn & { id: number; active_days: number; commits: number; status: string; language: string | null; name: string; description: string | null; active_dates: string[] | null; badge_at: string | null; slug: string; claimed: boolean; installation_id: number | null; login: string; comakers: string[] })[];
+  )) as (SigningIn & { id: number; active_days: number; commits: number; status: string; language: string | null; name: string; description: string | null; active_dates: string[] | null; badge_at: string | null; slug: string; claimed: boolean; installation_id: number | null; login: string; user_id: number; github_id: string; comakers: string[] })[];
   let ok = 0, failed = 0;
   const errors: { app: string; why: string }[] = [];
   for (const a of apps) {
@@ -28,6 +28,9 @@ export const GET: APIRoute = async ({ request }) => {
       const token = a.private ? (a.installation_id ? await installationToken(a.installation_id) : null) : await serverToken();
       const info = token ? await repoInfo(token, a.full_name).catch(() => null) : null;
       const stars = a.private ? 0 : info?.stargazers_count ?? null;
+      // GitHub ne redirige l'ancien nom que tant que personne ne le reprend : on garde le nom d'aujourd'hui.
+      if (info?.full_name && info.full_name !== a.full_name) await sql.query(`update apps set full_name = $2 where id = $1`, [a.id, info.full_name]);
+      if (info?.owner?.login && String(info.owner.id) === String(a.github_id) && info.owner.login !== a.login) await sql.query(`update users set login = $2 where id = $1`, [a.user_id, info.owner.login]);
       const platforms = a.platforms?.length ? a.platforms : guessPlatforms({ language: info?.language ?? a.language, topics: info?.topics, name: a.name, description: a.description, homepage: a.homepage });
       // Ce qui rassure avant le téléchargement : la fiche App Store vérifiée chez Apple, la notarisation lue dans le workflow.
       const sign = await refreshSigning({ ...a, platforms }, a.private ? null : token);

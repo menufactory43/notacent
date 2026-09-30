@@ -1,19 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
-import { currentUser } from '../lib/session';
-import { appBySlug, appsByUser, makersOf, canEdit, PRICINGS } from '../lib/db';
+import type { SessionUser } from '../lib/session';
+import { appsByUser, makersOf, canEdit, PRICINGS, type DbApp } from '../lib/db';
 import { PLATFORMS, platformsOf } from '../lib/platform';
-import { isAdmin } from '../lib/outreach';
 import Badge from './Badge.astro';
-interface Props { locale: Locale; slug: string }
-const { locale, slug } = Astro.props;
+// La page a déjà vérifié la session et les droits (lib/guard.ts).
+interface Props { locale: Locale; user: SessionUser; app: DbApp }
+const { locale, user, app } = Astro.props;
+const slug = app.slug;
 const s = t(locale);
-const user = await currentUser(Astro.cookies).catch(() => null);
-if (!user) return Astro.redirect(`/api/auth/github?lang=${locale}&back=${encodeURIComponent(localePath(locale, `/app/${slug}/modifier`))}`, 302);
-const app = await appBySlug(slug).catch(() => null);
-// Une fiche non réclamée n'a personne pour la remplir : l'admin peut le faire en attendant son maker.
-if (!app || !(canEdit(app, user) || (app.unclaimed && isAdmin(user.login)))) return new Response(null, { status: 404 });
 const owner = app.user_id === user.id;
 const makers = await makersOf(app.id).catch(() => []);
 const TOOLS = ['Claude Code', 'Cursor', 'Lovable', 'Bolt', 'Copilot', 'Codex', 'Autre'];

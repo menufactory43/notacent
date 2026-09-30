@@ -115,7 +115,7 @@ Premier relevé, 25 apps : 103 jours en médiane, 6 mois, 92 % sous vingt étoil
 
 ### 3 quater. Le courrier (réglé le 21 septembre 2026)
 
-La prospection part de `gabriel@getnotacent.com`, Google Workspace, MX, SPF et DKIM en place. `getnotacent.com` redirige vers notacent.app (il répondait 404 : un maker qui tapait le domaine de l'expéditeur tombait sur rien). Le bouton « ouvrir dans Gmail » force ce compte (`authuser`). `notacent.app` n'a pas de MX, exprès : seul Resend y envoie, depuis `send.notacent.app`. À poser un jour : un DMARC sur getnotacent.com.
+La prospection part de `gabriel@getnotacent.com`. Depuis le 1er octobre 2026, plus de Google Workspace : DNS de getnotacent.com et notacent.app chez Cloudflare, Cloudflare Email Routing transfère `gabriel@getnotacent.com` et `gabriel@notacent.app` vers meffysto@gmail.com, et l'envoi passe par « Envoyer en tant que » de Gmail (smtp.gmail.com). SPF : `include:_spf.mx.cloudflare.net include:_spf.google.com`. DMARC `p=none` en place sur getnotacent.com. Limite : pas de DKIM aligné sur le domaine (Gmail signe en gmail.com). `getnotacent.com` redirige vers notacent.app (il répondait 404 : un maker qui tapait le domaine de l'expéditeur tombait sur rien). Le bouton « ouvrir dans Gmail » ouvre le compte meffysto (`/u/<adresse>/`) ; l'expéditeur se choisit dans le champ « De ». Les alertes Resend partent toujours de `send.notacent.app`.
 
 ### 4. Se lister partout
 

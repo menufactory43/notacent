@@ -20,9 +20,11 @@ const row = target?.slug ? await appBySlug(target.slug) : null;
 const mail = target ? await composeMail(target, lang, row) : null;
 const to = target ? (target.owner_email ?? (useCommit ? target.commit_email : null)) : null;
 // Le compte dans le chemin (/u/<adresse>/), pas en ?authuser= : Gmail ignore authuser quand le compte n'est pas
-// connecté et retombe sur /u/0 (le compte Waltio). Avec le chemin, il demande de se connecter à getnotacent.
-const SENDER = 'gabriel@getnotacent.com';
-const gmail = mail ? `https://mail.google.com/mail/u/${SENDER}/?view=cm&fs=1&to=${encodeURIComponent(to ?? '')}&su=${encodeURIComponent(mail.subject)}&body=${encodeURIComponent(mail.body)}` : '';
+// connecté et retombe sur /u/0 (le compte Waltio). gabriel@getnotacent.com n'est plus un compte Google (Workspace
+// résilié) : c'est un alias « Envoyer en tant que » de meffysto, transféré par Cloudflare Email Routing. Gmail n'a pas
+// de paramètre d'URL pour l'expéditeur : choisir gabriel@getnotacent.com dans le champ « De » avant d'envoyer.
+const GMAIL_ACCOUNT = 'meffysto@gmail.com';
+const gmail = mail ? `https://mail.google.com/mail/u/${GMAIL_ACCOUNT}/?view=cm&fs=1&to=${encodeURIComponent(to ?? '')}&su=${encodeURIComponent(mail.subject)}&body=${encodeURIComponent(mail.body)}` : '';
 const d = (s: string | null | undefined) => (s ? new Date(s).toLocaleDateString('fr', { day: 'numeric', month: 'short', year: '2-digit' }) : '');
 const days = (c: Candidate) => c.active_days ?? c.metrics.active_days;
 const streak = (c: Candidate) => c.best_streak_weeks ?? c.metrics.best_streak_weeks;
@@ -53,6 +55,7 @@ const cols: { key: string; title: string; items: Candidate[] }[] = [
           {target.owner_twitter && <a class="chip" href={`https://x.com/${target.owner_twitter}`} rel="noopener">@{target.owner_twitter}</a>}
           {target.owner_blog && <a class="chip" href={target.owner_blog} rel="noopener">site</a>}
         </p>
+        <p class="to mono">de : gabriel@getnotacent.com (à choisir dans Gmail)</p>
         <p class="to mono">objet : {mail.subject}</p>
         <textarea id="body" rows="14">{mail.body}</textarea>
         <div class="actions">

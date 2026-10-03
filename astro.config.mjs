@@ -5,6 +5,8 @@ import vercel from '@astrojs/vercel';
 export default defineConfig({
   // Le domaine du site : les cartes de partage, le sitemap et le MCP ont besoin d'une URL absolue.
   site: 'https://notacent.app',
+  // Le CSS du site est petit (~20 Ko, ~5 Ko compressé) : l'inliner évite trois feuilles bloquantes avant le premier affichage.
+  build: { inlineStylesheets: 'always' },
   adapter: vercel({
     // Les cartes de partage (satori) lisent ces fichiers au moment du rendu :
     // le tracing des dépendances ne les voit pas, on les recopie à la main.

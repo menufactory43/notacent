@@ -1,4 +1,5 @@
 ---
+import '../styles/fonts.css';
 import '../styles/global.css';
 import { t, localePath, otherLocale, type Locale } from '../i18n/strings';
 import { totals } from '../lib/db';
@@ -43,9 +44,9 @@ const ogImage = new URL(image ?? (locale === 'fr' ? '/og.png' : '/og-en.png'), A
   <script defer src="/_vercel/insights/script.js"></script>
   <script is:inline defer src="https://mesure-seven.vercel.app/m.js" data-website-id="9fda5ad2-7f93-470e-8588-cccf9d42e2fd" data-domains="notacent.app"></script>
   {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" />
+  <!-- Polices auto-hébergées (src/styles/fonts.css) : on précharge les deux visibles dès l'ouverture, le logo et le titre (Caveat) et le texte (Atkinson). -->
+  <link rel="preload" href="/fonts/Caveat-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/AtkinsonHyperlegible-400-latin.woff2" as="font" type="font/woff2" crossorigin />
 </head>
 <body>
   <div class="wrap">

@@ -13,8 +13,9 @@ export const GET: APIRoute = async () => {
   // Les pages « Parcourir » : chaque valeur qui a au moins une app, plus les intentions.
   const counts = await browseCounts().catch(() => ({ tool: {}, platform: {}, language: {}, intent: {} }));
   const browse = [
-    ...Object.keys(counts.tool).map((v) => ({ kind: 'tool' as const, value: v })),
-    ...Object.keys(counts.platform).map((v) => ({ kind: 'platform' as const, value: v })),
+    // « Autre » n'est pas un outil ni une plateforme : pas de page à indexer.
+    ...Object.keys(counts.tool).filter((v) => v !== 'Autre').map((v) => ({ kind: 'tool' as const, value: v })),
+    ...Object.keys(counts.platform).filter((v) => v !== 'Autre').map((v) => ({ kind: 'platform' as const, value: v })),
     ...Object.keys(counts.language).map((v) => ({ kind: 'language' as const, value: v })),
     ...INTENTS.map((v) => ({ kind: 'intent' as const, value: v })),
     ...(await altCounts().catch(() => [])).map((x) => ({ kind: 'alt' as const, value: x.slug })),

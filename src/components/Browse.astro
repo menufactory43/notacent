@@ -16,10 +16,12 @@ if (sample) {
 const link = (b: Browse, n?: number) => ({ href: browsePath(b, locale), label: browseLabel(b, locale), n });
 const tools = TOOLS.filter((x) => x !== 'Autre').map((v) => link({ kind: 'tool', value: v }, counts.tool[v] ?? 0));
 const platforms = PLATFORMS.filter((x) => x !== 'Autre').map((v) => link({ kind: 'platform', value: v }, counts.platform[v] ?? 0));
-const languages = Object.entries(counts.language).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([v, n]) => link({ kind: 'language', value: v }, n));
+const languages = Object.entries(counts.language).sort((a, b) => b[1] - a[1]).map(([v, n]) => link({ kind: 'language', value: v }, n));
 const intents = INTENTS.map((v) => link({ kind: 'intent', value: v }, counts.intent[v] ?? 0));
-// « Alternative à » : les huit produits les plus cités. La colonne n'existe que s'il y en a.
-const alts = sample ? [] : (await altCounts().catch(() => [])).slice(0, 8).map((x) => ({ href: browsePath({ kind: 'alt', value: x.slug }, locale), label: x.name, n: x.n }));
+// « Alternative à » : tous les produits cités, les plus cités d'abord. La colonne n'existe que s'il y en a.
+const alts = sample ? [] : (await altCounts().catch(() => [])).map((x) => ({ href: browsePath({ kind: 'alt', value: x.slug }, locale), label: x.name, n: x.n }));
+// Huit liens en vue par colonne ; les autres derrière « + N », toujours dans le HTML : chaque page « Parcourir » reste atteignable.
+const VUE = 8;
 const cols = [[s.byTool, tools], [s.byPlatform, platforms], [s.byLanguage, languages], [s.byIntent, intents], ...(alts.length ? [[s.byAlt, alts] as const] : [])] as const;
 ---
 <section class="browse">
@@ -31,7 +33,10 @@ const cols = [[s.byTool, tools], [s.byPlatform, platforms], [s.byLanguage, langu
     {cols.map(([title, items]) => (
       <div class="col">
         <b class="hand">{title}</b>
-        {items.map((i) => <a href={i.href}>{i.label}{typeof i.n === 'number' && <span class="mono n">{i.n}</span>}</a>)}
+        {items.slice(0, VUE).map((i) => <a href={i.href}>{i.label}{typeof i.n === 'number' && <span class="mono n">{i.n}</span>}</a>)}
+        {items.length > VUE && (
+          <details><summary>+ {items.length - VUE}</summary>{items.slice(VUE).map((i) => <a href={i.href}>{i.label}{typeof i.n === 'number' && <span class="mono n">{i.n}</span>}</a>)}</details>
+        )}
       </div>
     ))}
   </div>
@@ -46,6 +51,9 @@ const cols = [[s.byTool, tools], [s.byPlatform, platforms], [s.byLanguage, langu
 .col>b{font:700 20px/1.2 var(--hand);margin-bottom:4px}
 .col a{text-decoration:none}
 .col a:hover{text-decoration:underline}
+.col details[open]{display:flex;flex-direction:column;gap:4px}
+.col summary{cursor:pointer;color:var(--pencil);font-size:14px;list-style:none}
+.col summary::-webkit-details-marker{display:none}
 .n{font-size:12px;color:var(--pencil);margin-left:6px}
 @media (max-width:760px){.grid{grid-template-columns:1fr 1fr;gap:14px}}
 </style>

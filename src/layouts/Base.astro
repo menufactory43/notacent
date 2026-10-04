@@ -39,6 +39,7 @@ const ogImage = new URL(image ?? (locale === 'fr' ? '/og.png' : '/og-en.png'), A
   <meta name="twitter:image" content={ogImage} />
   <link rel="alternate" hreflang="fr" href={new URL(localePath('fr', path), Astro.site ?? Astro.url)} />
   <link rel="alternate" hreflang="en" href={new URL(localePath('en', path), Astro.site ?? Astro.url)} />
+  <link rel="alternate" hreflang="x-default" href={new URL(localePath('fr', path), Astro.site ?? Astro.url)} />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="sitemap" href="/sitemap.xml" />
   <script defer src="/_vercel/insights/script.js"></script>

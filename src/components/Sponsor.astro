@@ -2,9 +2,9 @@
 // La page Sponsoriser : une marque utile aux makers, une seule place, jamais dans le classement.
 // Rien n'est vendu en libre-service : on en parle par mail, puis l'emplacement se code pour le premier sponsor.
 import Base from '../layouts/Base.astro';
-import { localePath, type Locale } from '../i18n/strings';
+import { t, localePath, type Locale } from '../i18n/strings';
 import { sponsorAudience } from '../lib/db';
-import { SITE } from '../lib/seo';
+import { SITE, breadcrumbLd } from '../lib/seo';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
 const fr = locale === 'fr';
@@ -16,11 +16,12 @@ const n = await sponsorAudience().catch(() => ({ apps: 0, makers: 0, claimed: 0,
 const num = (x: number) => x.toLocaleString(locale);
 const mail = `mailto:gabriel@getnotacent.com?subject=${encodeURIComponent(fr ? 'Sponsor Not a Cent' : 'Sponsoring Not a Cent')}`;
 const pageUrl = `${SITE}${L('/sponsor')}`;
-const jsonLd = {
+const page = {
   '@context': 'https://schema.org', '@type': 'WebPage', '@id': pageUrl, url: pageUrl, inLanguage: locale,
   name: fr ? 'Sponsoriser Not a Cent' : 'Sponsor Not a Cent',
   offers: { '@type': 'Offer', name: fr ? 'Sponsor fondateur' : 'Founding sponsor', price: String(PRICE_EUR), priceCurrency: 'EUR', url: pageUrl },
 };
+const jsonLd = [page, breadcrumbLd(locale, [[t(locale).home, '/'], [fr ? 'Sponsoriser' : 'Sponsor', '/sponsor']])];
 ---
 <Base locale={locale} path="/sponsor" title={fr ? 'Sponsoriser' : 'Sponsor'} jsonLd={jsonLd} description={fr
   ? `Une place de sponsor sur Not a Cent, l'annuaire des apps qui n'ont pas encore gagné un centime : ${num(n.apps)} apps, ${num(n.makers)} makers. Jamais dans le classement. ${price} par mois.`

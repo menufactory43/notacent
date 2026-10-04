@@ -8,3 +8,6 @@ dist/
 .vercel
 .env*
 .neon
+
+# Secrets chiffrés fnox : gardés en local, jamais sur ce dépôt public
+fnox.toml

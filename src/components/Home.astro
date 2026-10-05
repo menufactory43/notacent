@@ -55,30 +55,35 @@ const seek = [
   { label: s.seekRadar, href: browsePath({ kind: 'intent', value: 'radar' }, locale) },
   { label: s.seekTakeover, href: browsePath({ kind: 'intent', value: 'takeover' }, locale) },
 ];
+// L'accueil montre d'abord le classement : les dix premiers, la suite repliée (toujours dans le HTML pour Google).
+const SHOWN = 10;
+const toolChips = [
+  { label: s.allTools, href: link({ tool: '' }), on: !tool },
+  ...tools.map((x) => ({ label: x, href: link({ tool: x }), on: tool === x })),
+];
+// Sur mobile, seule la première phrase de l'accroche reste.
+const [lede1, ...rest] = s.lede.split(/(?<=\.) /);
+const ledeRest = rest.join(' ');
 ---
 <Base locale={locale} path="/" jsonLd={isSample ? undefined : siteLd(locale, board)}>
   {notice && <p class="notice sk hand">{notice}</p>}
   <AppOfTheWeek locale={locale} />
+  <div class="top">
   <section class="hero">
-    <div>
-      <h1 set:html={s.h1} />
-      <p class="lede">{s.lede}</p>
-      <form class="paste sk" method="get" action="/api/auth/github">
-        <input type="hidden" name="lang" value={locale} />
-        <input type="url" name="repo" placeholder={s.placeholder} aria-label="URL" />
-        <button class="sk sk-btn primary" type="submit">{s.add}</button>
-      </form>
-      <small class="hint">{s.hint} · <a href="https://github.com/menufactory43/notacent/blob/main/src/lib/metrics.ts">{s.hintSource}</a></small>
-      <div class="seek">
-        <span class="hand">{s.seek}</span>
-        {seek.map((x) => <a class="chip" href={x.href}>{x.label}</a>)}
-      </div>
+    <h1 set:html={s.h1} />
+    <p class="lede">{lede1}{' '}<span class="lede-more">{ledeRest}</span></p>
+    <form class="paste sk" method="get" action="/api/auth/github">
+      <input type="hidden" name="lang" value={locale} />
+      <input type="url" name="repo" placeholder={s.placeholder} aria-label="URL" />
+      <button class="sk sk-btn primary" type="submit">{s.add}</button>
+    </form>
+    <small class="hint">{s.hint} · <a href="https://github.com/menufactory43/notacent/blob/main/src/lib/metrics.ts">{s.hintSource}</a></small>
+    <div class="seek">
+      <span class="hand">{s.seek}</span>
+      {seek.map((x) => <a class="chip" href={x.href}>{x.label}</a>)}
     </div>
-    <Feed locale={locale} />
   </section>
-
-  <Gains locale={locale} days={board[0]?.activeDays ?? 214} />
-  <Gems locale={locale} week={gems.week} streak={gems.streak} radar={gems.radar} />
+  <div class="feed"><Feed locale={locale} /></div>
 
   <section id="board">
     <div class="sh">
@@ -86,10 +91,11 @@ const seek = [
       <div class="seg" role="group">
         {tabs.map(([k, label]) => <a href={link({ t: k === 'all' ? '' : k })} aria-current={tab === k ? 'page' : undefined}>{label}</a>)}
       </div>
-      <div class="filters">
-        <a class="chip" href={link({ tool: '' })} aria-pressed={!tool ? 'true' : 'false'}>{s.allTools}</a>
-        {tools.map((x) => <a class="chip" href={link({ tool: x })} aria-pressed={tool === x ? 'true' : 'false'}>{x}</a>)}
-      </div>
+      <div class="filters">{toolChips.map((x) => <a class="chip" href={x.href} aria-pressed={x.on ? 'true' : 'false'}>{x.label}</a>)}</div>
+      <details class="filters-m" open={tool ? true : undefined}>
+        <summary class="chip">{tool || s.filterTool}</summary>
+        <div class="filters">{toolChips.map((x) => <a class="chip" href={x.href} aria-pressed={x.on ? 'true' : 'false'}>{x.label}</a>)}</div>
+      </details>
     </div>
     {tab === 'euro' && <p class="sub hand">{s.euroBoardSub}</p>}
     {isSample && <p class="examples hand">{githubReady() ? s.emptyBoard : s.examples}</p>}
@@ -98,24 +104,40 @@ const seek = [
     <div class="board">
       {board.slice(0, 2).map((a, i) => <Row app={a} rank={i + 1} locale={locale} seed={i + 1} stamp={gemStamp(a.slug)} />)}
       {sponsor && <Row app={sponsor} locale={locale} seed={7} />}
-      {board.slice(2).map((a, i) => <Row app={a} rank={i + 3} locale={locale} seed={i + 3} stamp={gemStamp(a.slug)} />)}
+      {board.slice(2, SHOWN).map((a, i) => <Row app={a} rank={i + 3} locale={locale} seed={i + 3} stamp={gemStamp(a.slug)} />)}
     </div>
+    {board.length > SHOWN && (
+      <details class="more">
+        <summary class="hand">{s.moreApps} ({board.length - SHOWN})</summary>
+        <div class="board">
+          {board.slice(SHOWN).map((a, i) => <Row app={a} rank={i + SHOWN + 1} locale={locale} seed={i + SHOWN + 1} stamp={gemStamp(a.slug)} />)}
+        </div>
+      </details>
+    )}
     <p class="rules hand">{s.rulesLine} · <s>{s.r4}</s> {s.r4b}</p>
   </section>
+  </div>
+
+  <Gains locale={locale} days={board[0]?.activeDays ?? 214} />
+  <Gems locale={locale} week={gems.week} streak={gems.streak} radar={gems.radar} />
 
   <Browse locale={locale} sample={isSample} />
 </Base>
 <style>
 .notice{padding:10px 16px;margin:0 0 24px;font-size:19px;background:var(--paper-2)}
-.hero{display:grid;grid-template-columns:1.3fr .9fr;gap:40px;align-items:start;margin-bottom:52px}
-h1{font:700 clamp(40px,7vw,64px)/1 var(--hand);margin:0 0 12px;text-wrap:balance}
+.top{display:grid;grid-template-columns:1.3fr .9fr;grid-template-areas:'hero feed' 'board board';gap:28px 40px;align-items:start;margin-bottom:52px}
+.hero{grid-area:hero;min-width:0}
+.feed{grid-area:feed;min-width:0}
+#board{grid-area:board;min-width:0}
+h1{font:700 clamp(34px,5vw,50px)/1.05 var(--hand);margin:0 0 12px;text-wrap:balance}
 h1 :global(mark){background:linear-gradient(transparent 35%,var(--mark) 35%,var(--mark) 92%,transparent 92%);color:inherit;padding:0 4px}
 .lede{max-width:52ch;margin:0 0 20px;font-size:18px}
 .paste{display:flex;gap:8px;padding:6px 6px 6px 16px;align-items:center;max-width:560px}
 .paste input[type=url]{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;outline:none}
 .paste input::placeholder{color:var(--pencil)}
 .paste:focus-within{box-shadow:0 0 0 3px var(--hilite)}
-.hint{display:block;margin-top:8px;font:500 17px/1.2 var(--hand);color:var(--pencil)}
+.hint{display:none;margin-top:8px;font:500 17px/1.2 var(--hand);color:var(--pencil)}
+.paste:focus-within+.hint{display:block}
 .hint a{color:inherit;text-decoration:underline dotted}
 .seek{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
 .seek>span{font:500 17px/1 var(--hand);color:var(--pencil)}
@@ -123,6 +145,14 @@ h1 :global(mark){background:linear-gradient(transparent 35%,var(--mark) 35%,var(
 .sh{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0 0 8px}
 .sh h2{font:700 30px/1 var(--hand);margin:0}
 .filters{display:flex;gap:6px;flex-wrap:wrap;width:100%}
+.filters-m{display:none;width:100%}
+.filters-m summary{display:inline-block;cursor:pointer;list-style:none}
+.filters-m summary::-webkit-details-marker{display:none}
+.filters-m summary::after{content:' ▾'}
+.filters-m[open] summary{margin-bottom:8px}
+.more{margin-top:14px}
+.more summary{cursor:pointer;font:700 19px/1.2 var(--hand);color:var(--pencil);padding:8px 0}
+.more[open] summary{margin-bottom:14px}
 .chip{text-decoration:none}
 .examples{color:var(--redpen);font-size:17px;margin:0 0 14px}
 .sub{color:var(--pencil);font-size:18px;margin:0 0 10px}
@@ -131,5 +161,13 @@ h1 :global(mark){background:linear-gradient(transparent 35%,var(--mark) 35%,var(
 .board{display:grid;gap:14px}
 .rules{margin:16px 0 0;font:500 17px/1.3 var(--hand);color:var(--pencil)}
 .rules s{color:var(--pencil)}
-@media (max-width:760px){.hero{grid-template-columns:1fr}.cols{display:none}}
+@media (max-width:760px){
+  .top{grid-template-columns:1fr;grid-template-areas:'hero' 'board' 'feed';gap:24px}
+  .lede-more{display:none}
+  .seek{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;white-space:nowrap}
+  .seek>*{flex:none}
+  .sh>.filters{display:none}
+  .filters-m{display:block}
+  .cols{display:none}
+}
 </style>

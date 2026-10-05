@@ -34,12 +34,12 @@ const href = a ? withUtm(a.url[locale]) : '';
 .name:hover{text-decoration:underline}
 .ours{font:500 16px/1 var(--hand);color:var(--pencil)}
 .pitch{margin:4px 0 0;font-size:15px}
-.price{margin:2px 0 0;font:500 16px/1.2 var(--hand);color:var(--pencil)}
+.price{display:none;margin:2px 0 0;font:500 16px/1.2 var(--hand);color:var(--pencil)}
 .go{display:flex;flex-direction:column;align-items:center;gap:6px}
 .go .sk-btn{white-space:nowrap}
 .fiche{font:500 16px/1 var(--hand);color:var(--pencil)}
 @media (max-width:760px){
-  .aotw{grid-template-columns:auto 1fr;align-items:start}
-  .go{grid-column:1/-1;flex-direction:row;justify-content:flex-start;gap:14px}
+  .aotw{grid-template-columns:auto 1fr auto;align-items:center;padding:8px 12px;margin-bottom:18px}
+  .stamp,.ours,.pitch,.price,.fiche{display:none}
 }
 </style>

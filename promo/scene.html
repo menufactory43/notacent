@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Not a Cent · motion</title>
+<style>
+html,body{margin:0;background:#111;color:#ddd;font:14px system-ui}
+canvas{display:block;width:100vw;max-width:calc(100vh * 16 / 9);height:auto;margin:0 auto}
+#bar{display:flex;gap:10px;align-items:center;padding:8px 12px}
+#bar input{flex:1}
+body.render #bar{display:none}
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="bar"><button id="pp">pause</button><input id="scrub" type="range" min="0" max="1799" value="0"><span id="tc">0.00</span></div>
+<script src="scene.js"></script>
+<script>
+// ?render : le moteur de rendu pilote les images une par une. Sinon, aperçu temps réel (sans flou de bougé).
+(async () => {
+  const render = location.search.includes('render');
+  if (render) document.body.classList.add('render');
+  await SCENE.init(document.getElementById('c'));
+  window.READY = true;
+  if (render) return;
+  let playing = true, t0 = performance.now(), from = 0;
+  const scrub = document.getElementById('scrub'), tc = document.getElementById('tc');
+  const cur = () => playing ? (from + Math.floor((performance.now() - t0) / 1000 * SCENE.FPS)) % SCENE.FRAMES : +scrub.value;
+  document.getElementById('pp').onclick = (e) => { from = cur(); playing = !playing; t0 = performance.now(); e.target.textContent = playing ? 'pause' : 'play'; };
+  scrub.oninput = () => { playing = false; document.getElementById('pp').textContent = 'play'; };
+  const loop = () => { const i = cur(); SCENE.draw(i, { mb: false }); if (playing) scrub.value = i; tc.textContent = (i / SCENE.FPS).toFixed(2); requestAnimationFrame(loop); };
+  loop();
+})();
+</script>
+</body>
+</html>

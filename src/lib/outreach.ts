@@ -101,7 +101,9 @@ export function guessLocale(c: Candidate): MailLocale { return frenchish(c) ? 'f
 
 export interface Mail { to: string | null; subject: string; body: string; locale: MailLocale }
 export async function composeMail(c: Candidate, locale: MailLocale = guessLocale(c), row?: DbApp | null): Promise<Mail> {
-  const first = (c.owner_name ?? '').trim().split(/\s+/)[0] || c.owner_login;
+  // Un prénom qui n'en est pas un (« Fan() », « 张三 (Zhang) ») : le login, plutôt qu'un bonjour bizarre.
+  const name = (c.owner_name ?? '').trim().split(/\s+/)[0] ?? '';
+  const first = /^\p{L}[\p{L}'’-]*$/u.test(name) ? name : c.owner_login;
   const days = c.active_days ?? c.metrics.active_days;
   const streak = c.best_streak_weeks ?? c.metrics.best_streak_weeks;
   const firstCommit = new Date(c.first_commit ?? c.metrics.first_commit ?? Date.now());

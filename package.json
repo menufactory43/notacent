@@ -12,8 +12,7 @@
     "astro": "astro",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
     "og": "node --experimental-strip-types scripts/og.mjs",
-    "prospect": "node --env-file=.env.local --experimental-strip-types scripts/prospect.mjs",
-    "outreach:send": "esbuild scripts/send-outreach.ts --bundle --platform=node --format=esm --packages=external --define:import.meta.env=process.env --outfile=node_modules/.cache/send-outreach.mjs --log-level=error && node node_modules/.cache/send-outreach.mjs"
+    "prospect": "node --env-file=.env.local --experimental-strip-types scripts/prospect.mjs"
   },
   "dependencies": {
     "@astrojs/vercel": "^11.0.10",

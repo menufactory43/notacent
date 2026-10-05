@@ -11,3 +11,6 @@ dist/
 
 # Secrets chiffrés fnox : gardés en local, jamais sur ce dépôt public
 fnox.toml
+
+# Prospection des makers : gardée en local
+scripts/send-outreach.ts

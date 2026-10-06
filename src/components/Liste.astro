@@ -2,6 +2,8 @@
 import Base from '../layouts/Base.astro';
 import Row from './Row.astro';
 import Browse from './Browse.astro';
+import AppOfTheWeek from './AppOfTheWeek.astro';
+import { appOfTheWeek } from '../data/appOfTheWeek';
 import { t, localePath, type Locale } from '../i18n/strings';
 import { browseApps, type Browse as BrowseFilter } from '../lib/db';
 import { toView, declaredFree, declaredPaid } from '../lib/view';
@@ -30,6 +32,8 @@ const sections = split ? [
   { title: s.altPaid, sub: s.altPaidSub, rows: board.filter(declaredPaid) },
   { title: s.altUnknown, sub: s.altUnknownSub, rows: board.filter((a) => !declaredFree(a) && !declaredPaid(a)) },
 ].filter((x) => x.rows.length) : [];
+// Sur une page « Alternatives à X » où figure l'app du moment, son encart (qui dit « faite par nous ») donne le lien direct.
+const aotw = browse.kind === 'alt' && !!appOfTheWeek?.slug && board.some((a) => a.slug === appOfTheWeek.slug);
 const path = browsePath(browse, 'fr');
 const rss = `/flux/${path.split('/').slice(1).join('/')}.xml`;
 const alertMsg = { ok: s.alertOk, exists: s.alertExists, bad: s.alertBad }[Astro.url.searchParams.get('alerte') ?? ''] ?? '';
@@ -48,6 +52,7 @@ const alertMsg = { ok: s.alertOk, exists: s.alertExists, bad: s.alertBad }[Astro
       <small>{alertMsg ? <b class="hand msg">{alertMsg}</b> : s.alertNote} · <a href={rss}>{s.rss}</a></small>
     </form>
   </section>
+  {aotw && <AppOfTheWeek locale={locale} />}
   {board.length === 0 && <p class="nobody hand">{s.nobody} {s.nobodyHint} <a href={localePath(locale, '/ajouter')}>{s.add}</a></p>}
   <div class="cols hand" aria-hidden="true"><span></span><span></span><span>{s.colWeeks}</span><span class="r">{s.colDays}</span><span class="r">{s.colBravos}</span></div>
   <div class="board">

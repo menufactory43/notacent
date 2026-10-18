@@ -3,10 +3,8 @@ import '../styles/fonts.css';
 import '../styles/global.css';
 import { t, localePath, otherLocale, type Locale } from '../i18n/strings';
 import { totals } from '../lib/db';
-import { currentUser } from '../lib/session';
 interface Props { locale: Locale; title?: string; description?: string; path?: string; image?: string; jsonLd?: unknown }
 const { locale, title, description, path = '/', image, jsonLd } = Astro.props;
-const user = await currentUser(Astro.cookies).catch(() => null);
 const s = t(locale);
 const other = otherLocale(locale);
 const tot = await totals().catch(() => ({ apps: 0, days: 0, firstEuro: 0 }));
@@ -54,7 +52,7 @@ const ogImage = new URL(image ?? (locale === 'fr' ? '/og.png' : '/og-en.png'), A
       <a class="logo" href={localePath(locale, '/')}><span>Not a</span><span class="zero">Cent</span></a>
       <div class="nav-r">
         <span class="tally mono"><b>{tot.apps}</b> {s.apps} · <b>{tot.days.toLocaleString(locale)}</b> {s.totalDays} · {tot.firstEuro ? <><b>{tot.firstEuro}</b> {s.tallyFirst(tot.firstEuro)}</> : <><b>{locale === 'fr' ? '0 €' : '$0'}</b> {s.tallyZero}</>}</span>
-        {user && <form method="post" action="/api/auth/logout" class="me"><span class="hand">@{user.login}</span><button type="submit" class="chip">{s.logout}</button></form>}
+        <form method="post" action="/api/auth/logout" class="me" hidden><span class="hand"></span><button type="submit" class="chip">{s.logout}</button></form>
         <div class="seg" role="group" aria-label="Langue / Language">
           <a href={localePath('fr', path)} aria-current={locale === 'fr' ? 'page' : undefined}>FR</a>
           <a href={localePath('en', path)} aria-current={locale === 'en' ? 'page' : undefined}>EN</a>
@@ -67,6 +65,27 @@ const ogImage = new URL(image ?? (locale === 'fr' ? '/og.png' : '/og-en.png'), A
       <span>{s.foot2} · <a href={localePath(locale, '/methode')}>{s.method}</a> · <a href={localePath(locale, '/chiffres')}>{locale === 'fr' ? 'Chiffres' : 'Figures'}</a> · <a href={localePath(locale, '/confidentialite')}>{locale === 'fr' ? 'Confidentialité' : 'Privacy'}</a> · <a href={localePath(locale, '/a-propos')}>{locale === 'fr' ? 'À propos' : 'About'}</a> · <a href={localePath(locale, '/sponsor')}>{locale === 'fr' ? 'Sponsoriser' : 'Sponsor'}</a> · <a href="/api/mcp" title="Model Context Protocol">MCP</a></span>
     </footer>
   </div>
+  <script is:inline>
+    // La page est la même pour tous (elle sort du cache du CDN) : ce qui ne regarde que la personne connectée s'affiche ici.
+    // nac_in vaut 1 tant qu'une session est ouverte ; sans lui, une ancienne connexion se reconnaît à nac_lang, posé au même moment.
+    (function () {
+      var c = document.cookie;
+      if (!/(^|; )nac_in=1/.test(c) && (/(^|; )nac_in=/.test(c) || !/(^|; )nac_lang=/.test(c))) return;
+      fetch('/api/moi', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (u) {
+        if (!u) return;
+        var me = document.querySelector('nav .me');
+        if (me) { me.querySelector('span').textContent = '@' + u.login; me.hidden = false; }
+        document.querySelectorAll('[data-if="anon"]').forEach(function (e) { e.hidden = true; });
+        document.querySelectorAll('[data-owner]').forEach(function (box) {
+          var makers = (box.getAttribute('data-makers') || '').toLowerCase().split(',');
+          var mine = String(u.id) === box.getAttribute('data-owner') || makers.indexOf(u.login.toLowerCase()) >= 0;
+          if (!mine) return;
+          document.querySelectorAll('[data-if="mine"]').forEach(function (e) { e.hidden = false; });
+          document.querySelectorAll('[data-if="not-mine"]').forEach(function (e) { e.hidden = true; });
+        });
+      }).catch(function () {});
+    })();
+  </script>
 </body>
 </html>
 <style>

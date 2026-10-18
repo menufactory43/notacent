@@ -23,8 +23,13 @@ export interface SessionUser { id: number; github_id: number; login: string; nam
 
 export async function setSession(cookies: AstroCookies, userId: number) {
   cookies.set('nac_session', await sign(String(userId)), { path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 90 });
+  signedInHint(cookies, true);
 }
-export function clearSession(cookies: AstroCookies) { cookies.delete('nac_session', { path: '/' }); }
+export function clearSession(cookies: AstroCookies) { cookies.delete('nac_session', { path: '/' }); signedInHint(cookies, false); }
+// nac_in dit seulement à la page s'il vaut la peine de demander /api/moi : un visiteur anonyme ne réveille pas la base.
+export function signedInHint(cookies: AstroCookies, on: boolean) {
+  cookies.set('nac_in', on ? '1' : '0', { path: '/', secure: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 90 });
+}
 export async function currentUser(cookies: AstroCookies): Promise<SessionUser | null> {
   if (!hasDb) return null;
   const id = await verify(cookies.get('nac_session')?.value);

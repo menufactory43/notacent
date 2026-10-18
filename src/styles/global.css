@@ -36,3 +36,4 @@ a{color:inherit}
 .chip[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);background:var(--paper-2)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (prefers-reduced-motion: reduce){.sk-btn{transition:none}.sk-btn:hover{transform:none}}
+[hidden]{display:none!important}

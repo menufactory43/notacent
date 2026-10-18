@@ -2,7 +2,6 @@
 import Base from '../layouts/Base.astro';
 import { t, localePath, type Locale } from '../i18n/strings';
 import type { App } from '../data/apps';
-import { currentUser } from '../lib/session';
 import { stripeReady, sponsorDays, sponsorCents, sponsorCurrency } from '../lib/stripe';
 import { sponsorUntil, activeSponsor, rankIn, relatedApps, altName, type DbApp } from '../lib/db';
 import { toView, declaredFree, declaredPricing, revenueState } from '../lib/view';
@@ -15,9 +14,8 @@ import Badge from './Badge.astro';
 interface Props { locale: Locale; app: App; ownerId?: number; sample?: boolean; appId?: number; row?: DbApp }
 const { locale, app, ownerId, sample, appId, row } = Astro.props;
 const s = t(locale);
-const user = await currentUser(Astro.cookies).catch(() => null);
 const comakers = app.comakers ?? [];
-const mine = Boolean(user && ((ownerId && user.id === ownerId) || comakers.some((l) => l.toLowerCase() === user.login.toLowerCase())));
+// Le maker connecté ne se lit plus ici : la page sort du cache, le script de Base montre ses boutons (data-if="mine").
 const makers = [app.owner, ...comakers];
 const since = new Date(app.firstCommit).toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 // Le tampon dit ce que l'app a gagné, d'après son maker : « 0 € gagné », ou « 1er € » une fois le cap franchi.
@@ -60,7 +58,7 @@ const altLive = altOwn ? altList : (await Promise.all(altList.map(async (x) => (
 const alts = altLive.map((x) => ({ name: x.name, href: browsePath({ kind: 'alt', value: x.slug }, locale) }));
 const host = (() => { try { return app.url ? new URL(app.url).host : ''; } catch { return ''; } })();
 // Fiche non réclamée : créée depuis le repo public. Pas de dofollow ni de badge tant que le maker ne l'a pas prise en main.
-const unclaimed = Boolean(app.unclaimed) && !mine;
+const unclaimed = Boolean(app.unclaimed);
 const claimHref = `/api/auth/github?lang=${locale}&back=${encodeURIComponent(localePath(locale, `/app/${app.slug}/modifier`))}`;
 const crumbs: [string, string][] = [[s.home, '/'], ...(toolLink ? [[toolLink.label, toolLink.href.replace(/^\/en/, '')] as [string, string]] : []), ...(platLink ? [[platLink.label, platLink.href.replace(/^\/en/, '')] as [string, string]] : []), [app.name, `/app/${app.slug}`]];
 const ld = sample ? undefined : [softwareLd(app, locale), breadcrumbLd(locale, crumbs)];
@@ -78,7 +76,7 @@ const workflowUrl = nota && app.repo ? `${app.repo}/blob/HEAD/${nota.path}` : nu
 <Base locale={locale} path={`/app/${app.slug}`} title={app.name} description={metaDesc} image={`/api/og/${app.slug}.png${locale === 'fr' ? '' : '?lang=en'}`} jsonLd={ld}>
   {sample && <p class="examples hand">{s.examples}</p>}
   <p class="crumb">{crumbs.slice(0, -1).map((c) => <><a href={localePath(locale, c[1])}>{c[0]}</a> › </>)}<span>{app.name}</span></p>
-  <article class="sk fiche">
+  <article class="sk fiche" data-owner={ownerId ?? ''} data-makers={comakers.join(',')}>
     {stamp && <span class="stamp">{stamp}</span>}
     <div class="shot">
       {app.imageUrl ? <img src={app.imageUrl} alt="" loading="lazy" /> : <canvas id="shot" width="520" height="390" aria-hidden="true"></canvas>}
@@ -126,15 +124,15 @@ const workflowUrl = nota && app.repo ? `${app.repo}/blob/HEAD/${nota.path}` : nu
         <button class="sk sk-btn primary bravo" type="button" data-slug={app.slug} data-already={s.already}>✋ {s.bravo} · <span class="count mono">{app.bravos}</span></button>
         {app.url && <a class="sk sk-btn" href={sample ? app.url : `/api/apps/go?slug=${app.slug}`} rel={unclaimed ? 'nofollow noopener' : 'noopener'}>{s.open} ↗</a>}
         {app.repo && <a class="sk sk-btn" href={app.repo} rel="noopener">{s.repo}</a>}
-        {mine && <a class="sk sk-btn" href={localePath(locale, `/app/${app.slug}/modifier`)}>✎ {s.edit}</a>}
+        {!sample && <a class="sk sk-btn" href={localePath(locale, `/app/${app.slug}/modifier`)} data-if="mine" hidden>✎ {s.edit}</a>}
       </div>
       {host && !unclaimed && <p class="dofollow hand">{s.dofollow(host)} · {app.clicks.toLocaleString(locale)} {s.clicks}</p>}
-      {!user && !sample && !unclaimed && <p class="yours hand"><a href={claimHref}>{s.yours}</a></p>}
+      {!sample && !unclaimed && <p class="yours hand" data-if="anon"><a href={claimHref}>{s.yours}</a></p>}
       {sponsorMsg && <p class="sponsor-msg hand">{sponsorMsg}</p>}
       {until && <p class="sponsor-msg hand">★ {s.sponsorUntil(new Date(until).toLocaleDateString(locale))}</p>}
-      {mine && stripeReady() && !until && rev !== 'first' && <p class="sponsor-note hand">{s.sponsorFirstOnly}</p>}
-      {mine && stripeReady() && !until && rev === 'first' && (
-        <form method="post" action="/api/sponsor/checkout" class="sponsor">
+      {!sample && stripeReady() && !until && rev !== 'first' && <p class="sponsor-note hand" data-if="mine" hidden>{s.sponsorFirstOnly}</p>}
+      {!sample && stripeReady() && !until && rev === 'first' && (
+        <form method="post" action="/api/sponsor/checkout" class="sponsor" data-if="mine" hidden>
           <input type="hidden" name="slug" value={app.slug} />
           <button class="sk sk-btn" type="submit">★ {s.sponsorBtn(sponsorDays(), price)}</button>
           <small class="hand">{someoneElse ? s.sponsorQueue : s.sponsorNote}</small>
@@ -170,7 +168,10 @@ const workflowUrl = nota && app.repo ? `${app.repo}/blob/HEAD/${nota.path}` : nu
         <small class="hand">{s.unclaimedNote}</small>
       </section>
     ) : (
-      <Badge locale={locale} slug={app.slug} days={app.activeDays} title={s.badgeTitle} seenAt={app.badgeAt} firstEuro={rev === 'first'} code={mine} />
+      <>
+        <div data-if="not-mine"><Badge locale={locale} slug={app.slug} days={app.activeDays} title={s.badgeTitle} seenAt={app.badgeAt} firstEuro={rev === 'first'} code={false} /></div>
+        {!sample && <div data-if="mine" hidden><Badge locale={locale} slug={app.slug} days={app.activeDays} title={s.badgeTitle} seenAt={app.badgeAt} firstEuro={rev === 'first'} code={true} /></div>}
+      </>
     )}
   </div>
 

@@ -59,7 +59,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const altNames = typed.map(([k, x]) => known.find((r) => r.slug === k)?.name ?? x);
   const rows = (await sql.query(
     `update apps set url = $1, image_url = coalesce($2, image_url), longest = $3, tool = $4, pricing = $5, status = $6, name = coalesce($7, name),
-       image = coalesce($10, image), image_type = coalesce($11, image_type), tagline = $12, platforms = case when cardinality($13::text[]) > 0 then $13::text[] else platforms end, takeover = $14, store_url = $15, store = $16, alternative_to = $17, alt_slugs = $18,
+       image = coalesce($10, image), image_type = coalesce($11, image_type), image_at = case when $10::bytea is not null then now() else image_at end, tagline = $12, platforms = case when cardinality($13::text[]) > 0 then $13::text[] else platforms end, takeover = $14, store_url = $15, store = $16, alternative_to = $17, alt_slugs = $18,
        revenue_source = case when $19 then 'declared' else revenue_source end, revenue_declared_at = case when $19 then coalesce(revenue_declared_at, now()) else revenue_declared_at end
      where id = $9 and slug = $8 returning id, slug`,
     [url, httpOnly(clean(f.get('image_url'), 500)), clean(f.get('longest'), 600), tool, pricing, status, clean(f.get('name'), 80), slug, before.id, image, imageType, clean(f.get('tagline'), 140), platforms, takeover, declared ? storeUrl : null, store && JSON.stringify(store), altNames, altSlugs, declareZero],

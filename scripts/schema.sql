@@ -49,6 +49,7 @@ create table if not exists activity (
 create index if not exists activity_recent on activity (created_at desc);
 alter table apps add column if not exists image bytea;
 alter table apps add column if not exists image_type text;
+alter table apps add column if not exists image_at timestamptz;
 create table if not exists sponsors (
   id serial primary key,
   app_id int references apps(id) on delete cascade,

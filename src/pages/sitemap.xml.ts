@@ -23,5 +23,5 @@ export const GET: APIRoute = async () => {
   for (const b of browse) pages.push({ fr: browsePath(b, 'fr'), en: browsePath(b, 'en'), prio: '0.7' });
   const url = (p: typeof pages[number], l: 'fr' | 'en') => `<url><loc>${SITE}${p[l]}</loc>${p.mod ? `<lastmod>${p.mod}</lastmod>` : ''}<priority>${p.prio}</priority><xhtml:link rel="alternate" hreflang="fr" href="${SITE}${p.fr}"/><xhtml:link rel="alternate" hreflang="en" href="${SITE}${p.en}"/></url>`;
   const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${pages.flatMap((p) => [url(p, 'fr'), url(p, 'en')]).join('\n')}\n</urlset>`;
-  return new Response(body, { headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
+  return new Response(body, { headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400' } });
 };

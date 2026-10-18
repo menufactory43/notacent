@@ -66,6 +66,6 @@ export const GET: APIRoute = async ({ params, url }) => {
   );
 
   return new Response(png as Uint8Array<ArrayBuffer>, {
-    headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=300' },
+    headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=300, s-maxage=86400, stale-while-revalidate=604800' },
   });
 };

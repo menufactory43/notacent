@@ -10,7 +10,7 @@ export interface DbApp {
   pricing: Pricing; status: 'polishing' | 'done' | 'paused';
   first_commit: string | null; last_commit: string | null; commits: number; active_days: number;
   active_days_30: number; best_streak_weeks: number; weekly: number[]; bravos: number; clicks: number;
-  published: boolean; refreshed_at: string | null; created_at: string; login?: string; has_image?: boolean; sponsored?: boolean;
+  published: boolean; refreshed_at: string | null; created_at: string; login?: string; has_image?: boolean; image_v?: number | string | null; sponsored?: boolean;
   stars: number; platform: string | null; platforms: string[]; takeover: boolean; unclaimed?: boolean; authors: number; active_dates: (string | Date)[] | null; owner_commits: number | null; comakers: string[];
   store_url: string | null; store: Store | null; notarized: Notarized | null;
   alternative_to: string[]; alt_slugs: string[]; badge_at: string | null;
@@ -23,7 +23,7 @@ export const PRICINGS: Pricing[] = ['free', 'donations', 'one_time', 'subscripti
 export type RevenueSource = 'declared';
 
 // Les colonnes d'une fiche, une fois pour toutes : chaque requête les lit telles quelles.
-const COLS = `a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image, coalesce(a.stars, 0) as stars, a.platforms[1] as platform, a.platforms, coalesce(a.takeover, false) as takeover, (not coalesce(u.claimed, true)) as unclaimed, coalesce(a.authors, 1) as authors, a.active_dates, a.owner_commits, (select coalesce(array_agg(m.login order by m.added_at), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers, a.store_url, a.store, a.notarized, coalesce(a.alternative_to, '{}') as alternative_to, coalesce(a.alt_slugs, '{}') as alt_slugs, a.badge_at, a.revenue_source, a.revenue_declared_at, a.first_euro_at, a.first_euro_days`;
+const COLS = `a.id, a.user_id, a.repo_id, a.full_name, a.slug, a.name, a.description, a.tagline, a.language, a.private, a.homepage, a.url, a.image_url, a.longest, a.tool, a.pricing, a.status, a.first_commit, a.last_commit, a.commits, a.active_days, a.active_days_30, a.best_streak_weeks, a.weekly, a.bravos, a.clicks, a.published, a.refreshed_at, a.created_at, u.login, (a.image is not null) as has_image, extract(epoch from a.image_at)::bigint as image_v, coalesce(a.stars, 0) as stars, a.platforms[1] as platform, a.platforms, coalesce(a.takeover, false) as takeover, (not coalesce(u.claimed, true)) as unclaimed, coalesce(a.authors, 1) as authors, a.active_dates, a.owner_commits, (select coalesce(array_agg(m.login order by m.added_at), '{}') from makers m where m.app_id = a.id and m.confirmed) as comakers, a.store_url, a.store, a.notarized, coalesce(a.alternative_to, '{}') as alternative_to, coalesce(a.alt_slugs, '{}') as alt_slugs, a.badge_at, a.revenue_source, a.revenue_declared_at, a.first_euro_at, a.first_euro_days`;
 const FROM = `from apps a join users u on u.id = a.user_id`;
 // L'éligibilité, une seule fois pour tout le site : une fiche publiée. Le modèle économique ne compte pas
 // (gratuite, payante, abonnement : même règle). Classement, parcourir, alternatives, recherche MCP, alertes,

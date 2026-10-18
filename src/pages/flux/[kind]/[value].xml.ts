@@ -22,5 +22,5 @@ export const GET: APIRoute = async ({ params, url }) => {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Not a Cent · ${esc(browseLabel(b, locale))}</title><link>${page}</link><atom:link href="${SITE}${url.pathname}${url.search}" rel="self" type="application/rss+xml"/><description>${esc(browseLede(b, locale))}</description><language>${locale}</language>
 ${items.join('\n')}
 </channel></rss>`;
-  return new Response(body, { headers: { 'Content-Type': 'application/rss+xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
+  return new Response(body, { headers: { 'Content-Type': 'application/rss+xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400' } });
 };

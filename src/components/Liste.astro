@@ -33,7 +33,7 @@ const sections = split ? [
   { title: s.altUnknown, sub: s.altUnknownSub, rows: board.filter((a) => !declaredFree(a) && !declaredPaid(a)) },
 ].filter((x) => x.rows.length) : [];
 // Sur une page « Alternatives à X » où figure l'app du moment, son encart (qui dit « faite par nous ») donne le lien direct.
-const aotw = browse.kind === 'alt' && !!appOfTheWeek?.slug && board.some((a) => a.slug === appOfTheWeek.slug);
+const aotw = browse.kind === 'alt' && !!appOfTheWeek?.slug && board.some((a) => a.slug === appOfTheWeek?.slug);
 const path = browsePath(browse, 'fr');
 const rss = `/flux/${path.split('/').slice(1).join('/')}.xml`;
 const alertMsg = { ok: s.alertOk, exists: s.alertExists, bad: s.alertBad }[Astro.url.searchParams.get('alerte') ?? ''] ?? '';
